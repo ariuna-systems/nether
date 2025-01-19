@@ -11,6 +11,8 @@ import uuid
 
 import concurrent
 
+__version__ = "0.1.0"
+
 
 class Runnable(Protocol):
     @abstractmethod
@@ -50,6 +52,10 @@ def _loop_exception_handler(loop, context):
 
 
 class Dispatcher:
+    """
+    Publish/Subscribe
+    """
+
     def __init__(self) -> None: ...
     def register_subscriber(self, message_type, subscriber): ...
     def publish() -> None: ...  # notify/deliver
@@ -60,9 +66,10 @@ class Application:
     NETHER application singleton instance.
     """
 
-    def __init__(self, settings=None) -> None:
+    def __init__(self, settings: None) -> None:
         self._services = {}
         self._settings = settings
+        self._dispatcher = Dispatcher()
 
         try:
             self._event_loop = asyncio.get_running_loop()
@@ -147,7 +154,7 @@ def task(n):
     return result
 
 
-class Example1(Application):
+class Example_Application_1(Application):
     def __init__(self, settings=None) -> None:
         super().__init__(settings=settings)
         self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=10)
@@ -162,8 +169,27 @@ class Example1(Application):
         self.stop()
 
 
+class Example_Application_2(Application):
+    def __init__(self, settings=None) -> None:
+        super().__init__(settings=settings)
+        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=10)
+
+    async def main(self) -> None:
+        # tasks = [
+        #     self._event_loop.run_in_executor(self.executor, service.run)
+        #     for service in self.services.values()
+        # ]
+        print("ex 2")
+        # print(tasks)
+        # results = await asyncio.gather(*tasks)
+
+
 def main() -> None:
-    application = Example1(None)
+    # application = Example_Application_1(None)
+    # application.register_service(ServiceExample(1, application))
+    # application.start()
+
+    application = Example_Application_2(None)
     application.register_service(ServiceExample(1, application))
     application.start()
 

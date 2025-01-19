@@ -1,0 +1,23 @@
+[project]
+name = "nether"
+description = "the foundation library"
+dynamic = ["readme", "version"]
+requires-python = ">=3.12"
+license = {text = "MIT"}
+dependencies = [
+]
+
+[tool.setuptools.dynamic]
+readme = {file = ["README.md"]}
+version = {attr = "nether.__init__.__version__"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+namespaces = true
+
+[tool.pytest.ini_options]
+markers = [
+    "domain",
+    "service",
+    "integration"
+]
