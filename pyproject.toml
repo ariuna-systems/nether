@@ -5,6 +5,8 @@ dynamic = ["readme", "version"]
 requires-python = ">=3.12"
 license = {text = "MIT"}
 dependencies = [
+    "aiohttp",
+    "pywin32", # TODO: add as extras
 ]
 
 [tool.setuptools.dynamic]
@@ -19,5 +21,5 @@ namespaces = true
 markers = [
     "domain",
     "service",
-    "integration"
+    "storage",
 ]
