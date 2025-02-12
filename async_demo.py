@@ -1,38 +1,3 @@
-"""
-
-Asynchronní programování (paradigma)
-Asynchronní program
-
-Kdy využijeme async? Kdy je výhodnější threading? Dají se kombinovat?
-
-asyncio modul (balík): coroutine-based concurrency
-
-Korutina nemůže bežet bez runtime tj bez event loop viz např. `asyncio.run(coroutine())`.
-
-coroutine vs coroutine function vs generator based coroutine?
-
-korutinu lze přiřadit do proměnné.
-korutinu musíme spustit na event loop, nelze ji pustit jako obyčejnou funkci.
-
-Kolikrát můžeme spustit asyncion.run(coroutine)?
-
-
-kdy nepoužívat ayncio:
-- CPU bound task
-https://www.slingacademy.com/article/python-311-when-you-should-not-use-asyncio/
-
-
-- Asyncio Event Loop in Separate Thread
-    https://superfastpython.com/asyncio-event-loop-separate-thread/
-
-## References
-
-- Python Concurrency with asyncio, Matthew Fowler, 2022.
-- Using Asyncio in Python, Caleb Hattingh, 2020.
-- Asyncio Recipes, Mohamed Mustapha Tahrioui, 2019.
-
-"""
-
 import asyncio
 import inspect
 
