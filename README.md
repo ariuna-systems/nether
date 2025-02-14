@@ -20,7 +20,7 @@ ve stanovéném intervalu nebo načasování (scheduled). Nakonec všechny slyž
 mediátoru (message-bus).
 - Důležitým požadavkem je, že selkhání jakékoliv služby neshodí celý server. To jak služba ošetřuje chybové stavy je její záležitost a v nejhorším případě může 
 informovat aplikaci o neošetřitelném stavu. Aplikace se pak může rozhodnout, jak bude reagovat.
-- Aplikace by měla zpracovávat požadavky asychronně tj. neblokujícím způsobem (zejména IO operace) a zároveň umožňovat efektivně spouštět CPU intenzivní úlohy).
+- Aplikace by měla zpracovávat požadavky asychronně tj. neblokujícím způsobem IO operace a zároveň umožňovat efektivně spouštět CPU intenzivní úlohy (zřejmě na vláknech).
 - Nesmí docházek k tomu, že se spouští vlákna, která nelze jednoduše monitorovat a případně ukončit.
 
 ## Roadmap 
