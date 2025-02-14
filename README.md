@@ -23,6 +23,17 @@ informovat aplikaci o neošetřitelném stavu. Aplikace se pak může rozhodnout
 - Aplikace by měla zpracovávat požadavky asychronně tj. neblokujícím způsobem IO operace a zároveň umožňovat efektivně spouštět CPU intenzivní úlohy (zřejmě na vláknech).
 - Nesmí docházek k tomu, že se spouští vlákna, která nelze jednoduše monitorovat a případně ukončit.
 
+Problém: Neumíme zrušit běžící tasky, pokud zmáčkneme CTRL+C.
+
+## Architektura
+
+### Application
+
+Na vrcholu hierarchie stojí třída `Application` ze které dědí každá aplikace postavená na knihovně Nether.
+
+Application je centrální přístupový bod program. Applikace registruje služby, které mohou komunikovat interne i externě
+přes aplikaci pomocí zpráv (publish/subscribe).
+
 ## Roadmap 
 
 ### 01
@@ -31,13 +42,3 @@ Nejdříve výtvoříme jádro knihovny, kdy naším cílem je spustit server, k
 komunikovat přes HTTP. Server je schopen zaregistrovat další službu a komunikovat
 s ní asynchrnonně. V této fázi nechceme řešit clean architecture ani domain driven design.
 
-## Development notes
-
-Problém: Neumíme zrušit běžící tasky, pokud zmáčkneme CTRL+C.
-
-## Application
-
-Na vrcholu hierarchie stojí třída `Application` ze které dědí každá aplikace postavená na knihovně Nether.
-
-Application je centrální přístupový bod program. Applikace registruje služby, které mohou komunikovat interne i externě
-přes aplikaci pomocí zpráv (publish/subscribe).
