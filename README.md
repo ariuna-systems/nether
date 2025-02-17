@@ -8,7 +8,7 @@ Tento framwork vznikl z interních potřeba Wavelet.space, může ale nemusí vy
 Našim cílem není vytvořit projektt, který bude vyhovovat všem, ale především nám!
 Základnem je vyžít naplno standardní knihovnu; používat minimum externích balíku.
 
-## Roadmap 
+## Roadmap
 
 ### 01
 
