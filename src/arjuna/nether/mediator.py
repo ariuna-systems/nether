@@ -62,9 +62,9 @@ class MediatorProtocol(Protocol):
   async def handle_message(self, message: Message, uow_id: uuid.UUID) -> None: ...
   async def _handle_global_message(self, message: Message, log_level: int = logging.DEBUG) -> None: ...
   @classmethod
-  def register(cls, handler: ServiceProtocol[Any]) -> None: ...
+  def register(cls, service: ServiceProtocol[Any]) -> None: ...
   @classmethod
-  def unregister(cls, handler: ServiceProtocol[Any]) -> None: ...
+  def unregister(cls, service: ServiceProtocol[Any]) -> None: ...
 
 
 class BaseService[T: Message](ServiceProtocol[T]):
@@ -190,9 +190,9 @@ class Mediator:
 
   @classmethod
   async def stop(cls) -> None:
+    print("deleted services")
     for service in cls._services:
       await service.stop()
-
     del cls._instance
     del cls._services
 
@@ -204,39 +204,40 @@ class Mediator:
   async def register_unit_of_work(self, uow: UnitOfWorkProtocol) -> None:
     """Registers a new unit of work to receive messages."""
     async with self._get_uow_lock(uow.id):
-      logger.info(f"Unit of work `{uow.id}` registered.")
+      logger.debug(f"Unit of work `{uow.id}` registered.")
       self._units_of_work[uow.id] = uow
 
   async def unregister_unit_of_work(self, uow: UnitOfWorkProtocol) -> None:
     """Unregisters a unit of work, stopping message routing to it."""
     async with self._get_uow_lock(uow.id):
       if self._units_of_work.pop(uow.id, None) is not None:  # Pop without raising
-        logger.info(f"Unit of work `{uow.id}` unregistered.")
+        logger.debug(f"Unit of work `{uow.id}` unregistered.")
 
   @staticmethod
-  async def _handler_task(
+  async def _handling_task(
     *,
-    handler: ServiceProtocol[Any],
+    service: ServiceProtocol[Any],
     message: Message,
     dispatch: Callable[[Message], Awaitable[None]],
     join_stream: Callable[[], asyncio.Queue[Any]],
   ) -> None:
     try:
-      await handler.handle(message, dispatch=dispatch, join_stream=join_stream)
+      await service.handle(message, dispatch=dispatch, join_stream=join_stream)
     except Exception as error:
-      logger.critical(f"Uncaught error from {type(handler)}: {error}")
+      logger.critical(f"Uncaught error from {type(service)}: {error}")
 
   async def handle_message(self, message: Message, uow_id: uuid.UUID) -> None:
-    """Handles a message by dispatching it to the appropriate handlers."""
+    """Handles a message in unit of work by dispatching it to the appropriate services."""
     uow = self._units_of_work.get(uow_id)
     if uow is None:
+      logger.critical(f"Unit of Work not found: {uow_id}")
       return
 
     handled = False
-    for handler in self._services:
-      if isinstance(message, handler.supports):
+    for service in self._services:
+      if isinstance(message, service.supports):
         task = asyncio.create_task(
-          self._handler_task(handler=handler, message=message, dispatch=uow.process, join_stream=uow.join_stream)
+          self._handling_task(service=service, message=message, dispatch=uow.process, join_stream=uow.join_stream)
         )
         uow.add_task(task)
         handled = True
@@ -245,16 +246,17 @@ class Mediator:
       logger.critical(f"No handler found for message: {message}")
 
   async def _handle_global_message(self, message: Message, log_level: int = logging.DEBUG) -> None:
-    """Handles a message by dispatching it to the appropriate handlers."""
+    """Handles a global message by dispatching it to the appropriate services."""
 
-    async def logger_enqueue(message: Message) -> None:
+    async def dispatch_to_logger(message: Message) -> None:
+      """Dispatch function mock for logging."""
       logger.log(log_level, f"Global message: {message}")
 
     handled = False
-    for handler in self._services:
-      if isinstance(message, handler.supports):
-        await self._handler_task(
-          handler=handler, message=message, dispatch=logger_enqueue, join_stream=lambda: asyncio.Queue()
+    for service in self._services:
+      if isinstance(message, service.supports):
+        await self._handling_task(
+          service=service, message=message, dispatch=dispatch_to_logger, join_stream=lambda: asyncio.Queue()
         )
         handled = True
 
@@ -262,13 +264,15 @@ class Mediator:
       logger.critical(f"No handler found for message: {message}")
 
   @classmethod
-  def register(cls, handler: ServiceProtocol[Any]) -> None:
-    """Register an asynchronous handler."""
-    logger.info(f"Handler {type(handler).__name__} registered.")
-    cls._services.add(handler)
+  def register(cls, service: ServiceProtocol[Any]) -> None:
+    """Register a service."""
+    logger.info(f"Service {type(service).__name__} registered.")
+    service.set_mediator(cls)
+    cls._services.add(service)
 
   @classmethod
-  def unregister(cls, handler: ServiceProtocol[Any]) -> None:
-    """Unregister an asynchronous handler."""
-    logger.info(f"Handler {type(handler).__name__} unregistered.")
-    cls._services.remove(handler)
+  def unregister(cls, service: ServiceProtocol[Any]) -> None:
+    """Unregister a service."""
+    logger.info(f"Service {type(service).__name__} unregistered.")
+    service.set_mediator(cls)
+    cls._services.remove(service)

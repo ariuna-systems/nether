@@ -59,7 +59,7 @@ skip-magic-trailing-comma = false
 line-ending = "auto"
 
 [tool.mypy]
-files = ["src", "example.py"]
+files = ["src", "server_example.py"]
 ignore_missing_imports = true
 show_error_codes = true
 warn_unused_ignores = true

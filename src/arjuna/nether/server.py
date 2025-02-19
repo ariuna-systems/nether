@@ -60,7 +60,7 @@ class ViewAdded(SuccessEvent): ...
 class AddViewFailure(FailureEvent): ...
 
 
-class ServerInterfaceHandlerError(Exception): ...
+class HTTPInterfaceServiceError(Exception): ...
 
 
 class _DynamicRouter:
@@ -200,7 +200,7 @@ class HTTPInterfaceService(BaseService[StartServer | StopServer | AddView]):
     port = self.port
 
     if self.runner is not None:
-      raise ServerInterfaceHandlerError("Server is already running")
+      raise HTTPInterfaceServiceError("Server is already running")
 
     self.runner = web.AppRunner(self.app)
     await self.runner.setup()
@@ -211,7 +211,7 @@ class HTTPInterfaceService(BaseService[StartServer | StopServer | AddView]):
 
   async def stop(self) -> None:
     if self.runner is None:
-      raise ServerInterfaceHandlerError("Server is not running")
+      raise HTTPInterfaceServiceError("Server is not running")
 
     for site in self.runner.sites:
       await site.stop()

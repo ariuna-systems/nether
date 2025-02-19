@@ -2,6 +2,7 @@ import argparse
 import asyncio
 import logging
 import platform
+import signal
 import sys
 from abc import abstractmethod
 from typing import Any
@@ -30,6 +31,7 @@ class Application:
     self._mediator = mediator
     self._unit_of_work = unit_of_work
     self.logger = logger
+    self._shutdown_event = asyncio.Event()
 
   @property
   def platform(self) -> str | None:
@@ -54,14 +56,32 @@ class Application:
       if service in self._mediator.services():
         self._mediator.unregister(service)
 
+  async def _signal_handler(self) -> None:
+    """Handle shutdown signals"""
+    self.logger.info("Received shutdown signal, stopping services...")
+    self._shutdown_event.set()
+
+  def _setup_signal_handlers(self) -> None:
+    """Setup handlers for interrupt signals"""
+    loop = asyncio.get_event_loop()
+    for sig in (signal.SIGINT, signal.SIGTERM):
+      loop.add_signal_handler(sig, lambda: asyncio.create_task(self._signal_handler()))
+
   async def start(self) -> None:
     try:
+      self._setup_signal_handlers()
       await self._before_start()
       await self.main()
 
-      while any(service.is_running for service in self._mediator.services()):
-        await asyncio.sleep(1)
+      while not self._shutdown_event.is_set() and any(service.is_running for service in self._mediator.services()):
+        await asyncio.sleep(0.5)
+    except asyncio.CancelledError:
+      self.logger.info("Application cancelled")
+    except Exception as e:
+      self.logger.error(f"Application error: {e}")
+      raise
     finally:
+      await self.stop()
       self.logger.info("[FINISHED]")
 
   async def stop(self) -> None:
