@@ -90,7 +90,10 @@ class Application:
 
   async def _before_start(self) -> None:
     for service in self.services:
-      await service.start()
+      try:
+        await service.start()
+      except Exception as error:
+        self.logger.error(f"Error starting service {type(service).__name__}: {error}")
     self.logger.info("before start")
 
   @abstractmethod

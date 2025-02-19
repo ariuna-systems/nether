@@ -85,6 +85,27 @@ class ReceiverService(BaseService[ProducedCommand]):
     print(f"Received message: {type(message).__name__} {message.number}")
 
 
+class ErrorRaisingService(BaseService[None]):
+  def __init__(self):
+    self.mediator = cast(type[MediatorProtocol], None)
+    self._is_running = False
+
+  def set_mediator(self, mediator: type[MediatorProtocol]) -> None:
+    self.mediator = mediator
+
+  async def start(self) -> None:
+    print("ErrorRaisingService started.")
+    raise Exception("ErrorRaisingService error")
+    self._is_running = True
+
+  async def stop(self) -> None:
+    print("ErrorRaisingService stopped.")
+    self._is_running = False
+
+  async def handle(self, *_, **__) -> None:
+    raise Exception("ErrorRaisingService error")
+
+
 async def main():
   configuration = argparse.Namespace()
   configuration.host = "localhost"
@@ -95,6 +116,7 @@ async def main():
   app.register_service(server)
   app.register_service(ProducerService())
   app.register_service(ReceiverService())
+  app.register_service(ErrorRaisingService())
   await app.start()
 
 
