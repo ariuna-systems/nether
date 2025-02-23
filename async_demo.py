@@ -1,3 +1,36 @@
+"""Asynchronní programování (paradigma)
+Asynchronní program
+
+Kdy využijeme async? Kdy je výhodnější threading? Dají se kombinovat?
+
+asyncio modul (balík): coroutine-based concurrency
+
+Korutina nemůže bežet bez runtime tj bez event loop viz např. `asyncio.run(coroutine())`.
+
+coroutine vs coroutine function vs generator based coroutine?
+
+korutinu lze přiřadit do proměnné.
+korutinu musíme spustit na event loop, nelze ji pustit jako obyčejnou funkci.
+
+Kolikrát můžeme spustit asyncion.run(coroutine)?
+
+
+kdy nepoužívat ayncio:
+- CPU bound task
+https://www.slingacademy.com/article/python-311-when-you-should-not-use-asyncio/
+
+
+- Asyncio Event Loop in Separate Thread
+    https://superfastpython.com/asyncio-event-loop-separate-thread/
+
+## References
+
+- Python Concurrency with asyncio, Matthew Fowler, 2022.
+- Using Asyncio in Python, Caleb Hattingh, 2020.
+- Asyncio Recipes, Mohamed Mustapha Tahrioui, 2019.
+
+"""
+
 import asyncio
 import inspect
 
@@ -5,71 +38,71 @@ import inspect
 # Removed in Python 3.10
 # @asyncio.coroutine
 def custom_coroutine():
-    yield from asyncio.sleep(1)
+  yield from asyncio.sleep(1)  # type: ignore
 
 
 async def demo_0():
-    await asyncio.sleep(5)
-    print("Demo 0 finished")
+  await asyncio.sleep(5)
+  print("Demo 0 finished")
 
 
 async def demo_1():
-    async def coroutine():
-        print("+++")
-        await asyncio.sleep(10)
-        print("---")  # should be not printed
+  async def coroutine():
+    print("+++")
+    await asyncio.sleep(10)
+    print("---")  # should be not printed
 
-    task = asyncio.create_task(coroutine())
-    await asyncio.sleep(1)
+  task = asyncio.create_task(coroutine())
+  await asyncio.sleep(1)
 
-    cancel_requested = task.cancel()
-    await asyncio.sleep(1)
-    print(f"Task should be canceled: {cancel_requested}")
+  cancel_requested = task.cancel()
+  await asyncio.sleep(1)
+  print(f"Task should be canceled: {cancel_requested}")
 
-    await asyncio.sleep(1)
-    print(f"Task already canceled: {task.cancelled()}")
+  await asyncio.sleep(1)
+  print(f"Task already canceled: {task.cancelled()}")
 
-    print("Demo finished")
+  print("Demo finished")
 
 
 async def demo_2():
-    async def coroutine(number):
-        print(f"Task {number} started")
-        await asyncio.sleep(10)
-        print("---")  # should be not printed
+  async def coroutine(number):
+    print(f"Task {number} started")
+    await asyncio.sleep(10)
+    print("---")  # should be not printed
 
-    task_1 = asyncio.create_task(coroutine(1))
-    task_2 = asyncio.create_task(coroutine(1))
+  asyncio.create_task(coroutine(1))
+  asyncio.create_task(coroutine(1))
 
-    await asyncio.sleep(1)
-    # cancel_requested = task.cancel()
-    await asyncio.sleep(1)
-    # print(f"Task should be canceled: {cancel_requested}")
+  await asyncio.sleep(1)
+  # cancel_requested = task.cancel()
+  await asyncio.sleep(1)
+  # print(f"Task should be canceled: {cancel_requested}")
 
-    # await asyncio.sleep(1)
-    # print(f"Task already canceled: {task.cancelled()}")
+  # await asyncio.sleep(1)
+  # print(f"Task already canceled: {task.cancelled()}")
 
-    print("Demo finished")
+  print("Demo finished")
 
 
 if __name__ == "__main__":
-    print(type(demo_0), asyncio.iscoroutine(demo_0))
-    print(type(demo_0), inspect.iscoroutine(demo_0))
-    print(type(demo_0), inspect.iscoroutinefunction(demo_0))
+  print(type(demo_0), asyncio.iscoroutine(demo_0))
+  print(type(demo_0), inspect.iscoroutine(demo_0))
+  print(type(demo_0), inspect.iscoroutinefunction(demo_0))
 
-    print(type(custom_coroutine), asyncio.iscoroutine(custom_coroutine))
-    print(type(custom_coroutine), inspect.iscoroutine(custom_coroutine))
+  print(type(custom_coroutine), asyncio.iscoroutine(custom_coroutine))
+  print(type(custom_coroutine), inspect.iscoroutine(custom_coroutine))
 
-    # asyncio.run(demo_0())
-    # asyncio.run(demo_2())
+  # asyncio.run(demo_0())
+  # asyncio.run(demo_2())
 
-    # RuntimeWarning: coroutine 'demo_0' was never awaited
-    # RuntimeWarning: Enable tracemalloc to get the object allocation traceback
-    demo_0()
+  # RuntimeWarning: coroutine 'demo_0' was never awaited
+  # RuntimeWarning: Enable tracemalloc to get the object allocation traceback
+  demo_0()
 
-    # OK: Přiřadíme korutinu do proměnné a pak pustíme
-    coro = demo_0()
-    asyncio.run(coro)
+  # OK: Přiřadíme korutinu do proměnné a pak pustíme
+  coro = demo_0()
+  asyncio.run(coro)
 
-    sleeper = asyncio.sleep(3)
-    asyncio.run(sleeper)
+  sleeper = asyncio.sleep(3)
+  asyncio.run(sleeper)

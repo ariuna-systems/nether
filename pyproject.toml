@@ -1,25 +1,71 @@
 [project]
-name = "nether"
+name = "arjuna-nether"
 description = "the foundation library"
 dynamic = ["readme", "version"]
 requires-python = ">=3.12"
-license = {text = "MIT"}
-dependencies = [
-    "aiohttp",
-    "pywin32", # TODO: add as extras
-]
+license = { text = "MIT" }
+dependencies = ["aiohttp"]
+
+[project.optional-dependencies]
+windows = ["pywin32"]
 
 [tool.setuptools.dynamic]
-readme = {file = ["README.md"]}
-version = {attr = "nether.__init__.__version__"}
+readme = { file = ["README.md"] }
+version = { attr = "arjuna.nether.__init__.__version__" }
 
 [tool.setuptools.packages.find]
 where = ["src"]
-namespaces = true
+include = ["arjuna.nether"]
 
-[tool.pytest.ini_options]
-markers = [
-    "domain",
-    "service",
-    "storage",
+[tool.ruff]
+extend-include = ["*.ipynb"]
+line-length = 120
+target-version = "py312"
+indent-width = 2
+exclude = [
+    "docs",
+    ".eggs",
+    ".git",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "build",
+    "dist",
+    "venv",
 ]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle - Error
+    "W",   # pycodestyle - Warning
+    "F",   # PyFlakes
+    "C4",  # flake8 - Comprehensions
+    "B",   # flake8 - Bugbear
+    "I",   # Import sort
+    "N",   # pep8 - Naming
+    "PTH", # use pathlib
+    "UP",  # PyUpgrade (new syntax)
+]
+ignore = []
+fixable = ["ALL"]
+unfixable = []
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.mypy]
+files = ["src", "server_example.py"]
+ignore_missing_imports = true
+show_error_codes = true
+warn_unused_ignores = true
+warn_unused_configs = true
+namespace_packages = true
+explicit_package_bases = true
+show_column_numbers = true
+check_untyped_defs = true
+exclude = ['venv', '.venv']
