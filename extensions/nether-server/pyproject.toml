@@ -10,7 +10,7 @@ dynamic = ["readme"]
 requires-python = ">=3.12"
 dependencies = [
   "aiohttp",
-  "arjuna-nether @ git+ssh://git@github.com/arjuna-group/nether.git",
+  "nether @ git+ssh://git@github.com/arjuna-group/nether.git",
 ]
 
 [tool.setuptools.packages.find]
