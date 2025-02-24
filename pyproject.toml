@@ -8,14 +8,15 @@ dependencies = ["aiohttp"]
 
 [project.optional-dependencies]
 windows = ["pywin32"]
+access = ["nether-access @ git+ssh://git@github.com/arjuna-group/nether.git#subdirectory=extensions/access"]
 
 [tool.setuptools.dynamic]
 readme = { file = ["README.md"] }
-version = { attr = "arjuna.nether.__init__.__version__" }
+version = { attr = "nether.__init__.__version__" }
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["arjuna.nether"]
+include = ["nether"]
 
 [tool.ruff]
 extend-include = ["*.ipynb"]
