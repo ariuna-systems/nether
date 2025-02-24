@@ -14,7 +14,7 @@ dependencies = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["nether.httpserver"]
+include = ["nether.server"]
 
 [tool.setuptools.dynamic]
 readme = { file = ["README.md"] }
