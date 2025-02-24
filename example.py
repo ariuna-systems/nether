@@ -6,7 +6,7 @@ import sys
 import threading
 import time
 
-from arjuna.nether import Application, Service
+from nether import Application, Service
 
 
 class ServiceExample(Service):

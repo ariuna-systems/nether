@@ -9,8 +9,8 @@ from zoneinfo import ZoneInfo
 import jwt
 import pyotp
 
-from arjuna.nether.common import Event, ServiceError
-from arjuna.nether.mediator import BaseService
+from nether.common import Event, ServiceError
+from nether.mediator import BaseService
 
 from ..account import AccountRepository
 from ._domain import (

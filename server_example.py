@@ -5,10 +5,10 @@ import time
 from dataclasses import dataclass
 from typing import cast
 
-from arjuna.nether import Application
-from arjuna.nether.common import Command
-from arjuna.nether.mediator import BaseService, MediatorProtocol
-from arjuna.nether.server import HTTPInterfaceService
+from nether import Application
+from nether.common import Command
+from nether.mediator import BaseService, MediatorProtocol
+from nether.server import HTTPInterfaceService
 
 
 class MyApplication(Application):

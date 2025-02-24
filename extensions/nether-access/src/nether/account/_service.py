@@ -2,8 +2,8 @@ import uuid
 
 import pyotp
 
-from arjuna.nether.common import ServiceError, Event
-from arjuna.nether.mediator import BaseService
+from nether.common import ServiceError, Event
+from nether.mediator import BaseService
 
 from ._domain import (
   Account,

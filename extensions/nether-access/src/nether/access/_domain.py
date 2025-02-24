@@ -5,7 +5,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime
 
-from arjuna.nether.common import Command, FailureEvent, SuccessEvent
+from nether.common import Command, FailureEvent, SuccessEvent
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)

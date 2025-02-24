@@ -6,7 +6,7 @@ import uuid
 import psycopg
 import psycopg.rows
 
-from arjuna.nether.common import AsyncConnectorProtocol
+from nether.common import AsyncConnectorProtocol
 
 from ._domain import AccountSession
 

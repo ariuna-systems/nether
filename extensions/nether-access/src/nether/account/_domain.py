@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 __all__ = ["Account", "AccountRole", "AccountDomainError"]
 
-from arjuna.nether.common import DomainError, Command, Event, FailureEvent
+from nether.common import DomainError, Command, Event, FailureEvent
 
 from ..access import AccountSession
 
