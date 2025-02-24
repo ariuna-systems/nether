@@ -1,5 +1,5 @@
 [project]
-name = "arjuna-nether"
+name = "nether"
 description = "the foundation library"
 dynamic = ["readme", "version"]
 requires-python = ">=3.12"
