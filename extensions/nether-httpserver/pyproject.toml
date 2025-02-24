@@ -9,14 +9,12 @@ version = "0.3.0"
 dynamic = ["readme"]
 requires-python = ">=3.12"
 dependencies = [
-  "psycopg",
-  "pyjwt",
-  "pyotp",
-  "nether @ git+ssh://git@github.com/arjuna-group/nether.git",
+  "aiohttp",
+  "arjuna-nether @ git+ssh://git@github.com/arjuna-group/nether.git",
 ]
 
 [tool.setuptools.packages.find]
-include = ["nether.access", "nether.account"]
+include = ["nether.httpserver"]
 
 [tool.setuptools.dynamic]
 readme = { file = ["README.md"] }

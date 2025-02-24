@@ -10,8 +10,8 @@ from typing import Any, cast
 from aiohttp import hdrs as headers
 from aiohttp import web, web_urldispatcher
 
-from .common import Command, Event, FailureEvent, Message, SuccessEvent
-from .mediator import BaseService, MediatorProtocol
+from nether.common import Command, Event, FailureEvent, Message, SuccessEvent
+from nether.mediator import BaseService, MediatorProtocol
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 local_logger = logging.getLogger(__name__)

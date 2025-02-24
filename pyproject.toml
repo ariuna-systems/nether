@@ -1,6 +1,6 @@
 [project]
 name = "nether"
-description = "the foundation library"
+description = "The foundation library"
 dynamic = ["readme", "version"]
 requires-python = ">=3.12"
 license = { text = "MIT" }
@@ -8,6 +8,7 @@ dependencies = ["aiohttp"]
 
 [project.optional-dependencies]
 windows = ["pywin32"]
+server = ["nether-httpserver @ git+ssh://git@github.com/arjuna-group/nether.git#subdirectory=extensions/nether-httpserver"]
 access = ["nether-access @ git+ssh://git@github.com/arjuna-group/nether.git#subdirectory=extensions/nether-access"]
 
 [tool.setuptools.dynamic]
