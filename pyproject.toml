@@ -24,6 +24,7 @@ line-length = 120
 target-version = "py312"
 indent-width = 2
 exclude = [
+    "extensions",
     "docs",
     ".eggs",
     ".git",
