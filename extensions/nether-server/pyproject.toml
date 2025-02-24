@@ -3,8 +3,8 @@ requires = ["setuptools >= 61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "nether-httpserver"
-description = "Nether HTTP Server"
+name = "nether-server"
+description = "Nether server"
 version = "0.3.0"
 dynamic = ["readme"]
 requires-python = ">=3.12"

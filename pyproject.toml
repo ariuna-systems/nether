@@ -8,7 +8,7 @@ dependencies = ["aiohttp"]
 
 [project.optional-dependencies]
 windows = ["pywin32"]
-server = ["nether-httpserver @ git+ssh://git@github.com/arjuna-group/nether.git#subdirectory=extensions/nether-httpserver"]
+server = ["nether-server @ git+ssh://git@github.com/arjuna-group/nether.git#subdirectory=extensions/nether-server"]
 access = ["nether-access @ git+ssh://git@github.com/arjuna-group/nether.git#subdirectory=extensions/nether-access"]
 
 [tool.setuptools.dynamic]
