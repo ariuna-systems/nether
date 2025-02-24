@@ -8,7 +8,7 @@ dependencies = ["aiohttp"]
 
 [project.optional-dependencies]
 windows = ["pywin32"]
-access = ["nether-access @ git+ssh://git@github.com/arjuna-group/nether.git#subdirectory=extensions/access"]
+access = ["nether-access @ git+ssh://git@github.com/arjuna-group/nether.git#subdirectory=extensions/nether-access"]
 
 [tool.setuptools.dynamic]
 readme = { file = ["README.md"] }
