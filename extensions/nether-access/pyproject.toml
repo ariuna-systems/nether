@@ -1,0 +1,67 @@
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nether-access"
+description = "Nether access library"
+version = "0.3.0"
+dynamic = ["readme"]
+requires-python = ">=3.12"
+dependencies = [
+  "psycopg",
+  "pyjwt",
+  "pyotp",
+  "arjuna-nether @ git+ssh://git@github.com/arjuna-group/nether.git@daniel",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["nether.access", "nether.account"]
+
+[tool.setuptools.dynamic]
+readme = { file = ["README.md"] }
+
+[tool.ruff]
+extend-include = ["*.ipynb"]
+line-length = 120
+target-version = "py312"
+indent-width = 2
+exclude = [
+  "docs",
+  ".bzr",
+  ".direnv",
+  ".eggs",
+  ".git",
+  ".git-rewrite",
+  ".hg",
+  ".mypy_cache",
+  ".nox",
+  ".pants.d",
+  ".pytype",
+  ".ruff_cache",
+  ".svn",
+  ".tox",
+  ".venv",
+  "__pypackages__",
+  "_build",
+  "buck-out",
+  "build",
+  "dist",
+  "node_modules",
+  "venv",
+]
+
+[tool.pytest.ini_options]
+markers = ["application", "domain", "service", "storage"]
+
+[tool.mypy]
+files = ["src"]
+ignore_missing_imports = true
+show_error_codes = true
+warn_unused_ignores = true
+warn_unused_configs = true
+namespace_packages = true
+explicit_package_bases = true
+show_column_numbers = true
+exclude = ['venv', '.venv']
