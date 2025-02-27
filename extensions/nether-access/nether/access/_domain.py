@@ -1,6 +1,8 @@
 __all__ = ["AccountSession"]
 
 
+from collections.abc import Iterable
+from typing import ClassVar
 import uuid
 from dataclasses import dataclass
 from datetime import datetime
@@ -15,7 +17,23 @@ class AccountSession:
   expires_at: datetime
 
 
+## ERRORS ##
+
+
+class PermissionError(Exception): ...
+
+
 ## MESSAGES ##
+
+
+@dataclass(frozen=True, kw_only=True)
+class SignedCommand(Command):
+  jwt_token: str
+
+
+@dataclass(frozen=True, kw_only=True)
+class AccessControlledCommand(SignedCommand):
+  fields: ClassVar[Iterable[str]]
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -61,3 +79,17 @@ class JWTValidated(SuccessEvent):
 
 @dataclass(frozen=True)
 class ValidateJWTFailure(FailureEvent): ...
+
+
+@dataclass(frozen=True)
+class Authorize(Command):
+  cmd: AccessControlledCommand
+
+
+@dataclass(frozen=True)
+class Authorized(SuccessEvent):
+  account_id: uuid.UUID
+
+
+@dataclass(frozen=True)
+class Unauthorized(FailureEvent): ...

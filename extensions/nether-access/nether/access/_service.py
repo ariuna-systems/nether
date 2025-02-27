@@ -1,6 +1,8 @@
 __all__ = ["AccessService"]
 
 
+import logging
+import sys
 import uuid
 from datetime import datetime, timedelta
 from typing import get_args
@@ -12,12 +14,18 @@ import pyotp
 from nether.common import Event, ServiceError
 from nether.mediator import BaseService
 
+from ..account import Account
+
 from ..account import AccountRepository
 from ._domain import (
+  AccessControlledCommand,
   AccountSession,
   AccountValidated,
+  Authorize,
+  Authorized,
   JWTValidated,
   OneTimePasswordValidated,
+  Unauthorized,
   ValidateAccount,
   ValidateAccountFailure,
   ValidateAccountOneTimePassword,
@@ -27,24 +35,49 @@ from ._domain import (
 )
 from ._storage import AccessRepository
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
+logger.propagate = False
+handler = logging.StreamHandler(stream=sys.stdout)
+handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
+logger.addHandler(handler)
+
 
 class AccessServiceError(ServiceError): ...
 
 
-class AccessService(BaseService[ValidateAccount | ValidateAccountOneTimePassword | ValidateJWT]):
+class AccessService(BaseService[Authorize | ValidateAccount | ValidateAccountOneTimePassword | ValidateJWT]):
   @property
   def supports(self):
     return get_args(self.__orig_bases__[0])[0]
 
-  def __init__(self, *, account_repository: AccountRepository, access_repository: AccessRepository) -> None:
+  def __init__(
+    self, *, account_repository: AccountRepository, access_repository: AccessRepository, _authorize_all: bool = False
+  ) -> None:
     self._account_repository = account_repository
     self._access_repository = access_repository
     self._is_running = False
+    self._authorize_all = _authorize_all
 
-  def set_mediator(self, *_) -> None: ...
+  def set_mediator_context_factory(self, *_) -> None: ...
 
   async def start(self) -> None:
-    self._is_running = False
+    try:
+      if self._authorize_all:
+        admin_account = Account(
+          identifier=uuid.NAMESPACE_DNS,
+          name="admin",
+          email="admin@admin",
+          password_hash="admin",
+          secret="admin",
+          session=None,
+          roles=[],
+        )
+        await self._account_repository.create(admin_account)
+    except Exception as error:
+      logger.warning(f"Issue creating admin account, maybe it already exists: {error}")
+
+    self._is_running = True
 
   async def stop(self) -> None:
     self._is_running = False
@@ -56,6 +89,11 @@ class AccessService(BaseService[ValidateAccount | ValidateAccountOneTimePassword
     result_event: Event
     try:
       match message:
+        case Authorize() as cmd:
+          if self._authorize_all:
+            result_event = Authorized(uuid.NAMESPACE_DNS)
+          else:
+            result_event = Authorized(await self._authorize_command(cmd.cmd))
         case ValidateAccount() as cmd:
           result_event = AccountValidated(
             await self._validate_account(
@@ -69,11 +107,14 @@ class AccessService(BaseService[ValidateAccount | ValidateAccountOneTimePassword
             ),
           )
         case ValidateJWT() as cmd:
-          result_event = JWTValidated(
-            await self._validate_jwt(token=cmd.token),
-          )
+          if self._authorize_all:
+            result_event = JWTValidated(uuid.NAMESPACE_DNS)
+          else:
+            result_event = JWTValidated(await self._validate_jwt(cmd.token))
     except Exception as error:
       match message:
+        case Authorize():
+          result_event = Unauthorized(error)
         case ValidateAccount():
           result_event = ValidateAccountFailure(error)
         case ValidateAccountOneTimePassword():
@@ -127,7 +168,7 @@ class AccessService(BaseService[ValidateAccount | ValidateAccountOneTimePassword
     )
     return token
 
-  async def _validate_jwt(self, *, token: str) -> uuid.UUID:
+  async def _validate_jwt(self, token: str, /) -> uuid.UUID:
     try:
       payload = jwt.decode(token, "TODO SECRET", algorithms=["HS256"])
       return uuid.UUID(payload["account_id"])
@@ -137,3 +178,13 @@ class AccessService(BaseService[ValidateAccount | ValidateAccountOneTimePassword
       raise AccessServiceError("Invalid token") from error
     except Exception as error:
       raise AccessServiceError(str(error)) from error
+
+  async def _authorize_command(self, cmd: AccessControlledCommand) -> uuid.UUID:
+    account_id = await self._validate_jwt(cmd.jwt_token)
+    async with self._access_repository.transaction() as cursor:
+      for field in cmd.fields:
+        if not await self._access_repository.check_account_permission(
+          account_id=account_id, item_id=getattr(cmd, field), cursor=cursor
+        ):
+          raise AccessServiceError(f"Permission denied for item `{getattr(cmd, field)}` to account `{account_id}`")
+    return account_id

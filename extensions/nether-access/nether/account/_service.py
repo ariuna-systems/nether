@@ -29,7 +29,7 @@ class AccountService(BaseService[CreateAccount | CreateAccountWithDefaultRole | 
     self._repository = account_repository
     self._is_running = False
 
-  def set_mediator(self, *_) -> None: ...
+  def set_mediator_context_factory(self, *_) -> None: ...
 
   async def start(self) -> None:
     self._is_running = False

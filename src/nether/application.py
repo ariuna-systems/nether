@@ -7,7 +7,11 @@ import sys
 from abc import abstractmethod
 from typing import Any
 
-from .mediator import Mediator, MediatorProtocol, ServiceProtocol, UnitOfWork, UnitOfWorkProtocol
+from .mediator import (
+  MEDIATOR_INSTANCE,
+  MediatorProtocol,
+  ServiceProtocol,
+)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 local_logger = logging.getLogger(__name__)
@@ -22,14 +26,12 @@ class Application:
   def __init__(
     self,
     *,
-    mediator: type[MediatorProtocol] = Mediator,
-    unit_of_work: type[UnitOfWorkProtocol] = UnitOfWork,
+    mediator: MediatorProtocol = MEDIATOR_INSTANCE,
     configuration: argparse.Namespace,
     logger: logging.Logger = local_logger,
   ) -> None:
     self.configuration = configuration
     self._mediator = mediator
-    self._unit_of_work = unit_of_work
     self.logger = logger
     self._shutdown_event = asyncio.Event()
 
@@ -44,16 +46,16 @@ class Application:
   @property
   def services(self) -> set[ServiceProtocol[Any]]:
     """Get the registered service."""
-    return self._mediator.services()
+    return self._mediator.services
 
   def register_service(self, *services: ServiceProtocol[Any]) -> None:
     for service in services:
-      if service not in self._mediator.services():
+      if service not in self._mediator.services:
         self._mediator.register(service)
 
   def unregister_service(self, *services: ServiceProtocol[Any]) -> None:
     for service in services:
-      if service in self._mediator.services():
+      if service in self._mediator.services:
         self._mediator.unregister(service)
 
   async def _signal_handler(self) -> None:
@@ -73,7 +75,7 @@ class Application:
       await self._before_start()
       await self.main()
 
-      while not self._shutdown_event.is_set() and any(service.is_running for service in self._mediator.services()):
+      while not self._shutdown_event.is_set() and any(service.is_running for service in self._mediator.services):
         await asyncio.sleep(0.5)
     except asyncio.CancelledError:
       self.logger.info("Application cancelled")

@@ -55,7 +55,7 @@ exclude = [
 markers = ["application", "domain", "service", "storage"]
 
 [tool.mypy]
-files = ["src"]
+files = ["nether"]
 ignore_missing_imports = true
 show_error_codes = true
 warn_unused_ignores = true

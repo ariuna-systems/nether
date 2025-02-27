@@ -11,7 +11,7 @@ from aiohttp import hdrs as headers
 from aiohttp import web, web_urldispatcher
 
 from nether.common import Command, Event, FailureEvent, Message, SuccessEvent
-from nether.mediator import BaseService, MediatorProtocol
+from nether.mediator import BaseService
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 local_logger = logging.getLogger(__name__)
@@ -143,7 +143,12 @@ class _DynamicRouter:
     if match_info is None:
       if allowed_methods:
         return web.Response(status=405, text="Method Not Allowed")
-      return await handler(request)
+      try:
+        return await handler(request)
+      except Exception:
+        traceback_details = traceback.format_exc()
+        self.logger.error(f"{traceback_details}")
+        return web.Response(status=500, text="Internal Server Error")
 
     try:
       match_info.add_app(request.app)
@@ -175,7 +180,6 @@ class HTTPInterfaceService(BaseService[StartServer | StopServer | AddView]):
     self.logger = logger
     self.runner: web.AppRunner | None = None
     self.tasks: set[asyncio.Task[Any]] = set()
-    self.mediator: type[MediatorProtocol] = cast(type[MediatorProtocol], None)
     self._is_running = False
 
   @web.middleware
@@ -192,8 +196,7 @@ class HTTPInterfaceService(BaseService[StartServer | StopServer | AddView]):
       if task:
         self.tasks.remove(task)
 
-  def set_mediator(self, mediator: type[MediatorProtocol]) -> None:
-    self.mediator = mediator
+  def set_mediator_context_factory(self, *_) -> None: ...
 
   async def start(self) -> None:
     host = self.host
@@ -219,7 +222,7 @@ class HTTPInterfaceService(BaseService[StartServer | StopServer | AddView]):
     if self.tasks:
       self.logger.info(f"Waiting for {len(self.tasks)} ongoing requests before shutdown.")
       try:
-        await asyncio.wait_for(asyncio.gather(*self.tasks, return_exceptions=True), timeout=60.0)
+        await asyncio.wait_for(asyncio.gather(*self.tasks, return_exceptions=True), timeout=10.0)
       except TimeoutError:
         self.logger.warning(f"Shutdown timed out, killing {len(self.tasks)} active requests")
 
