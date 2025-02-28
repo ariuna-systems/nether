@@ -5,7 +5,7 @@ from pathlib import Path
 import sys
 import traceback
 from collections.abc import Awaitable, Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, cast
 
 from aiohttp import hdrs as headers
@@ -65,7 +65,7 @@ class AddViewFailure(FailureEvent): ...
 class AddStatic(Command):
   prefix: str
   path: Path
-  kwargs: dict[str, Any] = {}
+  kwargs: dict[str, Any] = field(default_factory=lambda: {})
 
 
 @dataclass(frozen=True)
