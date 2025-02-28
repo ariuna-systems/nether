@@ -1,6 +1,7 @@
 import argparse
 import asyncio
 import logging
+from pathlib import Path
 import sys
 import traceback
 from collections.abc import Awaitable, Callable
@@ -60,6 +61,21 @@ class ViewAdded(SuccessEvent): ...
 class AddViewFailure(FailureEvent): ...
 
 
+@dataclass(frozen=True)
+class AddStatic(Command):
+  prefix: str
+  path: Path
+  kwargs: dict[str, Any] = {}
+
+
+@dataclass(frozen=True)
+class StaticAdded(SuccessEvent): ...
+
+
+@dataclass(frozen=True)
+class AddStaticFailure(FailureEvent): ...
+
+
 class HTTPInterfaceServiceError(Exception): ...
 
 
@@ -67,17 +83,55 @@ class _DynamicRouter:
   def __init__(self, app: web.Application, logger: logging.Logger = local_logger):
     self.app = app
     self.logger = logger
-    self._resource_map: dict[str, list[web_urldispatcher.Resource]] = {}
+    self._resource_map: dict[str, list[web_urldispatcher.AbstractResource]] = {}
 
-  def add_dynamic_view(self, route: str, view_class: type[web.View]) -> None:
-    resource = self._add_resource(route)
+  def add_view(self, route: str, view_class: type[web.View]) -> None:
+    resource = self._create_resource(route)
+    self._add_resource(resource)
     resource.add_route(headers.METH_ANY, view_class)
 
-  def _add_resource(self, path: str, *, name: str | None = None) -> web_urldispatcher.Resource:
+  def add_route(
+    self,
+    method: str,
+    path: str,
+    handler: web_urldispatcher.Handler | type[web.View],
+    *,
+    name: str | None = None,
+    **kwargs,
+  ) -> None:
     resource = self._create_resource(path, name=name)
+    self._add_resource(resource)
+    resource.add_route(method, handler)
+
+  def add_static(
+    self,
+    prefix: str,
+    path: Path,
+    *,
+    name: str | None = None,
+    expect_handler: web_urldispatcher._ExpectHandler | None = None,
+    chunk_size: int = 256 * 1024,
+    show_index: bool = False,
+    follow_symlinks: bool = False,
+    append_version: bool = False,
+  ) -> None:
+    if prefix.endswith("/"):
+      prefix = prefix[:-1]
+    resource = web_urldispatcher.StaticResource(
+      prefix=prefix,
+      directory=path,
+      name=name,
+      expect_handler=expect_handler,
+      chunk_size=chunk_size,
+      show_index=show_index,
+      follow_symlinks=follow_symlinks,
+      append_version=append_version,
+    )
+    self._add_resource(resource)
+
+  def _add_resource(self, resource: web_urldispatcher.AbstractResource) -> None:
     key = self._resource_key(resource)
     self._resource_map.setdefault(key, []).append(resource)
-    return resource
 
   def _create_resource(self, path: str, *, name: str | None = None) -> web_urldispatcher.Resource:
     if path and not path.startswith("/"):
@@ -94,7 +148,7 @@ class _DynamicRouter:
     return not has_template and not has_argument_fields
 
   @staticmethod
-  def _resource_key(resource: web_urldispatcher.Resource) -> str:
+  def _resource_key(resource: web_urldispatcher.AbstractResource) -> str:
     canonical = resource.canonical
     if "{" in canonical:
       before_dynamic = canonical.partition("{")[0]
@@ -107,7 +161,7 @@ class _DynamicRouter:
 
   @staticmethod
   async def _resolve_dynamic_route(
-    request: web.Request, resource_index: dict[str, list[web_urldispatcher.Resource]]
+    request: web.Request, resource_index: dict[str, list[web_urldispatcher.AbstractResource]]
   ) -> tuple[web_urldispatcher.UrlMappingMatchInfo | None, set[str]]:
     allowed_methods: set[str] = set()
     match_info = None
@@ -243,10 +297,15 @@ class HTTPInterfaceService(BaseService[StartServer | StopServer | AddView]):
         case AddView():
           await self._add_view(route=message.route, view=message.view)
           result_event = ViewAdded()
+        case AddStatic():
+          await self._add_static(prefix=message.prefix, path=message.path, **message.kwargs)
+          result_event = StaticAdded()
     except Exception as error:
       match message:
         case AddView():
           result_event = AddViewFailure(error=error)
+        case AddStatic():
+          result_event = AddStaticFailure(error=error)
     finally:
       await dispatch(result_event)
 
@@ -257,3 +316,9 @@ class HTTPInterfaceService(BaseService[StartServer | StopServer | AddView]):
     else:
       self.app.router.add_view(route, view)
     self.logger.info(f"View `{view.__name__}` assigned to route {route}")
+
+  async def _add_static(self, prefix: str, path: Path, **kwargs) -> None:
+    if self.app.frozen:
+      self.app["dynamic_router"].add_static(prefix, path, **kwargs)
+    else:
+      self.app.router.add_static(prefix, path, **kwargs)
