@@ -15,8 +15,16 @@ dependencies = [
   "nether @ git+ssh://git@github.com/arjuna-group/nether.git",
 ]
 
+[tool.setuptools]
+py-modules = []
+
+[tool.setuptools.package-data]
+"nether.access" = ["py.typed"]
+"nether.account" = ["py.typed"]
+
 [tool.setuptools.packages.find]
-include = ["nether.access", "nether.account"]
+where = ["src"]
+include = ["nether.*"]
 
 [tool.setuptools.dynamic]
 readme = { file = ["README.md"] }
@@ -55,7 +63,7 @@ exclude = [
 markers = ["application", "domain", "service", "storage"]
 
 [tool.mypy]
-files = ["nether"]
+files = ["src"]
 ignore_missing_imports = true
 show_error_codes = true
 warn_unused_ignores = true
