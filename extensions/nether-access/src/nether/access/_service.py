@@ -182,9 +182,16 @@ class AccessService(BaseService[Authorize | ValidateAccount | ValidateAccountOne
   async def _authorize_command(self, cmd: AccessControlledCommand) -> uuid.UUID:
     account_id = await self._validate_jwt(cmd.jwt_token)
     async with self._access_repository.transaction() as cursor:
+      items_to_check: list[uuid.UUID] = []
       for field in cmd.fields:
+        field_value = getattr(cmd, field)
+        if isinstance(field_value, list):
+          items_to_check.extend(field_value)
+        else:
+          items_to_check.append(field_value)
+      for item in items_to_check:
         if not await self._access_repository.check_account_permission(
-          account_id=account_id, item_id=getattr(cmd, field), cursor=cursor
+          account_id=account_id, item_id=item, cursor=cursor
         ):
-          raise AccessServiceError(f"Permission denied for item `{getattr(cmd, field)}` to account `{account_id}`")
+          raise AccessServiceError(f"Permission denied for item `{item}` to account `{account_id}`")
     return account_id
