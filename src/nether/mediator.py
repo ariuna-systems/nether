@@ -184,7 +184,7 @@ class Mediator:
     for service in self._services:
       await service.stop()
     del self._services
-    del self._instance
+    self._instance = None
 
   def _get_context_lock(self, context_id: uuid.UUID) -> asyncio.Lock:
     if context_id not in self._context_locks:
