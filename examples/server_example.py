@@ -8,7 +8,6 @@ from typing import cast
 from nether import Application
 from nether.common import Command
 from nether.mediator import BaseService, MediatorProtocol
-from nether.server import HTTPInterfaceService
 
 
 class MyApplication(Application):
@@ -110,10 +109,8 @@ async def main():
   configuration = argparse.Namespace()
   configuration.host = "localhost"
   configuration.port = 8080
-  server = HTTPInterfaceService(configuration=configuration)
 
   app = MyApplication(configuration=configuration)
-  app.register_service(server)
   app.register_service(ProducerService())
   app.register_service(ReceiverService())
   app.register_service(ErrorRaisingService())

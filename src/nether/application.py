@@ -33,7 +33,7 @@ class Application:
     self.configuration = configuration
     self._mediator = mediator
     self.logger = logger
-    self._shutdown_event = asyncio.Event()
+    self._stop_event = asyncio.Event()
 
   @property
   def platform(self) -> str | None:
@@ -58,19 +58,15 @@ class Application:
       if service in self._mediator.services:
         self._mediator.unregister(service)
 
-  async def _signal_handler(self) -> None:
-    """Handle shutdown signals"""
-    self.logger.info("Received shutdown signal, stopping services...")
-    self._shutdown_event.set()
-
   def _setup_signal_handlers(self) -> None:
     """Setup handlers for interrupt signals"""
-    loop = asyncio.get_event_loop()
-    if platform.system() == "Windows":
-      loop.add_signal_handler(signal.SIGINT, lambda: asyncio.create_task(self._signal_handler()))
-    else:
-      for sig in (signal.SIGINT, signal.SIGTERM):
-        loop.add_signal_handler(sig, lambda: asyncio.create_task(self._signal_handler()))
+
+    def raise_graceful_exit(*args):
+      self._stop_event.set()
+      print("Shutdown signal")
+
+    signal.signal(signal.SIGINT, raise_graceful_exit)
+    signal.signal(signal.SIGTERM, raise_graceful_exit)
 
   async def start(self) -> None:
     try:
@@ -78,7 +74,7 @@ class Application:
       await self._before_start()
       await self.main()
 
-      while not self._shutdown_event.is_set() and any(service.is_running for service in self._mediator.services):
+      while not self._stop_event.is_set() and any(service.is_running for service in self._mediator.services):
         await asyncio.sleep(0.5)
     except asyncio.CancelledError:
       self.logger.info("Application cancelled")
