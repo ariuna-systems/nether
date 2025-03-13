@@ -66,8 +66,11 @@ class Application:
   def _setup_signal_handlers(self) -> None:
     """Setup handlers for interrupt signals"""
     loop = asyncio.get_event_loop()
-    for sig in (signal.SIGINT, signal.SIGTERM):
-      loop.add_signal_handler(sig, lambda: asyncio.create_task(self._signal_handler()))
+    if platform.system() == "Windows":
+      loop.add_signal_handler(signal.SIGINT, lambda: asyncio.create_task(self._signal_handler()))
+    else:
+      for sig in (signal.SIGINT, signal.SIGTERM):
+        loop.add_signal_handler(sig, lambda: asyncio.create_task(self._signal_handler()))
 
   async def start(self) -> None:
     try:
