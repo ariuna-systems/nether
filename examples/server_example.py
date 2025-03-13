@@ -25,15 +25,15 @@ class ProducerService(BaseService[None]):
   def __init__(self):
     self.running_thread: threading.Thread | None = None
     self._stop_event = threading.Event()
-    self.mediator = cast(type[MediatorProtocol], None)
+    self._mediator_context = cast(type[MediatorProtocol], None)
     self._is_running = False
 
-  def set_mediator(self, mediator: type[MediatorProtocol]) -> None:
-    self.mediator = mediator
+  def set_mediator_context_factory(self, mediator: type[MediatorProtocol]) -> None:
+    self._mediator_context = mediator
 
   async def _produce_command(self, command: Command) -> None:
-    async with self.mediator.open_unit_of_work() as uow:
-      await uow.process(command)
+    async with self._mediator_context() as ctx:
+      await ctx.process(command)
 
   def _worker(self):
     """Worker function that runs in a separate thread."""
@@ -70,7 +70,7 @@ class ReceiverService(BaseService[ProducedCommand]):
     self.mediator = cast(type[MediatorProtocol], None)
     self._is_running = False
 
-  def set_mediator(self, mediator: type[MediatorProtocol]) -> None:
+  def set_mediator_context_factory(self, mediator: type[MediatorProtocol]) -> None:
     self.mediator = mediator
 
   async def start(self) -> None:
@@ -90,7 +90,7 @@ class ErrorRaisingService(BaseService[None]):
     self.mediator = cast(type[MediatorProtocol], None)
     self._is_running = False
 
-  def set_mediator(self, mediator: type[MediatorProtocol]) -> None:
+  def set_mediator_context_factory(self, mediator: type[MediatorProtocol]) -> None:
     self.mediator = mediator
 
   async def start(self) -> None:
