@@ -19,7 +19,7 @@ class AccessRepository:
     self.transaction = postgres_connector.transaction
 
   async def check_account_permission(
-    self, *, account_id: uuid.UUID, item_id: uuid.UUID, cursor: psycopg.AsyncCursor[psycopg.rows.DictRow]
+    self, *, account_id: uuid.UUID, asset_id: uuid.UUID, cursor: psycopg.AsyncCursor[psycopg.rows.DictRow]
   ) -> bool:
     await cursor.execute(
       """
@@ -27,10 +27,10 @@ class AccessRepository:
         SELECT EXISTS(
           SELECT 1 FROM access_entry
           LEFT JOIN account_role ON access_entry.role_id = account_role.role_id
-          WHERE access_entry.item_id = %(item_id)s AND (access_entry.account_id = %(account_id)s OR account_role.role_id IS NOT NULL)
+          WHERE access_entry.asset_id = %(asset_id)s AND (access_entry.account_id = %(account_id)s OR account_role.role_id IS NOT NULL)
         )
       """,
-      {"account_id": account_id, "item_id": item_id},
+      {"account_id": account_id, "asset_id": asset_id},
     )
     result = await cursor.fetchone()
     if result is None:
