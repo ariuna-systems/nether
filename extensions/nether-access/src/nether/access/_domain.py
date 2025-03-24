@@ -93,3 +93,19 @@ class Authorized(SuccessEvent):
 
 @dataclass(frozen=True)
 class Unauthorized(FailureEvent): ...
+
+
+# Microsoft Online
+
+
+@dataclass(frozen=True)
+class ValidateMicrosoftOnlineJWT(Command):
+  jwt_token: str
+
+
+@dataclass(frozen=True)
+class MicrosoftOnlineJWTValidated(SuccessEvent):
+  decoded_payload: str
+
+
+class ValidateMicrosoftOnlineJWTFailure(FailureEvent): ...

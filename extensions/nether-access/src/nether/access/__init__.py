@@ -21,6 +21,10 @@ __all__ = [
   "SignedCommand",
   "AccessControlledCommand",
   "PermissionError",
+  "MicrosoftOnlineService",
+  "ValidateMicrosoftOnlineJWT",
+  "ValidateMicrosoftOnlineJWTFailure",
+  "MicrosoftOnlineJWTValidated",
 ]
 
 
@@ -41,6 +45,9 @@ from ._domain import (
   SignedCommand,
   AccessControlledCommand,
   PermissionError,
+  MicrosoftOnlineJWTValidated,
+  ValidateMicrosoftOnlineJWT,
+  ValidateMicrosoftOnlineJWTFailure,
 )
-from ._service import AccessService
+from ._service import AccessService, MicrosoftOnlineService
 from ._storage import AccessRepository

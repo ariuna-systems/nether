@@ -1,13 +1,13 @@
-__all__ = ["AccessService"]
+__all__ = ["AccessService", "MicrosoftOnlineService"]
 
 
 import logging
 import sys
 import uuid
-from datetime import datetime, timedelta
-from typing import get_args
+from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
+import aiohttp
 import jwt
 import pyotp
 
@@ -24,6 +24,7 @@ from ._domain import (
   Authorize,
   Authorized,
   JWTValidated,
+  MicrosoftOnlineJWTValidated,
   OneTimePasswordValidated,
   Unauthorized,
   ValidateAccount,
@@ -32,6 +33,8 @@ from ._domain import (
   ValidateAccountOneTimePasswordFailure,
   ValidateJWT,
   ValidateJWTFailure,
+  ValidateMicrosoftOnlineJWT,
+  ValidateMicrosoftOnlineJWTFailure,
 )
 from ._storage import AccessRepository
 
@@ -47,17 +50,19 @@ class AccessServiceError(ServiceError): ...
 
 
 class AccessService(BaseService[Authorize | ValidateAccount | ValidateAccountOneTimePassword | ValidateJWT]):
-  @property
-  def supports(self):
-    return get_args(self.__orig_bases__[0])[0]
-
   def __init__(
-    self, *, account_repository: AccountRepository, access_repository: AccessRepository, _authorize_all: bool = False
+    self,
+    *,
+    account_repository: AccountRepository,
+    access_repository: AccessRepository,
+    _authorize_all: bool = False,
+    jwt_secret: str = "DEV",
   ) -> None:
     self._account_repository = account_repository
     self._access_repository = access_repository
     self._is_running = False
     self._authorize_all = _authorize_all
+    self._jwt_secret = jwt_secret
 
   def set_mediator_context_factory(self, *_) -> None: ...
 
@@ -110,7 +115,7 @@ class AccessService(BaseService[Authorize | ValidateAccount | ValidateAccountOne
           if self._authorize_all:
             result_event = JWTValidated(uuid.NAMESPACE_DNS)
           else:
-            result_event = JWTValidated(await self._validate_jwt(cmd.token))
+            result_event = JWTValidated(self._validate_jwt(cmd.token))
     except Exception as error:
       match message:
         case Authorize():
@@ -163,14 +168,14 @@ class AccessService(BaseService[Authorize | ValidateAccount | ValidateAccountOne
 
     token = jwt.encode(
       {"account_id": str(account.identifier), "exp": datetime.now() + timedelta(hours=24)},
-      "TODO SECRET",
+      self._jwt_secret,
       algorithm="HS256",
     )
     return token
 
-  async def _validate_jwt(self, token: str, /) -> uuid.UUID:
+  def _validate_jwt(self, token: str, /) -> uuid.UUID:
     try:
-      payload = jwt.decode(token, "TODO SECRET", algorithms=["HS256"])
+      payload = jwt.decode(token, self._jwt_secret, algorithms=["HS256"])
       return uuid.UUID(payload["account_id"])
     except jwt.ExpiredSignatureError as error:
       raise AccessServiceError("Token expired") from error
@@ -180,7 +185,7 @@ class AccessService(BaseService[Authorize | ValidateAccount | ValidateAccountOne
       raise AccessServiceError(str(error)) from error
 
   async def _authorize_command(self, cmd: AccessControlledCommand) -> uuid.UUID:
-    account_id = await self._validate_jwt(cmd.jwt_token)
+    account_id = self._validate_jwt(cmd.jwt_token)
     async with self._access_repository.transaction() as cursor:
       assets_to_check: list[uuid.UUID] = []
       for field in cmd.fields:
@@ -195,3 +200,80 @@ class AccessService(BaseService[Authorize | ValidateAccount | ValidateAccountOne
         ):
           raise AccessServiceError(f"Permission denied for asset `{asset}` to account `{account_id}`")
     return account_id
+
+
+class MicrosoftOnlineService(BaseService[ValidateMicrosoftOnlineJWT]):
+  _PUBLIC_KEY_TEMPLATE = "-----BEGIN CERTIFICATE-----\n{certificate}\n-----END CERTIFICATE-----"
+
+  def __init__(self, *, tenant_id: str, client_id: str):
+    self._tenant_id = tenant_id
+    self._client_id = client_id
+    self._keys: list = []
+    self._last_fetch: datetime = datetime.fromtimestamp(0, tz=UTC)
+    self._cache_duration = timedelta(hours=1)
+    self._is_running = False
+
+  def set_mediator_context_factory(self, *_) -> None: ...
+
+  async def start(self) -> None:
+    self._is_running = True
+
+  async def stop(self) -> None:
+    self._is_running = False
+
+  async def handle(self, message, *, dispatch, **_) -> None:
+    if not isinstance(message, self.supports):
+      return
+
+    result_event: Event
+    try:
+      match message:
+        case ValidateMicrosoftOnlineJWT():
+          result_event = MicrosoftOnlineJWTValidated(await self._validate(message.jwt_token))
+    except Exception as error:
+      match message:
+        case ValidateMicrosoftOnlineJWT():
+          result_event = ValidateMicrosoftOnlineJWTFailure(error)
+    finally:
+      await dispatch(result_event)
+
+  async def _fetch_keys(self) -> None:
+    url = f"https://login.microsoftonline.com/{self._tenant_id}/discovery/v2.0/keys"
+    async with aiohttp.ClientSession() as session:
+      async with session.get(url) as response:
+        if response.status != 200:
+          raise ValueError(f"Failed to fetch JW Keys: {response.status}")
+        self._keys = (await response.json())["keys"]
+        self._last_fetch = datetime.now(tz=UTC)
+
+  async def _current_keys(self) -> list:
+    current_time = datetime.now(tz=UTC)
+    if 0 == len(self._keys) or (current_time - self._last_fetch > self._cache_duration):
+      await self._fetch_keys()
+    return self._keys
+
+  async def _validate(self, jwt_token: str) -> dict:
+    keys = await self._current_keys()
+
+    unverified_header = jwt.get_unverified_header(jwt_token)
+    kid = unverified_header["kid"]
+
+    signing_key = next((key for key in keys if key["kid"] == kid), None)
+    if not signing_key:
+      raise ValueError("No matching key found")
+
+    public_key = self._PUBLIC_KEY_TEMPLATE.format(certificate=signing_key["x5c"][0])
+
+    return jwt.decode(
+      jwt_token,
+      key=public_key,
+      algorithms=["RS256"],
+      audience=self._client_id,
+      issuer=f"https://login.microsoftonline.com/{self._tenant_id}/v2.0",
+      options={
+        "verify_signature": True,
+        "verify_exp": True,
+        "verify_aud": True,
+        "verify_iss": True,
+      },
+    )
