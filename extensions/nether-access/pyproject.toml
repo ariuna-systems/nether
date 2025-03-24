@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "nether-access"
 description = "Nether access library"
-version = "0.5.0"
+version = "0.5.1"
 dynamic = ["readme"]
 requires-python = ">=3.12"
 dependencies = [
