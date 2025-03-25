@@ -66,9 +66,8 @@ class MediatorProtocol(Protocol):
 
 
 class BaseService[T: Message](ServiceProtocol[T]):
-  def __new__(cls, *args, **kwargs):
-    instance = super().__new__(cls)
-    instance._is_running = False
+  def __init__(self, *_, **__) -> None:
+    self._is_running = False
 
   @property
   def supports(self) -> type[T]:
@@ -255,6 +254,7 @@ class Mediator:
 
   def register(self, service: ServiceProtocol[Any]) -> None:
     """Register a service."""
+    print(service)
     logger.info(f"Service {type(service).__name__} registered.")
     service.set_mediator_context_factory(self.context)
     self._services.add(service)
