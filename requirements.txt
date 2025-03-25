@@ -1,5 +1,6 @@
 ruff
 mypy
 radon
+pytest
 ./extensions/nether-server
 ./extensions/nether-access
