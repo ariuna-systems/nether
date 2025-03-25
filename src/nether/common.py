@@ -1,6 +1,6 @@
 import time
 from collections.abc import AsyncIterator, Iterator
-from contextlib import AbstractAsyncContextManager, AbstractContextManager, asynccontextmanager, contextmanager
+from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass, field
 from typing import Protocol
 
@@ -41,9 +41,9 @@ class FailureEvent(Event):
 
 class ConnectorProtocol[T](Protocol):
   @contextmanager
-  def transaction(self) -> Iterator[AbstractContextManager[T]]: ...
+  def transaction(self) -> Iterator[T]: ...
 
 
 class AsyncConnectorProtocol[T](Protocol):
   @asynccontextmanager
-  def transaction(self) -> AsyncIterator[AbstractAsyncContextManager[T]]: ...
+  def transaction(self) -> AsyncIterator[T]: ...
