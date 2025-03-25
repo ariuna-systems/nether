@@ -66,7 +66,7 @@ class MediatorProtocol(Protocol):
 
 
 class BaseService[T: Message](ServiceProtocol[T]):
-  def __new__(cls):
+  def __new__(cls, *args, **kwargs):
     instance = super().__new__(cls)
     instance._is_running = False
 
