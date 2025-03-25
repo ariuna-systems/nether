@@ -254,7 +254,6 @@ class Mediator:
 
   def register(self, service: ServiceProtocol[Any]) -> None:
     """Register a service."""
-    print(service)
     logger.info(f"Service {type(service).__name__} registered.")
     service.set_mediator_context_factory(self.context)
     self._services.add(service)

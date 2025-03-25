@@ -23,6 +23,7 @@ class ProducedCommand(Command):
 
 class ProducerService(BaseService[None]):
   def __init__(self):
+    super().__init__(self)
     self.running_thread: threading.Thread | None = None
     self._stop_event = threading.Event()
     self._mediator_context = cast(type[MediatorProtocol], None)
@@ -66,8 +67,8 @@ class ProducerService(BaseService[None]):
 
 class ReceiverService(BaseService[ProducedCommand]):
   def __init__(self):
+    super().__init__(self)
     self.mediator = cast(type[MediatorProtocol], None)
-    self._is_running = False
 
   def set_mediator_context_factory(self, mediator: type[MediatorProtocol]) -> None:
     self.mediator = mediator
@@ -86,8 +87,8 @@ class ReceiverService(BaseService[ProducedCommand]):
 
 class ErrorRaisingService(BaseService[None]):
   def __init__(self):
+    super().__init__(self)
     self.mediator = cast(type[MediatorProtocol], None)
-    self._is_running = False
 
   def set_mediator_context_factory(self, mediator: type[MediatorProtocol]) -> None:
     self.mediator = mediator
