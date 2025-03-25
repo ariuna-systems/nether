@@ -26,7 +26,6 @@ class ProducerService(BaseService[None]):
     self.running_thread: threading.Thread | None = None
     self._stop_event = threading.Event()
     self._mediator_context = cast(type[MediatorProtocol], None)
-    self._is_running = False
 
   def set_mediator_context_factory(self, mediator: type[MediatorProtocol]) -> None:
     self._mediator_context = mediator

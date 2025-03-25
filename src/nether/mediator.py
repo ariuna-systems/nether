@@ -66,22 +66,25 @@ class MediatorProtocol(Protocol):
 
 
 class BaseService[T: Message](ServiceProtocol[T]):
+  def __new__(cls):
+    instance = super().__new__(cls)
+    instance._is_running = False
+
   @property
   def supports(self) -> type[T]:
     return get_args(self.__orig_bases__[0])[0]  # type: ignore[attr-defined, no-any-return, unused-ignore]
 
   @property
   def is_running(self) -> bool:
-    return self._is_running  # type: ignore[attr-defined]
+    return self._is_running
 
-  @abstractmethod
   def set_mediator_context_factory(self, mediator_context_factory: MEDIATOR_CONTEXT_MANAGER) -> None: ...
 
-  @abstractmethod
-  async def start(self) -> None: ...
+  async def start(self) -> None:
+    self._is_running = True
 
-  @abstractmethod
-  async def stop(self) -> None: ...
+  async def stop(self) -> None:
+    self._is_running = False
 
   @abstractmethod
   async def handle(
