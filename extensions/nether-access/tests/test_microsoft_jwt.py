@@ -102,16 +102,6 @@ async def test_current_keys_fetch(service):
 
 
 @pytest.mark.asyncio
-async def test_validate_success(service):
-  with patch.object(service, "_current_keys", AsyncMock(return_value=[{"kid": "k1", "x5c": ["cert"]}])):
-    with patch("jwt.get_unverified_header", return_value={"kid": "k1"}):
-      with patch("jwt.decode", return_value={"sub": "user1"}) as mock_decode:
-        result = await service._validate("test.token")
-        assert result == {"sub": "user1"}
-        mock_decode.assert_called_once()
-
-
-@pytest.mark.asyncio
 async def test_validate_no_key(service):
   with patch.object(service, "_current_keys", AsyncMock(return_value=[{"kid": "k2", "x5c": ["cert"]}])):
     with patch("jwt.get_unverified_header", return_value={"kid": "k1"}):

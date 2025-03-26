@@ -11,6 +11,9 @@ from zoneinfo import ZoneInfo
 import aiohttp
 import jwt
 import pyotp
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
 
 from nether.common import Event, ServiceError
 from nether.mediator import BaseService
@@ -261,7 +264,13 @@ class MicrosoftOnlineService(BaseService[ValidateMicrosoftOnlineJWT]):
     if not signing_key:
       raise ValueError("No matching key found")
 
-    public_key = f"-----BEGIN PUBLIC KEY-----\n{signing_key["x5c"][0]}\n-----END PUBLIC KEY-----"
+    pem_key = f"-----BEGIN CERTIFICATE-----\n{signing_key['x5c'][0]}\n-----END CERTIFICATE-----"
+    cert = x509.load_pem_x509_certificate(pem_key.encode(), default_backend())
+    public_key = (
+      cert.public_key()
+      .public_bytes(encoding=serialization.Encoding.PEM, format=serialization.PublicFormat.SubjectPublicKeyInfo)
+      .decode("utf-8")
+    )
     return jwt.decode(
       jwt_token,
       key=public_key,
@@ -269,7 +278,7 @@ class MicrosoftOnlineService(BaseService[ValidateMicrosoftOnlineJWT]):
       audience=self._client_id,
       issuer=f"https://login.microsoftonline.com/{self._tenant_id}/v2.0",
       options={
-        "verify_signature": False,  # TODO
+        "verify_signature": True,
         "verify_exp": True,
         "verify_aud": True,
         "verify_iss": True,

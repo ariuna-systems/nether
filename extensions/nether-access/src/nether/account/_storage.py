@@ -76,7 +76,7 @@ class AccountRepository:
 
   async def search(self, account_id: uuid.UUID, /) -> Account | None:
     async with self.transaction() as cursor:
-      cursor.execute(
+      await cursor.execute(
         "SELECT * FROM account WHERE id = %s",
         (account_id,),
       )

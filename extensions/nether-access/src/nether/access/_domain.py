@@ -105,7 +105,7 @@ class ValidateMicrosoftOnlineJWT(Command):
 
 @dataclass(frozen=True)
 class MicrosoftOnlineJWTValidated(SuccessEvent):
-  decoded_payload: str
+  decoded_payload: dict
 
 
 class ValidateMicrosoftOnlineJWTFailure(FailureEvent): ...

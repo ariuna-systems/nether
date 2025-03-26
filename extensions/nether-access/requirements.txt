@@ -3,3 +3,6 @@ mypy
 pytest
 pytest-asyncio
 radon
+requests
+types-requests
+python-dotenv
