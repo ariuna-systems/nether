@@ -11,8 +11,7 @@ from typing import Any, cast
 from aiohttp import hdrs as headers
 from aiohttp import web, web_urldispatcher
 
-from nether.application import Application
-from nether.common import Command, Event, FailureEvent, Message, SuccessEvent
+from nether.common import Command, Event, FailureEvent, Message, SuccessEvent, ServiceError
 from nether.service import BaseService
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -77,7 +76,7 @@ class StaticAdded(SuccessEvent): ...
 class AddStaticFailure(FailureEvent): ...
 
 
-class HTTPInterfaceServiceError(Exception): ...
+class HTTPInterfaceServiceError(ServiceError): ...
 
 
 class _DynamicRouter:

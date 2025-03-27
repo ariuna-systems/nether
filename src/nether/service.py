@@ -1,17 +1,20 @@
-from typing import TYPE_CHECKING, Any, Protocol, TypeVar, get_args
+import asyncio
 from abc import abstractmethod
 from collections.abc import Awaitable, Callable
+from typing import TYPE_CHECKING, Any, Protocol, TypeVar, get_args
 
-import asyncio
 from nether.common import Message
 
 if TYPE_CHECKING:
   from nether.application import Application
 
 
+class _NeverMatch: ...
+
+
 class ServiceProtocol[T: Message](Protocol):
   @property
-  def supports(self) -> type[T]:
+  def supports(self) -> type[T] | type[_NeverMatch]:
     """Supported message type."""
 
   @property
@@ -27,18 +30,17 @@ class ServiceProtocol[T: Message](Protocol):
     join_stream: Callable[[], asyncio.Queue[Any]],
   ) -> None: ...
 
-class _NeverMatch: ...
 
 class BaseService[T: Message](ServiceProtocol[T]):
   def __init__(self, *_, **__) -> None:
     self._is_running = False
 
   @property
-  def supports(self) -> type[T]:
+  def supports(self) -> type[T] | type[_NeverMatch]:
     supports_type = get_args(self.__orig_bases__[0])[0]  # type: ignore[attr-defined, no-any-return, unused-ignore]
-    if isinstance(supports_type,TypeVar):
+    if isinstance(supports_type, TypeVar):
       return _NeverMatch
-    return supports_type  
+    return supports_type
 
   @property
   def is_running(self) -> bool:

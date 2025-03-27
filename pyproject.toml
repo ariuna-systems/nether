@@ -8,8 +8,12 @@ dependencies = ["aiohttp"]
 
 [project.optional-dependencies]
 windows = ["pywin32"]
-server = ["nether-server @ git+ssh://git@github.com/arjuna-group/nether.git#subdirectory=extensions/nether-server"]
-access = ["nether-access @ git+ssh://git@github.com/arjuna-group/nether.git#subdirectory=extensions/nether-access"]
+server = [
+    "nether-server @ git+ssh://git@github.com/arjuna-group/nether.git#subdirectory=extensions/nether-server",
+]
+access = [
+    "nether-access @ git+ssh://git@github.com/arjuna-group/nether.git#subdirectory=extensions/nether-access",
+]
 
 [tool.setuptools.dynamic]
 readme = { file = ["README.md"] }
@@ -67,8 +71,6 @@ ignore_missing_imports = true
 show_error_codes = true
 warn_unused_ignores = true
 warn_unused_configs = true
-namespace_packages = true
-explicit_package_bases = true
 show_column_numbers = true
 check_untyped_defs = true
 exclude = ['venv', '.venv']
