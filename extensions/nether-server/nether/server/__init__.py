@@ -11,6 +11,7 @@ from typing import Any, cast
 from aiohttp import hdrs as headers
 from aiohttp import web, web_urldispatcher
 
+from nether.application import Application
 from nether.common import Command, Event, FailureEvent, Message, SuccessEvent
 from nether.mediator import BaseService
 
@@ -250,25 +251,23 @@ class HTTPInterfaceService(BaseService[StartServer | StopServer | AddView]):
       if task:
         self.tasks.remove(task)
 
-  def set_mediator_context_factory(self, *_) -> None: ...
-
   async def start(self) -> None:
     host = self.host
     port = self.port
 
     if self.runner is not None:
-      raise HTTPInterfaceServiceError("Server is already running")
+      raise HTTPInterfaceServiceError("Server is already running.")
 
     self.runner = web.AppRunner(self.app)
     await self.runner.setup()
     tcp_site = web.TCPSite(self.runner, host, port)
     await tcp_site.start()
-    self.logger.info(f"Server started on {host}:{port}")
+    self.logger.info(f"Server started on {host}:{port}.")
     self._is_running = True
 
   async def stop(self) -> None:
     if self.runner is None:
-      raise HTTPInterfaceServiceError("Server is not running")
+      raise HTTPInterfaceServiceError("Server is not running.")
 
     for site in self.runner.sites:
       await site.stop()
@@ -278,7 +277,7 @@ class HTTPInterfaceService(BaseService[StartServer | StopServer | AddView]):
       try:
         await asyncio.wait_for(asyncio.gather(*self.tasks, return_exceptions=True), timeout=10.0)
       except TimeoutError:
-        self.logger.warning(f"Shutdown timed out, killing {len(self.tasks)} active requests")
+        self.logger.warning(f"Shutdown timed out, active requests were killed.")
 
     await self.runner.shutdown()
     await self.runner.cleanup()

@@ -16,7 +16,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 
 from nether.common import Event, ServiceError
-from nether.mediator import BaseService
+from nether.service import BaseService
 
 from ..account import Account
 
@@ -67,8 +67,6 @@ class AccessService(BaseService[Authorize | ValidateAccount | ValidateAccountOne
     self._is_running = False
     self._authorize_all = _authorize_all
     self._jwt_secret = jwt_secret
-
-  def set_mediator_context_factory(self, *_) -> None: ...
 
   async def start(self) -> None:
     try:
@@ -213,14 +211,6 @@ class MicrosoftOnlineService(BaseService[ValidateMicrosoftOnlineJWT]):
     self._keys: list = []
     self._last_fetch: datetime = datetime.fromtimestamp(0, tz=UTC)
     self._cache_duration = timedelta(hours=1)
-    self._is_running = False
-
-  def set_mediator_context_factory(self, *_) -> None: ...
-
-  async def start(self) -> None:
-    self._is_running = True
-
-  async def stop(self) -> None:
     self._is_running = False
 
   async def handle(self, message, *, dispatch, **_) -> None:

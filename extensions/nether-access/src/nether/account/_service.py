@@ -3,7 +3,7 @@ import uuid
 import pyotp
 
 from nether.common import ServiceError, Event
-from nether.mediator import BaseService
+from nether.service import BaseService
 
 from ._domain import (
   Account,
@@ -27,14 +27,6 @@ class AccountServiceError(ServiceError): ...
 class AccountService(BaseService[CreateAccount | CreateAccountWithDefaultRole | DeleteAccount | CheckAccountExists]):
   def __init__(self, *, account_repository: AccountRepository) -> None:
     self._repository = account_repository
-    self._is_running = False
-
-  def set_mediator_context_factory(self, *_) -> None: ...
-
-  async def start(self) -> None:
-    self._is_running = False
-
-  async def stop(self) -> None:
     self._is_running = False
 
   async def handle(self, message, *, dispatch, **_) -> None:

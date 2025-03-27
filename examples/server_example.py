@@ -7,7 +7,8 @@ from typing import cast
 
 from nether import Application
 from nether.common import Command
-from nether.mediator import BaseService, MediatorProtocol
+from nether.mediator import MediatorProtocol
+from nether.service import BaseService
 from nether.server import HTTPInterfaceService
 
 
@@ -21,18 +22,18 @@ class ProducedCommand(Command):
   number: int = 0
 
 
-class ProducerService(BaseService[None]):
+class ProducerService(BaseService):
   def __init__(self):
     super().__init__(self)
     self.running_thread: threading.Thread | None = None
     self._stop_event = threading.Event()
-    self._mediator_context = cast(type[MediatorProtocol], None)
+    self._application = cast(Application, None)
 
-  def set_mediator_context_factory(self, mediator: type[MediatorProtocol]) -> None:
-    self._mediator_context = mediator
+  def set_application(self, application: Application) -> None:
+    self._application = application
 
   async def _produce_command(self, command: Command) -> None:
-    async with self._mediator_context() as ctx:
+    async with self._application.mediator.context() as ctx:
       await ctx.process(command)
 
   def _worker(self):
@@ -70,8 +71,8 @@ class ReceiverService(BaseService[ProducedCommand]):
     super().__init__(self)
     self.mediator = cast(type[MediatorProtocol], None)
 
-  def set_mediator_context_factory(self, mediator: type[MediatorProtocol]) -> None:
-    self.mediator = mediator
+  def set_application(self, application: Application) -> None:
+    self._application = application
 
   async def start(self) -> None:
     print("ReceiverService started.")
@@ -81,17 +82,13 @@ class ReceiverService(BaseService[ProducedCommand]):
     print("ReceiverService stopped.")
     self._is_running = False
 
-  async def handle(self, message: ProducedCommand, **_) -> None:
+  async def handle(self, message, **_) -> None:
     print(f"Received message: {type(message).__name__} {message.number}")
 
 
-class ErrorRaisingService(BaseService[None]):
+class ErrorRaisingService(BaseService):
   def __init__(self):
     super().__init__(self)
-    self.mediator = cast(type[MediatorProtocol], None)
-
-  def set_mediator_context_factory(self, mediator: type[MediatorProtocol]) -> None:
-    self.mediator = mediator
 
   async def start(self) -> None:
     print("ErrorRaisingService started.")

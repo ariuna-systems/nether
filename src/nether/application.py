@@ -8,7 +8,7 @@ from abc import abstractmethod
 from typing import Any
 
 from .mediator import (
-  MEDIATOR_INSTANCE,
+  Mediator,
   MediatorProtocol,
   ServiceProtocol,
 )
@@ -26,7 +26,7 @@ class Application:
   def __init__(
     self,
     *,
-    mediator: MediatorProtocol = MEDIATOR_INSTANCE,
+    mediator: MediatorProtocol = Mediator(),  # noqa: B008
     configuration: argparse.Namespace,
     logger: logging.Logger = local_logger,
   ) -> None:
@@ -44,6 +44,11 @@ class Application:
     return None if system == "" else system
 
   @property
+  def mediator(self) -> MediatorProtocol:
+    """Get the mediator instance."""
+    return self._mediator
+
+  @property
   def services(self) -> set[ServiceProtocol[Any]]:
     """Get the registered service."""
     return self._mediator.services
@@ -51,7 +56,9 @@ class Application:
   def register_service(self, *services: ServiceProtocol[Any]) -> None:
     for service in services:
       if service not in self._mediator.services:
-        self._mediator.register(service)
+        service.set_application(self)
+        print("Registering service")
+        self._mediator.register(service)  # TODO: Možná udržovat služby na aplikaci a předat mediatoru instanci aplikace
 
   def unregister_service(self, *services: ServiceProtocol[Any]) -> None:
     for service in services:
@@ -61,12 +68,12 @@ class Application:
   def _setup_signal_handlers(self) -> None:
     """Setup handlers for interrupt signals"""
 
-    def raise_graceful_exit(*args):
+    def set_stop(*args):
       self._stop_event.set()
-      print("Shutdown signal")
+      print("Shutdown signal set.")
 
-    signal.signal(signal.SIGINT, raise_graceful_exit)
-    signal.signal(signal.SIGTERM, raise_graceful_exit)
+    signal.signal(signal.SIGINT, set_stop)
+    signal.signal(signal.SIGTERM, set_stop)
 
   async def start(self) -> None:
     try:
@@ -93,8 +100,9 @@ class Application:
     for service in self.services:
       try:
         await service.start()
+        self.logger.info(f"Service `{type(service).__name__}` started.")
       except Exception as error:
-        self.logger.error(f"Error starting service {type(service).__name__}: {error}")
+        self.logger.error(f"Error starting service `{type(service).__name__}`: {error}")
     self.logger.info("before start")
 
   @abstractmethod

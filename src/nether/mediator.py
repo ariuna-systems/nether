@@ -3,9 +3,10 @@ import contextlib
 import logging
 import sys
 import uuid
-from abc import abstractmethod
 from collections.abc import AsyncIterator, Awaitable, Callable, Coroutine
-from typing import Any, Protocol, Self, get_args
+from typing import Any, Protocol, Self
+
+from nether.service import ServiceProtocol
 
 from .common import Command, Event, Message, Query
 
@@ -29,26 +30,7 @@ class MediatorContextProtocol(Protocol):
   async def receive_result(self) -> Event | None: ...
 
 
-MEDIATOR_CONTEXT_MANAGER = Callable[[], contextlib.AbstractAsyncContextManager[MediatorContextProtocol]]
-
-
-class ServiceProtocol[T: Message](Protocol):
-  @property
-  def supports(self) -> type[T]:
-    """Supported message type."""
-
-  @property
-  def is_running(self) -> bool: ...
-  def set_mediator_context_factory(self, mediator_context_factory: MEDIATOR_CONTEXT_MANAGER) -> None: ...
-  async def start(self) -> None: ...
-  async def stop(self) -> None: ...
-  async def handle(
-    self,
-    message: Message,
-    *,
-    dispatch: Callable[[Message], Awaitable[None]],
-    join_stream: Callable[[], asyncio.Queue[Any]],
-  ) -> None: ...
+type MediatorContextManager = Callable[[], contextlib.AbstractAsyncContextManager[MediatorContextProtocol]]
 
 
 class MediatorProtocol(Protocol):
@@ -63,36 +45,6 @@ class MediatorProtocol(Protocol):
   async def _handle_global_message(self, message: Message, log_level: int = logging.DEBUG) -> None: ...
   def register(self, service: ServiceProtocol[Any]) -> None: ...
   def unregister(self, service: ServiceProtocol[Any]) -> None: ...
-
-
-class BaseService[T: Message](ServiceProtocol[T]):
-  def __init__(self, *_, **__) -> None:
-    self._is_running = False
-
-  @property
-  def supports(self) -> type[T]:
-    return get_args(self.__orig_bases__[0])[0]  # type: ignore[attr-defined, no-any-return, unused-ignore]
-
-  @property
-  def is_running(self) -> bool:
-    return self._is_running
-
-  def set_mediator_context_factory(self, mediator_context_factory: MEDIATOR_CONTEXT_MANAGER) -> None: ...
-
-  async def start(self) -> None:
-    self._is_running = True
-
-  async def stop(self) -> None:
-    self._is_running = False
-
-  @abstractmethod
-  async def handle(
-    self,
-    message: Message,
-    *,
-    dispatch: Callable[[Message], Awaitable[None]],
-    join_stream: Callable[[], asyncio.Queue[Any]],
-  ) -> None: ...
 
 
 class MediatorContext:
@@ -148,7 +100,7 @@ class MediatorContext:
 
 
 class Mediator:
-  """Shared asynchronous message bus that routes messages to units of work."""
+  """Shared asynchronous message bus that routes messages to services."""
 
   _instance: Self | None = None
 
@@ -255,14 +207,9 @@ class Mediator:
   def register(self, service: ServiceProtocol[Any]) -> None:
     """Register a service."""
     logger.info(f"Service {type(service).__name__} registered.")
-    service.set_mediator_context_factory(self.context)
     self._services.add(service)
 
   def unregister(self, service: ServiceProtocol[Any]) -> None:
     """Unregister a service."""
     logger.info(f"Service {type(service).__name__} unregistered.")
-    service.set_mediator_context_factory(self.context)
     self._services.remove(service)
-
-
-MEDIATOR_INSTANCE = Mediator()
