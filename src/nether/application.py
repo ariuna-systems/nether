@@ -17,6 +17,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(level
 local_logger = logging.getLogger(__name__)
 local_logger.propagate = False
 handler = logging.StreamHandler(stream=sys.stdout)
+handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
 local_logger.addHandler(handler)
 
 
@@ -69,7 +70,7 @@ class Application:
 
     def set_stop(*args):
       self._stop_event.set()
-      self.loogger.info("Shutdown signal set.")
+      self.logger.info("Shutdown signal set.")
 
     signal.signal(signal.SIGINT, set_stop)
     signal.signal(signal.SIGTERM, set_stop)
