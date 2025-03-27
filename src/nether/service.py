@@ -1,7 +1,7 @@
 import asyncio
+import logging
 from abc import abstractmethod
 from collections.abc import Awaitable, Callable
-import logging
 from typing import TYPE_CHECKING, Any, Protocol, TypeVar, get_args
 
 from nether.common import Message
