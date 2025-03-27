@@ -8,8 +8,8 @@ from typing import cast
 from nether import Application
 from nether.common import Command
 from nether.mediator import MediatorProtocol
-from nether.service import BaseService
 from nether.server import HTTPInterfaceService
+from nether.service import BaseService
 
 
 class MyApplication(Application):
