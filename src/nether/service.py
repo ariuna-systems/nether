@@ -1,6 +1,7 @@
 import asyncio
 from abc import abstractmethod
 from collections.abc import Awaitable, Callable
+import logging
 from typing import TYPE_CHECKING, Any, Protocol, TypeVar, get_args
 
 from nether.common import Message
@@ -32,7 +33,12 @@ class ServiceProtocol[T: Message](Protocol):
 
 
 class BaseService[T: Message](ServiceProtocol[T]):
-  def __init__(self, *_, **__) -> None:
+  def __init__(self, *_, logger: logging.Logger | None = None, **__) -> None:
+    if logger is not None:
+      self._logger = logger
+    else:
+      self._logger = logging.getLogger(type(self).__name__)
+      self._logger.addHandler(logging.NullHandler())
     self._is_running = False
 
   @property
