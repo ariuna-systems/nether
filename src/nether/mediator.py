@@ -134,7 +134,7 @@ class Mediator:
     return self._services
 
   async def stop(self) -> None:
-    print("deleted services")
+    logger.info("deleted services")
     for service in self._services:
       await service.stop()
     del self._services

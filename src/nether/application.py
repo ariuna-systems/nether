@@ -57,7 +57,6 @@ class Application:
     for service in services:
       if service not in self._mediator.services:
         service.set_application(self)
-        print("Registering service")
         self._mediator.register(service)  # TODO: Možná udržovat služby na aplikaci a předat mediatoru instanci aplikace
 
   def unregister_service(self, *services: ServiceProtocol[Any]) -> None:
@@ -70,7 +69,7 @@ class Application:
 
     def set_stop(*args):
       self._stop_event.set()
-      print("Shutdown signal set.")
+      self.loogger.info("Shutdown signal set.")
 
     signal.signal(signal.SIGINT, set_stop)
     signal.signal(signal.SIGTERM, set_stop)
