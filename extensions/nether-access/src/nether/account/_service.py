@@ -2,7 +2,8 @@ import uuid
 
 import pyotp
 
-from nether.common import ServiceError, Event
+from nether.common import Event
+from nether.exceptions import ServiceError
 from nether.service import BaseService
 
 from ._domain import (

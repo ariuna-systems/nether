@@ -5,12 +5,6 @@ from datetime import UTC, datetime
 from typing import Protocol
 
 
-class DomainError(Exception): ...
-
-
-class ServiceError(Exception): ...
-
-
 @dataclass(frozen=True, kw_only=True)
 class Message:
   created_at: datetime = field(default_factory=lambda: datetime.now(tz=UTC))
