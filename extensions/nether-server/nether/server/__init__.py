@@ -277,7 +277,7 @@ class HTTPInterfaceService(BaseService[StartServer | StopServer | AddView]):
       try:
         await asyncio.wait_for(asyncio.gather(*self.tasks, return_exceptions=True), timeout=10.0)
       except TimeoutError:
-        self.logger.warning(f"Shutdown timed out, active requests were killed.")
+        self.logger.warning("Shutdown timed out, active requests were killed.")
 
     await self.runner.shutdown()
     await self.runner.cleanup()

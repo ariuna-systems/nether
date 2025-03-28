@@ -35,6 +35,7 @@ class Application:
     self._mediator = mediator
     self.logger = logger
     self._stop_event = asyncio.Event()
+    # TODO: uptime, background processing
 
   @property
   def platform(self) -> str | None:
@@ -58,7 +59,7 @@ class Application:
     for service in services:
       if service not in self._mediator.services:
         service.set_application(self)
-        self._mediator.register(service)  # TODO: Možná udržovat služby na aplikaci a předat mediatoru instanci aplikace
+        self._mediator.register(service)  # TODO: Udržovat služby na aplikaci a předat mediatoru instanci aplikace
 
   def unregister_service(self, *services: ServiceProtocol[Any]) -> None:
     for service in services:
