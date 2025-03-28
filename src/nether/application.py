@@ -103,6 +103,7 @@ class Application:
         self.logger.info(f"Service `{type(service).__name__}` started.")
       except Exception as error:
         self.logger.error(f"Error starting service `{type(service).__name__}`: {error}")
+        sys.exit(1)
     self.logger.info("before start")
 
   @abstractmethod
