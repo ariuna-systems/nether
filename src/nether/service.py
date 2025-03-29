@@ -2,12 +2,9 @@ import asyncio
 import logging
 from abc import abstractmethod
 from collections.abc import Awaitable, Callable
-from typing import TYPE_CHECKING, Any, Protocol, TypeVar, get_args
+from typing import Any, Protocol, TypeVar, get_args
 
 from nether.common import Message
-
-if TYPE_CHECKING:
-  from nether.application import Application
 
 
 class _NeverMatch: ...
@@ -20,9 +17,13 @@ class ServiceProtocol[T: Message](Protocol):
 
   @property
   def is_running(self) -> bool: ...
-  def set_application(self, application: "Application") -> None: ...
+
+  def set_application(self, application) -> None: ...  # type: ignore
+
   async def start(self) -> None: ...
+
   async def stop(self) -> None: ...
+
   async def handle(
     self,
     message: Message,
@@ -32,7 +33,7 @@ class ServiceProtocol[T: Message](Protocol):
   ) -> None: ...
 
 
-class BaseService[T: Message](ServiceProtocol[T]):
+class Service[T: Message](ServiceProtocol[T]):
   def __init__(self, *_, logger: logging.Logger | None = None, **__) -> None:
     if logger is not None:
       self._logger = logger
@@ -52,7 +53,7 @@ class BaseService[T: Message](ServiceProtocol[T]):
   def is_running(self) -> bool:
     return self._is_running
 
-  def set_application(self, application: "Application") -> None: ...
+  def set_application(self, application) -> None: ...
 
   async def start(self) -> None:
     self._is_running = True

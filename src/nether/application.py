@@ -39,11 +39,9 @@ class Application:
 
   @property
   def platform(self) -> str | None:
-    """Return OS platform name e.g. Windows, Linux etc.
-    None means unrecognized.
-    """
-    system = platform.system()
-    return None if system == "" else system
+    """Return a platform name e.g. Windows, Linux or None if unrecognized."""
+    platform_name = platform.system()
+    return None if platform_name == "" else platform_name
 
   @property
   def mediator(self) -> MediatorProtocol:

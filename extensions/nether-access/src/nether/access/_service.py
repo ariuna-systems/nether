@@ -17,7 +17,7 @@ from cryptography.hazmat.primitives import serialization
 
 from nether.common import Event
 from nether.exceptions import ServiceError
-from nether.service import BaseService
+from nether.service import Service
 
 from ..account import Account
 
@@ -54,7 +54,7 @@ logger.addHandler(handler)
 class AccessServiceError(ServiceError): ...
 
 
-class AccessService(BaseService[Authorize | ValidateAccount | ValidateAccountOneTimePassword | ValidateJWT]):
+class AccessService(Service[Authorize | ValidateAccount | ValidateAccountOneTimePassword | ValidateJWT]):
   def __init__(
     self,
     *,
@@ -205,7 +205,7 @@ class AccessService(BaseService[Authorize | ValidateAccount | ValidateAccountOne
     return account_id
 
 
-class MicrosoftOnlineService(BaseService[ValidateMicrosoftOnlineJWT]):
+class MicrosoftOnlineService(Service[ValidateMicrosoftOnlineJWT]):
   def __init__(self, *, tenant_id: str, client_id: str):
     self._tenant_id = tenant_id
     self._client_id = client_id

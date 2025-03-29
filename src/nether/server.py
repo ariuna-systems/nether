@@ -1,11 +1,11 @@
 import argparse
 import asyncio
 import logging
-from pathlib import Path
 import sys
 import traceback
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, cast
 
 from aiohttp import hdrs as headers
@@ -13,7 +13,7 @@ from aiohttp import web, web_urldispatcher
 
 from nether.common import Command, Event, FailureEvent, Message, SuccessEvent
 from nether.exceptions import ServiceError
-from nether.service import BaseService
+from nether.service import Service
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 local_logger = logging.getLogger(__name__)
@@ -219,7 +219,7 @@ class _DynamicRouter:
       return web.Response(status=500, text="Internal Server Error")
 
 
-class HTTPInterfaceService(BaseService[StartServer | StopServer | AddView]):
+class HTTPInterfaceService(Service[StartServer | StopServer | AddView]):
   def __init__(self, *, configuration: argparse.Namespace, logger: logging.Logger = local_logger):
     self.app = web.Application()
     self.app["configuration"] = configuration

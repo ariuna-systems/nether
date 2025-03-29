@@ -9,7 +9,7 @@ from nether import Application
 from nether.common import Command
 from nether.mediator import MediatorProtocol
 from nether.server import HTTPInterfaceService
-from nether.service import BaseService
+from nether.service import Service
 
 
 class MyApplication(Application):
@@ -22,7 +22,7 @@ class ProducedCommand(Command):
   number: int = 0
 
 
-class ProducerService(BaseService):
+class ProducerService(Service):
   def __init__(self):
     super().__init__(self)
     self.running_thread: threading.Thread | None = None
@@ -66,7 +66,7 @@ class ProducerService(BaseService):
     pass
 
 
-class ReceiverService(BaseService[ProducedCommand]):
+class ReceiverService(Service[ProducedCommand]):
   def __init__(self):
     super().__init__(self)
     self.mediator = cast(type[MediatorProtocol], None)
@@ -86,7 +86,7 @@ class ReceiverService(BaseService[ProducedCommand]):
     print(f"Received message: {type(message).__name__} {message.number}")
 
 
-class ErrorRaisingService(BaseService):
+class ErrorRaisingService(Service):
   def __init__(self):
     super().__init__(self)
 
