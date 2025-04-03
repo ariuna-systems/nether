@@ -4,7 +4,7 @@
 
 **nether je framework pro rychlé vytváření a nasazení webových služeb.**
 
-Tento framwork vznikl z interních potřeba <https://arjuna.group>, může ale nemusí vyhovovat tvým potřebám.
+Tento framework vznikl z interních potřeba <https://arjuna.group>, může ale nemusí vyhovovat tvým potřebám.
 Našim cílem není vytvořit projektt, který bude vyhovovat všem, ale především nám!
 Základnem je vyžít naplno standardní knihovnu; používat minimum externích balíku.
 
