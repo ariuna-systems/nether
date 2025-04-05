@@ -218,3 +218,6 @@ class AccountRepository:
 
   async def exists(self, account_id: uuid.UUID, /) -> bool:
     return await self.search(account_id) is not None
+  
+  async def exists_by_name(self, account_name: str, /) -> bool:
+    return await self.search_by_name(account_name) is not None

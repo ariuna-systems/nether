@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "nether-access"
 description = "Nether access library"
-version = "0.5.3"
+version = "0.6.0"
 dynamic = ["readme"]
 requires-python = ">=3.12"
 dependencies = [
@@ -13,7 +13,6 @@ dependencies = [
   "pyjwt[crypto]",
   "pyotp",
   "aiohttp",
-  "nether @ git+ssh://git@github.com/arjuna-group/nether.git",
 ]
 
 [tool.setuptools]
