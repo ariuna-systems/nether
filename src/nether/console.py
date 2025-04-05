@@ -115,3 +115,8 @@ def postgres_string_from_env(env: dict[str, str], *, prefix: str = "") -> str:
   if schema is not None:
     connection_string += f"&options=-c%20search_path%3D{schema}"
   return connection_string
+
+
+def log_configuration(configuration: argparse.Namespace, *, logger: logging.Logger, level: int = logging.DEBUG) -> None:
+  for argument_name, argument_value in vars(configuration).items():
+    logger.log(level, f"{argument_name}: {argument_value}")
