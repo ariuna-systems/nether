@@ -3,6 +3,7 @@ import logging
 import os
 import sys
 from pathlib import Path
+from urllib.parse import quote_plus
 
 import dotenv
 
@@ -71,24 +72,46 @@ def configure_logger(logger: logging.Logger, verbose: int) -> None:
 
 
 def get_env(
-  env_file: Path, mandatory_variables: list[str], optional_variables: list[str], *, logger: logging.Logger | None = None
+  env_file: Path,
+  *,
+  mandatory_variables: list[str] | None = None,
+  optional_variables: list[str] | None = None,
+  logger: logging.Logger | None = None,
 ) -> dict[str, str]:
   dotenv.load_dotenv(env_file)
   env: dict[str, str] = {}
   missing = []
-  for env_var in mandatory_variables:
-    if env_var not in os.environ:
-      missing.append(env_var)
-      if logger is not None:
-        logger.error(f"Missing environment variable `{env_var}`.")
+  if mandatory_variables is not None:
+    for env_var in mandatory_variables:
+      if env_var not in os.environ:
+        missing.append(env_var)
+        if logger is not None:
+          logger.error(f"Missing environment variable `{env_var}`.")
+        else:
+          print(f"Missing environment variable `{env_var}`.", file=sys.stderr)
       else:
-        print(f"Missing environment variable `{env_var}`.", file=sys.stderr)
-    else:
-      env[env_var] = os.environ[env_var].strip('"')
-  for env_var in optional_variables:
-    if env_var in os.environ:
-      env[env_var] = os.environ[env_var].strip('"')
+        env[env_var] = os.environ[env_var].strip('"')
+  if optional_variables is not None:
+    for env_var in optional_variables:
+      if env_var in os.environ:
+        env[env_var] = os.environ[env_var].strip('"')
   if 0 < len(missing):
     sys.exit(1)
 
   return env
+
+
+def postgres_string_from_env(env: dict[str, str], *, prefix: str = "") -> str:
+  host = env[prefix + "DATABASE_HOST"]
+  port = env[prefix + "DATABASE_PORT"]
+  dbname = env[prefix + "DATABASE_NAME"]
+  schema = env.get(prefix + "DATABASE_SCHEMA")
+  user = env[prefix + "DATABASE_USER"]
+  password = env[prefix + "DATABASE_PASSWORD"]
+  timeout = env[prefix + "DATABASE_TIMEOUT"]
+  connection_string = (
+    f"postgresql://{quote_plus(user)}:{quote_plus(password)}@{host}:{port}/{dbname}?connect_timeout={timeout}"
+  )
+  if schema is not None:
+    connection_string += f"&options=-c%20search_path%3D{schema}"
+  return connection_string
