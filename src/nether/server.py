@@ -1,7 +1,6 @@
 import argparse
 import asyncio
 import logging
-import sys
 import traceback
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
@@ -12,14 +11,13 @@ from aiohttp import hdrs as headers
 from aiohttp import web, web_urldispatcher
 
 from nether.common import Command, Event, FailureEvent, Message, SuccessEvent
+from nether.console import configure_logger
 from nether.exceptions import ServiceError
 from nether.service import Service
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 local_logger = logging.getLogger(__name__)
 local_logger.propagate = False
-handler = logging.StreamHandler(stream=sys.stdout)
-local_logger.addHandler(handler)
+configure_logger(local_logger)
 
 
 @dataclass(frozen=True, kw_only=True)

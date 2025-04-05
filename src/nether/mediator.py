@@ -1,7 +1,6 @@
 import asyncio
 import contextlib
 import logging
-import sys
 import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable, Coroutine
 from typing import Any, Protocol, Self
@@ -9,12 +8,11 @@ from typing import Any, Protocol, Self
 from nether.service import ServiceProtocol
 
 from .common import Command, Event, Message, Query
+from .console import configure_logger
 
 logger = logging.getLogger(__name__)
 logger.propagate = False
-handler = logging.StreamHandler(stream=sys.stdout)
-handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
-logger.addHandler(handler)
+configure_logger(logger)
 
 
 class MediatorContextProtocol(Protocol):

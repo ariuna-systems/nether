@@ -7,18 +7,17 @@ import sys
 from abc import abstractmethod
 from typing import Any
 
+from nether.console import configure_logger
+
 from .mediator import (
   Mediator,
   MediatorProtocol,
   ServiceProtocol,
 )
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 local_logger = logging.getLogger(__name__)
 local_logger.propagate = False
-handler = logging.StreamHandler(stream=sys.stdout)
-handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
-local_logger.addHandler(handler)
+configure_logger(local_logger)
 
 
 class Application:
