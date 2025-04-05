@@ -1,4 +1,5 @@
 import argparse
+import datetime
 import logging
 import os
 import sys
@@ -59,15 +60,22 @@ def create_parser(
   return parser
 
 
-def configure_logger(logger: logging.Logger, verbose: int) -> None:
-  logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S.%f %z"
-  )
+class DatetimeFormatter(logging.Formatter):
+  def formatTime(self, record, datefmt=None):  # noqa: N802
+    dt = datetime.datetime.fromtimestamp(record.created).astimezone()
+    base_time = dt.strftime("%Y-%m-%d %H:%M:%S")
+    milliseconds = f"{dt.microsecond // 1000:03d}"
+    offset = dt.strftime("%z")
+    formatted_offset = f"{offset[:3]}:{offset[3:]}"
+    return f"{base_time}.{milliseconds} {formatted_offset}"
+
+
+def configure_logger(logger: logging.Logger, verbose: int = 0) -> None:
+  logging.basicConfig(level=logging.INFO)
   logger.setLevel(logging.INFO if verbose == 0 else max(logging.DEBUG, logging.WARNING - verbose * 10))
   handler = logging.StreamHandler(stream=sys.stdout)
-  handler.setFormatter(
-    logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S.%f %z")
-  )
+  formatter = DatetimeFormatter(fmt="%(asctime)s - %(name)s - %(levelname)s - %(message)s", style="%")
+  handler.setFormatter(formatter)
   logger.addHandler(handler)
 
 
