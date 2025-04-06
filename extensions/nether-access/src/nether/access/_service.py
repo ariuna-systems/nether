@@ -66,7 +66,7 @@ class AccessService(Service[Authorize | ValidateAccount | ValidateAccountOneTime
   ) -> None:
     """
     Uses HMAC by default.
-    
+
     To enable RSA, set `key` to Base64-encoded public key,
     set `enable_rsa_with_signing_key` to Base64-encoded private key.
     """
@@ -178,9 +178,13 @@ class AccessService(Service[Authorize | ValidateAccount | ValidateAccountOneTime
     async with self._access_repository.transaction() as cursor:
       await self._access_repository.delete_account_session(cursor=cursor, account_session_id=account_session_id)
 
+    if self._algorithm == "RS256":
+      signing_key: str | bytes = base64.b64decode(self._private_key).decode("utf-8")
+    else:
+      signing_key = self._private_key
     token = jwt.encode(
       {"account_id": str(account.identifier), "exp": datetime.now(tz=UTC) + timedelta(hours=24)},
-      self._private_key,
+      signing_key,
       algorithm=self._algorithm,
     )
     return token
@@ -188,7 +192,7 @@ class AccessService(Service[Authorize | ValidateAccount | ValidateAccountOneTime
   def _validate_jwt(self, token: str, /) -> uuid.UUID:
     try:
       if self._algorithm == "RS256":
-        decode_key: str | bytes = base64.b64decode(self._key)
+        decode_key: str | bytes = base64.b64decode(self._key).decode("utf-8")
       else:
         decode_key = self._key
       payload = jwt.decode(token, decode_key, algorithms=[self._algorithm])
