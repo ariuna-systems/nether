@@ -33,11 +33,15 @@ class FailureEvent(Event):
   ...
 
 
-class ConnectorProtocol[T](Protocol):
+class ConnectorProtocol[T, C](Protocol):
+  def connect(self) -> C: ...
+
   @contextmanager
   def transaction(self) -> Iterator[T]: ...
 
 
-class AsyncConnectorProtocol[T](Protocol):
+class AsyncConnectorProtocol[T, C](Protocol):
+  async def connect(self) -> C: ...
+
   @asynccontextmanager
   def transaction(self) -> AsyncIterator[T]: ...
