@@ -67,8 +67,8 @@ class AccessService(Service[Authorize | ValidateAccount | ValidateAccountOneTime
     """
     Uses HMAC by default.
 
-    To enable RSA, set `key` to Base64-encoded public key,
-    set `enable_rsa_with_signing_key` to Base64-encoded private key.
+    To enable RSA, set `key` to public key,
+    set `enable_rsa_with_signing_key` to private key.
     """
     self._account_repository = account_repository
     self._access_repository = access_repository
@@ -86,7 +86,7 @@ class AccessService(Service[Authorize | ValidateAccount | ValidateAccountOneTime
           name="admin",
           email="admin@admin.admin",
           password_hash="admin",
-          secret=base64.b32encode(),
+          secret=base64.b32encode(b"admin").decode('utf-8').rstrip('='),  # MFSG22LO
           session=None,
           roles=[],
         )
@@ -178,24 +178,16 @@ class AccessService(Service[Authorize | ValidateAccount | ValidateAccountOneTime
     async with self._access_repository.transaction() as cursor:
       await self._access_repository.delete_account_session(cursor=cursor, account_session_id=account_session_id)
 
-    if self._algorithm == "RS256":
-      signing_key: str | bytes = base64.b64decode(self._private_key).decode("utf-8")
-    else:
-      signing_key = self._private_key
     token = jwt.encode(
       {"account_id": str(account.identifier), "exp": datetime.now(tz=UTC) + timedelta(hours=24)},
-      signing_key,
+      self._private_key,
       algorithm=self._algorithm,
     )
     return token
 
   def _validate_jwt(self, token: str, /) -> uuid.UUID:
     try:
-      if self._algorithm == "RS256":
-        decode_key: str | bytes = base64.b64decode(self._key).decode("utf-8")
-      else:
-        decode_key = self._key
-      payload = jwt.decode(token, decode_key, algorithms=[self._algorithm])
+      payload = jwt.decode(token, self._key, algorithms=[self._algorithm])
       return uuid.UUID(payload["account_id"])
     except jwt.ExpiredSignatureError as error:
       raise AccessServiceError("Token expired") from error
