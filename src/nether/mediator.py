@@ -23,7 +23,7 @@ class MediatorContextProtocol(Protocol):
   def identifier(self) -> uuid.UUID: ...
   async def process(self, message: Message) -> None: ...
   async def close(self) -> None: ...
-  def join_stream(self) -> asyncio.Queue[Any]: ...
+  def join_stream(self) -> tuple[asyncio.Queue[Any], asyncio.Event]: ...
   def add_task(self, task: asyncio.Task[None]) -> None: ...
   async def receive_result(self) -> Event | None: ...
 
@@ -56,6 +56,7 @@ class MediatorContext:
     self._results: asyncio.Queue[Event] = asyncio.Queue()
     self._active_tasks: set[asyncio.Task[None]] = set()
     self._stream: asyncio.Queue[Any] = asyncio.Queue()
+    self._stream_stop_event: asyncio.Event = asyncio.Event()
 
   @property
   def identifier(self) -> uuid.UUID:
@@ -89,8 +90,8 @@ class MediatorContext:
         task.cancel()
     logger.debug(f"Unit of work {self._id} closed.")
 
-  def join_stream(self) -> asyncio.Queue[Any]:
-    return self._stream
+  def join_stream(self) -> tuple[asyncio.Queue[Any], asyncio.Event]:
+    return (self._stream, self._stream_stop_event)
 
   async def receive_result(self) -> Event | None:
     """Await and return the next available event for this unit of work."""
@@ -161,7 +162,7 @@ class Mediator:
     service: ServiceProtocol[Any],
     message: Message,
     dispatch: Callable[[Message], Awaitable[None]],
-    join_stream: Callable[[], asyncio.Queue[Any]],
+    join_stream: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
   ) -> None:
     try:
       await service.handle(message, dispatch=dispatch, join_stream=join_stream)
@@ -195,7 +196,10 @@ class Mediator:
     for service in self._services:
       if isinstance(message, service.supports):
         await self._handling_task(
-          service=service, message=message, dispatch=dispatch_to_logger, join_stream=lambda: asyncio.Queue()
+          service=service,
+          message=message,
+          dispatch=dispatch_to_logger,
+          join_stream=lambda: (asyncio.Queue(), asyncio.Event()),
         )
         handled = True
 
