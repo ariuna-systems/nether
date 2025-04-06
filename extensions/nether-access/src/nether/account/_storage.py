@@ -16,7 +16,7 @@ class AccountRepository:
   def __init__(
     self,
     *,
-    postgres_connector: AsyncConnectorProtocol[psycopg.AsyncCursor[psycopg.rows.DictRow]],
+    postgres_connector: AsyncConnectorProtocol[psycopg.AsyncCursor[psycopg.rows.DictRow], psycopg.AsyncConnection],
   ):
     self.transaction = postgres_connector.transaction
 
