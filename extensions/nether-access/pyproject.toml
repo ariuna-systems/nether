@@ -5,15 +5,10 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "nether-access"
 description = "Nether access library"
-version = "0.6.0"
+version = "0.1.0"                                               # Verzuj hlavní Nether balík
 dynamic = ["readme"]
 requires-python = ">=3.12"
-dependencies = [
-  "psycopg",
-  "pyjwt[crypto]",
-  "pyotp",
-  "aiohttp",
-]
+dependencies = ["psycopg", "pyjwt[crypto]", "pyotp", "aiohttp"]
 
 [tool.setuptools]
 py-modules = []

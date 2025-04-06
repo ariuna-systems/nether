@@ -20,6 +20,12 @@ local_logger.propagate = False
 configure_logger(local_logger)
 
 
+def run_main(coroutine):
+  if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+  asyncio.run(coroutine)
+
+
 class Application:
   """Represent an application singleton instance."""
 
