@@ -86,7 +86,7 @@ class AccessService(Service[Authorize | ValidateAccount | ValidateAccountOneTime
           name="admin",
           email="admin@admin.admin",
           password_hash="admin",
-          secret=base64.b32encode(b"admin").decode('utf-8').rstrip('='),  # MFSG22LO
+          secret=base64.b32encode(b"admin").decode("utf-8").rstrip("="),  # MFSG22LO
           session=None,
           roles=[],
         )
