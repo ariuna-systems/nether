@@ -6,9 +6,6 @@ dynamic = ["readme"]
 requires-python = ">=3.12"
 dependencies = ["psycopg", "pyjwt[crypto]", "pyotp", "aiohttp"]
 
-[tool.setuptools]
-py-modules = []
-
 [tool.setuptools.package-data]
 "nether.access" = ["py.typed"]
 "nether.account" = ["py.typed"]
