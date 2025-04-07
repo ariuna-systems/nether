@@ -1,10 +1,6 @@
-[build-system]
-requires = ["setuptools >= 61.0"]
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "nether-access"
-description = "Nether access library"
+description = "Nether Access Module"
 version = "0.1.0"                                               # Verzuj hlavní Nether balík
 dynamic = ["readme"]
 requires-python = ">=3.12"
@@ -55,7 +51,7 @@ exclude = [
 ]
 
 [tool.pytest.ini_options]
-markers = ["application", "domain", "service", "storage"]
+markers = ["asyncio"]
 
 [tool.mypy]
 files = ["src"]
