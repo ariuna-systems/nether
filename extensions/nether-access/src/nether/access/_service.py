@@ -4,7 +4,6 @@ __all__ = ["AccessService", "MicrosoftOnlineService"]
 import base64
 from collections.abc import Iterable
 import logging
-import sys
 import uuid
 from datetime import UTC, datetime, timedelta
 
@@ -16,8 +15,9 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 
 from nether.common import Event
-from nether.exceptions import ServiceError
+from nether.exceptions import ServiceError, NotFoundError
 from nether.service import Service
+from nether import console
 
 from ..account import Account
 
@@ -43,12 +43,9 @@ from ._domain import (
 )
 from ._storage import AccessRepository
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-logger = logging.getLogger(__name__)
-logger.propagate = False
-handler = logging.StreamHandler(stream=sys.stdout)
-handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
-logger.addHandler(handler)
+local_logger = logging.getLogger(__name__)
+local_logger.propagate = False
+console.configure_logger(local_logger)
 
 
 class AccessServiceError(ServiceError): ...
@@ -62,6 +59,7 @@ class AccessService(Service[Authorize | ValidateAccount | ValidateAccountOneTime
     access_repository: AccessRepository,
     key: str = "DEV",
     enable_rsa_with_signing_key: str | None = None,
+    logger: logging.Logger = local_logger,
     _authorize_all: bool = False,
   ) -> None:
     """
@@ -76,6 +74,7 @@ class AccessService(Service[Authorize | ValidateAccount | ValidateAccountOneTime
     self._key = key
     self._private_key = enable_rsa_with_signing_key or key
     self._algorithm = "RS256" if enable_rsa_with_signing_key else "HS256"
+    self._logger = logger
     self._authorize_all = _authorize_all
 
   async def start(self) -> None:
@@ -86,13 +85,13 @@ class AccessService(Service[Authorize | ValidateAccount | ValidateAccountOneTime
           name="admin",
           email="admin@admin.admin",
           password_hash="admin",
-          secret=base64.b32encode(b"admin").decode("utf-8").rstrip("="),  # MFSG22LO
+          secret=base64.b32encode(b"admin").decode("utf-8").rstrip("="),  # Use MFSG22LO for testing
           session=None,
           roles=[],
         )
         await self._account_repository.create(admin_account)
     except Exception as error:
-      logger.warning(f"Issue creating admin account, maybe it already exists: {error}")
+      self._logger.warning(f"Issue creating admin account, maybe it already exists: {error}")
 
     self._is_running = True
 
@@ -143,7 +142,7 @@ class AccessService(Service[Authorize | ValidateAccount | ValidateAccountOneTime
 
   async def _validate_account(self, *, email: str | None, account_name: str | None, password_hash: str) -> uuid.UUID:
     if email is None and account_name is None:
-      raise AccessServiceError("Email or account name must be provided")
+      raise AccessServiceError("Email or account name must be provided.")
 
     if account_name is not None:
       account = await self._account_repository.search_by_name(account_name)
@@ -151,9 +150,9 @@ class AccessService(Service[Authorize | ValidateAccount | ValidateAccountOneTime
       account = await self._account_repository.search_by_email(email)
 
     if account is None:
-      raise AccessServiceError("Account not found")
+      raise NotFoundError("Account not found.")
     if password_hash != account.password_hash:
-      raise AccessServiceError("Invalid password")
+      raise AccessServiceError("Invalid password.")
 
     async with self._access_repository.transaction() as cursor:
       await self._access_repository.delete_account_session(cursor=cursor, account_id=account.identifier)
@@ -168,12 +167,12 @@ class AccessService(Service[Authorize | ValidateAccount | ValidateAccountOneTime
     account = await self._account_repository.search_by_session_id(account_session_id)
 
     if account is None or account.session is None:
-      raise AccessServiceError("Session not found")
+      raise NotFoundError("Session not found.")
     if account.session.expires_at < datetime.now(tz=UTC):
-      raise AccessServiceError("Session expired")
+      raise AccessServiceError("Session expired.")
 
     if not pyotp.TOTP(account.secret).verify(one_time_password):
-      raise AccessServiceError("Invalid OTP")
+      raise AccessServiceError("Invalid OTP.")
 
     async with self._access_repository.transaction() as cursor:
       await self._access_repository.delete_account_session(cursor=cursor, account_session_id=account_session_id)
@@ -210,7 +209,7 @@ class AccessService(Service[Authorize | ValidateAccount | ValidateAccountOneTime
         if not await self._access_repository.check_account_permission(
           account_id=account_id, asset_id=asset, cursor=cursor
         ):
-          raise AccessServiceError(f"Permission denied for asset `{asset}` to account `{account_id}`")
+          raise PermissionError(f"Permission denied for asset `{asset}` to account `{account_id}`")
     return account_id
 
 
@@ -244,7 +243,7 @@ class MicrosoftOnlineService(Service[ValidateMicrosoftOnlineJWT]):
     async with aiohttp.ClientSession() as session:
       async with session.get(url) as response:
         if response.status != 200:
-          raise ValueError(f"Failed to fetch JW Keys: {response.status}")
+          raise AccessServiceError(f"Failed to fetch JW Keys: {response.status}")
         self._keys = (await response.json())["keys"]
         self._last_fetch = datetime.now(tz=UTC)
 
@@ -262,7 +261,7 @@ class MicrosoftOnlineService(Service[ValidateMicrosoftOnlineJWT]):
 
     signing_key = next((key for key in keys if key["kid"] == kid), None)
     if not signing_key:
-      raise ValueError("No matching key found")
+      raise AccessServiceError("No matching key found")
 
     pem_key = f"-----BEGIN CERTIFICATE-----\n{signing_key['x5c'][0]}\n-----END CERTIFICATE-----"
     cert = x509.load_pem_x509_certificate(pem_key.encode(), default_backend())

@@ -17,12 +17,6 @@ class AccountSession:
   expires_at: datetime
 
 
-## ERRORS ##
-
-
-class PermissionError(Exception): ...
-
-
 ## MESSAGES ##
 
 

@@ -71,7 +71,6 @@ class DatetimeFormatter(logging.Formatter):
 
 
 def configure_logger(logger: logging.Logger, verbose: int = 0) -> None:
-  logging.basicConfig(level=logging.INFO)
   logger.setLevel(logging.INFO if verbose == 0 else max(logging.DEBUG, logging.WARNING - verbose * 10))
   handler = logging.StreamHandler(stream=sys.stdout)
   formatter = DatetimeFormatter(fmt="%(asctime)s - %(name)s - %(levelname)s - %(message)s", style="%")

@@ -2,4 +2,4 @@ ruff
 mypy
 radon
 pytest
-# ./extensions/nether-access
+./extensions/nether-access

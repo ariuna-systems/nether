@@ -6,3 +6,4 @@ radon
 requests
 types-requests
 python-dotenv
+../../
