@@ -218,8 +218,14 @@ class _DynamicRouter:
 
 
 class HTTPInterfaceService(Service[StartServer | StopServer | AddView]):
-  def __init__(self, *, configuration: argparse.Namespace, logger: logging.Logger = local_logger):
-    self.app = web.Application(logger=logger)
+  def __init__(
+    self,
+    *,
+    configuration: argparse.Namespace,
+    logger: logging.Logger = local_logger,
+    configure_aiohttp_loggers: bool = True,
+  ):
+    self.app = web.Application()
     self.app["configuration"] = configuration
 
     dynamic_router = _DynamicRouter(self.app, logger=logger)
@@ -233,6 +239,21 @@ class HTTPInterfaceService(Service[StartServer | StopServer | AddView]):
     self.runner: web.AppRunner | None = None
     self.tasks: set[asyncio.Task[Any]] = set()
     self._is_running = False
+
+    # Configure aiohttp loggers
+    if configure_aiohttp_loggers:
+      for logger_name in [
+        "aiohttp.access",
+        "aiohttp.client",
+        "aiohttp.internal",
+        "aiohttp.server",
+        "aiohttp.web",
+        "aiohttp.websocket",
+      ]:
+        aiohttp_logger = logging.getLogger(logger_name)
+        aiohttp_logger.handlers.clear()
+        aiohttp_logger.propagate = False
+        configure_logger(aiohttp_logger)
 
   @web.middleware
   async def track_requests(
