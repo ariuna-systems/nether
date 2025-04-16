@@ -219,9 +219,8 @@ class _DynamicRouter:
 
 class HTTPInterfaceService(Service[StartServer | StopServer | AddView]):
   def __init__(self, *, configuration: argparse.Namespace, logger: logging.Logger = local_logger):
-    self.app = web.Application()
+    self.app = web.Application(logger=logger)
     self.app["configuration"] = configuration
-    self.app.logger = logger
 
     dynamic_router = _DynamicRouter(self.app, logger=logger)
     self.app["dynamic_router"] = dynamic_router
