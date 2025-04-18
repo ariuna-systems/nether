@@ -15,7 +15,11 @@ class AccessRepositoryError(Exception): ...
 
 
 class AccessRepository:
-  def __init__(self, *, postgres_connector: AsyncConnectorProtocol[psycopg.AsyncCursor[psycopg.rows.DictRow]]):
+  def __init__(
+    self,
+    *,
+    postgres_connector: AsyncConnectorProtocol[psycopg.AsyncCursor[psycopg.rows.DictRow], psycopg.AsyncConnection],
+  ):
     self.transaction = postgres_connector.transaction
 
   async def check_account_permission(

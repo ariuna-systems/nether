@@ -1,23 +1,10 @@
-[build-system]
-requires = ["setuptools >= 61.0"]
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "nether-access"
-description = "Nether access library"
-version = "0.5.3"
+description = "Nether Access Module"
+version = "0.1.0"                                               # Verzuj hlavní Nether balík
 dynamic = ["readme"]
 requires-python = ">=3.12"
-dependencies = [
-  "psycopg",
-  "pyjwt[crypto]",
-  "pyotp",
-  "aiohttp",
-  "nether @ git+ssh://git@github.com/arjuna-group/nether.git",
-]
-
-[tool.setuptools]
-py-modules = []
+dependencies = ["psycopg", "pyjwt[crypto]", "pyotp", "aiohttp"]
 
 [tool.setuptools.package-data]
 "nether.access" = ["py.typed"]
@@ -61,7 +48,7 @@ exclude = [
 ]
 
 [tool.pytest.ini_options]
-markers = ["application", "domain", "service", "storage"]
+markers = ["asyncio"]
 
 [tool.mypy]
 files = ["src"]

@@ -18,7 +18,7 @@ class ServiceProtocol[T: Message](Protocol):
   @property
   def is_running(self) -> bool: ...
 
-  def set_application(self, application) -> None: ...  # type: ignore
+  def set_application(self, application) -> None: ...
 
   async def start(self) -> None: ...
 
@@ -29,7 +29,7 @@ class ServiceProtocol[T: Message](Protocol):
     message: Message,
     *,
     dispatch: Callable[[Message], Awaitable[None]],
-    join_stream: Callable[[], asyncio.Queue[Any]],
+    join_stream: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
   ) -> None: ...
 
 
@@ -67,5 +67,5 @@ class Service[T: Message](ServiceProtocol[T]):
     message: Message,
     *,
     dispatch: Callable[[Message], Awaitable[None]],
-    join_stream: Callable[[], asyncio.Queue[Any]],
+    join_stream: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
   ) -> None: ...

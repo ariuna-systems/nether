@@ -3,7 +3,7 @@ import uuid
 import pyotp
 
 from nether.common import Event
-from nether.exceptions import ServiceError
+from nether.exceptions import ServiceError, AlreadyExistsError
 from nether.service import Service
 
 from ._domain import (
@@ -80,10 +80,10 @@ class AccountService(Service[CreateAccount | CreateAccountWithDefaultRole | Dele
 
     :returns: Tajný klíč pro dvoufázové ověření
     """
-    # Validace existence uživatele
+    # Validace existence stejnojmenného uživatele
     saved_account = await self._repository.search_by_name(account_name)
     if saved_account is not None:
-      raise AccountServiceError("Account with the same name already exists")
+      raise AlreadyExistsError("Account with the same name already exists")
 
     # Vytvoření uživatele
     roles = await self._repository.read_roles(role_ids)
@@ -101,4 +101,5 @@ class AccountService(Service[CreateAccount | CreateAccountWithDefaultRole | Dele
     return account.secret
 
   async def _delete_account(self, account_id: uuid.UUID, /) -> None:
+    # TODO: Smaže se i uživatelův obsah, nebo se někomu přepíše?
     raise NotImplementedError("Method `_delete_account` not implemented")

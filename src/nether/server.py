@@ -1,7 +1,6 @@
 import argparse
 import asyncio
 import logging
-import sys
 import traceback
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
@@ -12,14 +11,13 @@ from aiohttp import hdrs as headers
 from aiohttp import web, web_urldispatcher
 
 from nether.common import Command, Event, FailureEvent, Message, SuccessEvent
+from nether.console import configure_logger
 from nether.exceptions import ServiceError
 from nether.service import Service
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 local_logger = logging.getLogger(__name__)
 local_logger.propagate = False
-handler = logging.StreamHandler(stream=sys.stdout)
-local_logger.addHandler(handler)
+configure_logger(local_logger)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -220,10 +218,15 @@ class _DynamicRouter:
 
 
 class HTTPInterfaceService(Service[StartServer | StopServer | AddView]):
-  def __init__(self, *, configuration: argparse.Namespace, logger: logging.Logger = local_logger):
+  def __init__(
+    self,
+    *,
+    configuration: argparse.Namespace,
+    logger: logging.Logger = local_logger,
+    configure_aiohttp_loggers: bool = True,
+  ):
     self.app = web.Application()
     self.app["configuration"] = configuration
-    self.app.logger = logger
 
     dynamic_router = _DynamicRouter(self.app, logger=logger)
     self.app["dynamic_router"] = dynamic_router
@@ -236,6 +239,21 @@ class HTTPInterfaceService(Service[StartServer | StopServer | AddView]):
     self.runner: web.AppRunner | None = None
     self.tasks: set[asyncio.Task[Any]] = set()
     self._is_running = False
+
+    # Configure aiohttp loggers
+    if configure_aiohttp_loggers:
+      for logger_name in [
+        "aiohttp.access",
+        "aiohttp.client",
+        "aiohttp.internal",
+        "aiohttp.server",
+        "aiohttp.web",
+        "aiohttp.websocket",
+      ]:
+        aiohttp_logger = logging.getLogger(logger_name)
+        aiohttp_logger.handlers.clear()
+        aiohttp_logger.propagate = False
+        configure_logger(aiohttp_logger)
 
   @web.middleware
   async def track_requests(

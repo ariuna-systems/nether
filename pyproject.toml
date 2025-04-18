@@ -4,7 +4,7 @@ description = "The foundation library"
 dynamic = ["readme", "version"]
 requires-python = ">=3.12"
 license = { text = "MIT" }
-dependencies = ["aiohttp"]
+dependencies = ["aiohttp", "python-dotenv"]
 
 [project.optional-dependencies]
 windows = ["pywin32"]
@@ -66,7 +66,7 @@ skip-magic-trailing-comma = false
 line-ending = "auto"
 
 [tool.mypy]
-files = ["src", "examples/server_example.py"]
+files = ["src", "examples/server-simple.py"]
 ignore_missing_imports = true
 show_error_codes = true
 warn_unused_ignores = true

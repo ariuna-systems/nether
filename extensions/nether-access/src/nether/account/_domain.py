@@ -30,7 +30,6 @@ class Account:
     session: AccountSession | None,
     roles: list[AccountRole],
   ) -> None:
-    """Don't use directly, use the factory methods."""
     self.identifier = identifier
     self.email = email
     self.name = name
