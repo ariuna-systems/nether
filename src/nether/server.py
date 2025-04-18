@@ -1,3 +1,7 @@
+"""
+This module contains HTTP server classes and functions.
+"""
+
 import argparse
 import asyncio
 import logging
@@ -20,58 +24,58 @@ local_logger.propagate = False
 configure_logger(local_logger)
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class StartServer(Command):
   host: str
   port: int
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class ServerStarted(SuccessEvent): ...
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class StartServerFailure(FailureEvent): ...
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class StopServer(Command): ...
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class ServerStopped(SuccessEvent): ...
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class StopServerFailure(FailureEvent): ...
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class AddView(Command):
   route: str
   view: type[web.View]
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class ViewAdded(SuccessEvent): ...
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class AddViewFailure(FailureEvent): ...
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class AddStatic(Command):
   prefix: str
   path: Path
   kwargs: dict[str, Any] = field(default_factory=lambda: {})
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class StaticAdded(SuccessEvent): ...
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class AddStaticFailure(FailureEvent): ...
 
 

@@ -1,3 +1,7 @@
+"""
+This module contains command line interface related classes and functions.
+"""
+
 import argparse
 import datetime
 import logging

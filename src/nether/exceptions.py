@@ -1,16 +1,26 @@
+"""
+This module contains custom error classes and functions.
+"""
+
+__all__ = ["wrap_base_exception", "DomainError", "ServiceError", "StorageError", "NotFoundError", "AlreadyExistsError"]
+
+
 def wrap_base_exception(error: BaseException) -> Exception:
   """
-  Použij pro bezpečnost při odchytávání obecné BaseException.
-  Vrací chybu obalenou v Exception.
+  Použij pro bezpečnost při odchytávání obecné :class:`BaseException`.
 
-  Propaguje výjimku, když je chyba GeneratorExit | KeyboardInterrupt | SystemExit.
+  :param: Zachycená obecná základní výjimka.
+  :return: Chybu obalenou v :class:`Exception`.
 
-  PŘÍBĚH:
-    Knihovna Polars občas vyhazuje výjimku pyo3_runtime.PanicException, která
-    nedědí z Exception, ale přímo z BaseException. Proto při snaze o
-    zachycení BaseException dochází i k nechtěnému zachytávání kritických chyb
-    tj. GeneratorExit, KeyboardInterrupt, SystemExit. Z tohoto důvodu tyto
-    chyby propagujeme dále (reraise) a ostatní chyby přebalujeme do Exception.
+  Propaguje výjimku, když je chyba :class:`GeneratorExit`, :class:`KeyboardInterrupt`, :class:`SystemExit`.
+
+  .. note::
+    Knihovna Polars občas vyhazuje výjimku :class:`pyo3_runtime.PanicException`, která
+    nedědí z :class:`Exception`, ale přímo z :class:`BaseException`. Proto při snaze o
+    zachycení :class:`BaseException` dochází i k nechtěnému zachytávání kritických chyb
+    tj. :class:`GeneratorExit`, :class:`KeyboardInterrupt`, :class:`SystemExit`.
+    Z tohoto důvodu tyto chyby propagujeme dále a ostatní chyby měníme přebalujeme
+    na :class:`Exception`.
   """
   if isinstance(error, GeneratorExit | KeyboardInterrupt | SystemExit):
     raise error
