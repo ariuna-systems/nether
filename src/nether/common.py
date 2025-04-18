@@ -8,7 +8,6 @@ from typing import Protocol
 @dataclass(frozen=True, kw_only=True)
 class Message:
   created_at: datetime = field(default_factory=lambda: datetime.now(tz=UTC))
-  ...
 
 
 @dataclass(frozen=True)
@@ -30,7 +29,6 @@ class SuccessEvent(Event): ...
 @dataclass(frozen=True)
 class FailureEvent(Event):
   error: Exception
-  ...
 
 
 class ConnectorProtocol[T](Protocol):
