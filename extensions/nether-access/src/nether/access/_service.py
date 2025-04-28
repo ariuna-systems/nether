@@ -4,6 +4,7 @@ __all__ = ["AccessService", "MicrosoftOnlineService"]
 import base64
 from collections.abc import Iterable
 import logging
+from typing import cast
 import uuid
 from datetime import UTC, datetime, timedelta
 
@@ -12,6 +13,7 @@ import jwt
 from jwt.algorithms import RSAAlgorithm
 import pyotp
 from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
 
 from nether.common import Event
 from nether.exceptions import ServiceError, NotFoundError
@@ -263,7 +265,7 @@ class MicrosoftOnlineService(Service[ValidateMicrosoftOnlineJWT]):
       raise AccessServiceError("No matching key found.")
 
     public_key = (
-      RSAAlgorithm.from_jwk(signing_key)
+      cast(RSAPublicKey, RSAAlgorithm.from_jwk(signing_key))
       .public_bytes(encoding=serialization.Encoding.PEM, format=serialization.PublicFormat.SubjectPublicKeyInfo)
       .decode("utf-8")
     )
