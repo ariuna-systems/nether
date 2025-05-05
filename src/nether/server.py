@@ -9,6 +9,7 @@ from typing import Any, cast
 
 from aiohttp import hdrs as headers
 from aiohttp import web, web_urldispatcher
+from aiohttp_middlewares import cors
 
 from nether.common import Command, Event, FailureEvent, Message, SuccessEvent
 from nether.console import configure_logger
@@ -223,6 +224,7 @@ class HTTPInterfaceService(Service[StartServer | StopServer | AddView]):
     *,
     configuration: argparse.Namespace,
     logger: logging.Logger = local_logger,
+    cors_origins: list[str] | None = None,
     configure_aiohttp_loggers: bool = True,
   ):
     self.app = web.Application()
@@ -232,6 +234,8 @@ class HTTPInterfaceService(Service[StartServer | StopServer | AddView]):
     self.app["dynamic_router"] = dynamic_router
     self.app.middlewares.append(self.track_requests)
     self.app.middlewares.append(dynamic_router.middleware)
+    if cors_origins is not None:
+      self.app.middlewares.append(cors.cors_middleware(origins=cors_origins))
     self.host = configuration.host
     self.port = configuration.port
 
