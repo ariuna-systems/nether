@@ -233,9 +233,9 @@ class HTTPInterfaceService(Service[StartServer | StopServer | AddView]):
     dynamic_router = _DynamicRouter(self.app, logger=logger)
     self.app["dynamic_router"] = dynamic_router
     self.app.middlewares.append(self.track_requests)
-    self.app.middlewares.append(dynamic_router.middleware)
     if cors_origins is not None:
       self.app.middlewares.append(cors.cors_middleware(origins=cors_origins))
+    self.app.middlewares.append(dynamic_router.middleware)
     self.host = configuration.host
     self.port = configuration.port
 
