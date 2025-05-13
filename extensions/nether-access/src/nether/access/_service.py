@@ -2,7 +2,6 @@ __all__ = ["AccessService", "MicrosoftOnlineService"]
 
 
 import base64
-from collections.abc import Iterable
 import logging
 from typing import cast
 import uuid
@@ -202,7 +201,7 @@ class AccessService(Service[Authorize | ValidateAccount | ValidateAccountOneTime
       assets_to_check: list[uuid.UUID] = []
       for field in cmd.fields:
         field_value = getattr(cmd, field)
-        if isinstance(field_value, Iterable):
+        if isinstance(field_value, list | set):
           assets_to_check.extend(field_value)
         else:
           assets_to_check.append(field_value)
