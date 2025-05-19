@@ -124,6 +124,12 @@ def postgres_string_from_env(env: dict[str, str], *, prefix: str = "") -> str:
   return connection_string
 
 
-def log_configuration(configuration: argparse.Namespace, *, logger: logging.Logger, level: int = logging.DEBUG) -> None:
-  for argument_name, argument_value in vars(configuration).items():
-    logger.log(level, f"{argument_name}: {argument_value}")
+def log_configuration(
+  configuration: argparse.Namespace, *, logger: logging.Logger, level: int = logging.DEBUG, prefix: str = ""
+) -> None:
+  for argument_name, argument_value in sorted(vars(configuration).items()):
+    full_name = f"{prefix}{argument_name}" if prefix else argument_name
+    if isinstance(argument_value, argparse.Namespace):
+      log_configuration(argument_value, logger=logger, level=level, prefix=f"{full_name}.")
+    else:
+      logger.log(level, f"{full_name}: {argument_value}")

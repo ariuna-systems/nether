@@ -4,7 +4,7 @@ description = "The foundation library"
 dynamic = ["readme", "version"]
 requires-python = ">=3.12"
 license = { text = "MIT" }
-dependencies = ["aiohttp", "python-dotenv"]
+dependencies = ["aiohttp", "aiohttp-middlewares", "python-dotenv"]
 
 [project.optional-dependencies]
 windows = ["pywin32"]

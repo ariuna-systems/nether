@@ -2,17 +2,17 @@ __all__ = ["AccessService", "MicrosoftOnlineService"]
 
 
 import base64
-from collections.abc import Iterable
 import logging
+from typing import cast
 import uuid
 from datetime import UTC, datetime, timedelta
 
 import aiohttp
 import jwt
+from jwt.algorithms import RSAAlgorithm
 import pyotp
-from cryptography import x509
-from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
 
 from nether.common import Event
 from nether.exceptions import ServiceError, NotFoundError
@@ -201,7 +201,7 @@ class AccessService(Service[Authorize | ValidateAccount | ValidateAccountOneTime
       assets_to_check: list[uuid.UUID] = []
       for field in cmd.fields:
         field_value = getattr(cmd, field)
-        if isinstance(field_value, Iterable):
+        if isinstance(field_value, list | set):
           assets_to_check.extend(field_value)
         else:
           assets_to_check.append(field_value)
@@ -214,13 +214,14 @@ class AccessService(Service[Authorize | ValidateAccount | ValidateAccountOneTime
 
 
 class MicrosoftOnlineService(Service[ValidateMicrosoftOnlineJWT]):
-  def __init__(self, *, tenant_id: str, client_id: str):
+  def __init__(self, *, tenant_id: str, client_id: str, check_signature: bool = True):
     self._tenant_id = tenant_id
     self._client_id = client_id
     self._keys: list = []
     self._last_fetch: datetime = datetime.fromtimestamp(0, tz=UTC)
     self._cache_duration = timedelta(hours=1)
     self._is_running = False
+    self._check_signature = check_signature
 
   async def handle(self, message, *, dispatch, **_) -> None:
     if not isinstance(message, self.supports):
@@ -254,32 +255,39 @@ class MicrosoftOnlineService(Service[ValidateMicrosoftOnlineJWT]):
     return self._keys
 
   async def _validate(self, jwt_token: str) -> dict:
-    keys = await self._current_keys()
-
     unverified_header = jwt.get_unverified_header(jwt_token)
     kid = unverified_header["kid"]
 
+    keys = await self._current_keys()
     signing_key = next((key for key in keys if key["kid"] == kid), None)
     if not signing_key:
-      raise AccessServiceError("No matching key found")
+      raise AccessServiceError("No matching key found.")
 
-    pem_key = f"-----BEGIN CERTIFICATE-----\n{signing_key['x5c'][0]}\n-----END CERTIFICATE-----"
-    cert = x509.load_pem_x509_certificate(pem_key.encode(), default_backend())
     public_key = (
-      cert.public_key()
+      cast(RSAPublicKey, RSAAlgorithm.from_jwk(signing_key))
       .public_bytes(encoding=serialization.Encoding.PEM, format=serialization.PublicFormat.SubjectPublicKeyInfo)
       .decode("utf-8")
     )
-    return jwt.decode(
-      jwt_token,
-      key=public_key,
-      algorithms=["RS256"],
-      audience=self._client_id,
-      issuer=f"https://login.microsoftonline.com/{self._tenant_id}/v2.0",
-      options={
-        "verify_signature": True,
-        "verify_exp": True,
-        "verify_aud": True,
-        "verify_iss": True,
-      },
-    )
+    if not self._check_signature:
+      return jwt.decode(
+        jwt_token,
+        key=public_key,
+        algorithms=["RS256"],
+        options={
+          "verify_signature": False,
+        },
+      )
+    else:
+      return jwt.decode(
+        jwt_token,
+        key=public_key,
+        algorithms=["RS256"],
+        audience=self._client_id,
+        issuer=f"https://login.microsoftonline.com/{self._tenant_id}/v2.0",
+        options={
+          "verify_signature": True,
+          "verify_exp": True,
+          "verify_aud": True,
+          "verify_iss": True,
+        },
+      )
