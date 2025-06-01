@@ -63,7 +63,7 @@ class MediatorContext:
   """Context manager for a unit of work, providing isolated queues."""
 
   def __init__(self, handle_message: Callable[[Message, MediatorContextProtocol], Coroutine[Any, Any, None]]):
-    """If mediator not passed, automatically gets the singleton `Mediator` instance"""
+    """If mediator is not passed, automatically gets the singleton :class:`Mediator` instance."""
     self._handle_message = handle_message
 
     self._id = uuid.uuid4()
