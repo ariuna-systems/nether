@@ -12,6 +12,8 @@ def wrap_base_exception(error: BaseException) -> Exception:
     tj. GeneratorExit, KeyboardInterrupt, SystemExit. Z tohoto důvodu tyto
     chyby propagujeme dále (reraise) a ostatní chyby přebalujeme do Exception.
   """
+  if isinstance(error, Exception):
+    return error
   if isinstance(error, GeneratorExit | KeyboardInterrupt | SystemExit):
     raise error
   wrapped_error = Exception(error)
