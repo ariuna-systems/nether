@@ -146,12 +146,15 @@ def postgres_string_from_credentials(
   return connection_string
 
 
-def postgres_string_from_env(env: dict[str, str], *, prefix: str = "") -> str:
+def postgres_string_from_env(env: dict[str, str], *, prefix: str = "", logger: logging.Logger | None = None) -> str:
   """
-  Env has to contain HOST, PORT, NAME, USER, PASSWORD.
-  Env can contain SCHEMA, TIMEOUT, READONLY (bool), DSN (overrides other options).
+  Env has to contain {HOST, PORT, NAME, USER, PASSWORD} or DSN which overrides all other options.
+  Env can contain SCHEMA, TIMEOUT, READONLY (bool).
   """
   if (dsn := env.get(prefix + "DSN")) is not None:
+    if logger is not None and (prefix + "HOST") in env:  # If there are other options, log override
+      logger.debug("Database DSN found, overriding other options.")
+
     return dsn
 
   host = env[prefix + "HOST"]
