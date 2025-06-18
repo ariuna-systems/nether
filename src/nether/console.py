@@ -128,12 +128,9 @@ def postgres_string_from_credentials(
   schema: str | None = None,
   user: str,
   password: str,
-  timeout: str | int = 10,
   readonly: bool = False,
 ) -> str:
-  connection_string = (
-    f"postgresql://{quote_plus(user)}:{quote_plus(password)}@{host}:{port}/{dbname}?connect_timeout={timeout}"
-  )
+  connection_string = f"postgresql://{quote_plus(user)}:{quote_plus(password)}@{host}:{port}/{dbname}"
   options = []
   if schema is not None:
     options.append(f"search_path={schema}")
@@ -141,7 +138,7 @@ def postgres_string_from_credentials(
     options.append("default_transaction_read_only=on")
   if options:
     options_value = " ".join([f"-c {opt}" for opt in options])
-    connection_string += f"&options={quote_plus(options_value)}"
+    connection_string += f"?options={quote_plus(options_value)}"
 
   return connection_string
 
@@ -149,7 +146,7 @@ def postgres_string_from_credentials(
 def postgres_string_from_env(env: dict[str, str], *, prefix: str = "", logger: logging.Logger | None = None) -> str:
   """
   Env has to contain {HOST, PORT, NAME, USER, PASSWORD} or DSN which overrides all other options.
-  Env can contain SCHEMA, TIMEOUT, READONLY (bool).
+  Env can contain SCHEMA, READONLY (bool).
   """
   if (dsn := env.get(prefix + "DSN")) is not None:
     if logger is not None and (prefix + "HOST") in env:  # If there are other options, log override
@@ -163,10 +160,9 @@ def postgres_string_from_env(env: dict[str, str], *, prefix: str = "", logger: l
   schema = env.get(prefix + "SCHEMA")
   user = env[prefix + "USER"]
   password = env[prefix + "PASSWORD"]
-  timeout = env.get(prefix + "TIMEOUT", 10)
   readonly = parse_bool_env(env.get(prefix + "READONLY"))
   return postgres_string_from_credentials(
-    host=host, port=port, dbname=dbname, schema=schema, user=user, password=password, timeout=timeout, readonly=readonly
+    host=host, port=port, dbname=dbname, schema=schema, user=user, password=password, readonly=readonly
   )
 
 
