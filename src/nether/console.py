@@ -108,20 +108,63 @@ def get_env(
   return env
 
 
-def postgres_string_from_env(env: dict[str, str], *, prefix: str = "") -> str:
-  host = env[prefix + "DATABASE_HOST"]
-  port = env[prefix + "DATABASE_PORT"]
-  dbname = env[prefix + "DATABASE_NAME"]
-  schema = env.get(prefix + "DATABASE_SCHEMA")
-  user = env[prefix + "DATABASE_USER"]
-  password = env[prefix + "DATABASE_PASSWORD"]
-  timeout = env[prefix + "DATABASE_TIMEOUT"]
+TRUE_VALUES = {"true", "1", "yes", "on"}
+
+
+def parse_bool_env(env_value: str | int | None) -> bool:
+  if env_value is None:
+    return False
+  elif isinstance(env_value, str):
+    return env_value.lower().strip() in TRUE_VALUES
+  else:
+    return bool(env_value)
+
+
+def postgres_string_from_credentials(
+  *,
+  host: str,
+  port: str,
+  dbname: str,
+  schema: str | None = None,
+  user: str,
+  password: str,
+  timeout: str | int = 10,
+  readonly: bool = False,
+) -> str:
   connection_string = (
     f"postgresql://{quote_plus(user)}:{quote_plus(password)}@{host}:{port}/{dbname}?connect_timeout={timeout}"
   )
+  options = []
   if schema is not None:
-    connection_string += f"&options=-c%20search_path%3D{schema}"
+    options.append(f"search_path={schema}")
+  if readonly:
+    options.append("default_transaction_read_only=on")
+  if options:
+    options_value = " ".join([f"-c {opt}" for opt in options])
+    connection_string += f"&options={quote_plus(options_value)}"
+
   return connection_string
+
+
+def postgres_string_from_env(env: dict[str, str], *, prefix: str = "") -> str:
+  """
+  Env has to contain HOST, PORT, NAME, USER, PASSWORD.
+  Env can contain SCHEMA, TIMEOUT, READONLY (bool), DSN (overrides other options).
+  """
+  if (dsn := env.get(prefix + "DSN")) is not None:
+    return dsn
+
+  host = env[prefix + "HOST"]
+  port = env[prefix + "PORT"]
+  dbname = env[prefix + "NAME"]
+  schema = env.get(prefix + "SCHEMA")
+  user = env[prefix + "USER"]
+  password = env[prefix + "PASSWORD"]
+  timeout = env.get(prefix + "TIMEOUT", 10)
+  readonly = parse_bool_env(env.get(prefix + "READONLY"))
+  return postgres_string_from_credentials(
+    host=host, port=port, dbname=dbname, schema=schema, user=user, password=password, timeout=timeout, readonly=readonly
+  )
 
 
 def log_configuration(

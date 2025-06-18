@@ -8,16 +8,13 @@ dependencies = ["aiohttp", "aiohttp-middlewares", "python-dotenv"]
 
 [project.optional-dependencies]
 windows = ["pywin32"]
-server = [
-    "nether-server @ git+ssh://git@github.com/arjuna-group/nether.git#subdirectory=extensions/nether-server",
-]
 access = [
     "nether-access @ git+ssh://git@github.com/arjuna-group/nether.git#subdirectory=extensions/nether-access",
 ]
 
 [tool.setuptools.dynamic]
 readme = { file = ["README.md"] }
-version = { attr = "nether.__init__.__version__" }
+version = { attr = "nether.__version__" }
 
 [tool.setuptools.packages.find]
 where = ["src"]
