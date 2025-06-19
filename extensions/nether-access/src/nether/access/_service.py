@@ -81,7 +81,7 @@ class AccessService(Service[Authorize | ValidateAccount | ValidateAccountOneTime
     try:
       if self._authorize_all:
         admin_account = Account(
-          identifier=uuid.NAMESPACE_DNS,
+          identifier=uuid.UUID('00000000-0000-0000-0000-000000000000'),
           name="admin",
           email="admin@admin.admin",
           password_hash="admin",
@@ -107,7 +107,7 @@ class AccessService(Service[Authorize | ValidateAccount | ValidateAccountOneTime
       match message:
         case Authorize() as cmd:
           if self._authorize_all:
-            result_event = Authorized(uuid.NAMESPACE_DNS)
+            result_event = Authorized(uuid.UUID('00000000-0000-0000-0000-000000000000'))
           else:
             result_event = Authorized(await self._authorize_command(cmd.cmd))
         case ValidateAccount() as cmd:
@@ -124,7 +124,7 @@ class AccessService(Service[Authorize | ValidateAccount | ValidateAccountOneTime
           )
         case ValidateJWT() as cmd:
           if self._authorize_all:
-            result_event = JWTValidated(uuid.NAMESPACE_DNS)
+            result_event = JWTValidated(uuid.UUID('00000000-0000-0000-0000-000000000000'))
           else:
             result_event = JWTValidated(self._validate_jwt(cmd.token))
     except Exception as error:
