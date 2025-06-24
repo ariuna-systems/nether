@@ -59,6 +59,7 @@ class AccessService(Service[Authorize | ValidateAccount | ValidateAccountOneTime
     access_repository: AccessRepository,
     key: str = "DEV",
     enable_rsa_with_signing_key: str | None = None,
+    admin_id: uuid.UUID = uuid.UUID("00000000-0000-0000-0000-000000000000"),
     logger: logging.Logger = local_logger,
     _authorize_all: bool = False,
   ) -> None:
@@ -74,6 +75,7 @@ class AccessService(Service[Authorize | ValidateAccount | ValidateAccountOneTime
     self._key = key
     self._private_key = enable_rsa_with_signing_key or key
     self._algorithm = "RS256" if enable_rsa_with_signing_key else "HS256"
+    self._admin_id = admin_id
     self._logger = logger
     self._authorize_all = _authorize_all
 
@@ -81,7 +83,7 @@ class AccessService(Service[Authorize | ValidateAccount | ValidateAccountOneTime
     try:
       if self._authorize_all:
         admin_account = Account(
-          identifier=uuid.UUID('00000000-0000-0000-0000-000000000000'),
+          identifier=self._admin_id,
           name="admin",
           email="admin@admin.admin",
           password_hash="admin",
@@ -107,7 +109,7 @@ class AccessService(Service[Authorize | ValidateAccount | ValidateAccountOneTime
       match message:
         case Authorize() as cmd:
           if self._authorize_all:
-            result_event = Authorized(uuid.UUID('00000000-0000-0000-0000-000000000000'))
+            result_event = Authorized(self._admin_id)
           else:
             result_event = Authorized(await self._authorize_command(cmd.cmd))
         case ValidateAccount() as cmd:
@@ -124,7 +126,7 @@ class AccessService(Service[Authorize | ValidateAccount | ValidateAccountOneTime
           )
         case ValidateJWT() as cmd:
           if self._authorize_all:
-            result_event = JWTValidated(uuid.UUID('00000000-0000-0000-0000-000000000000'))
+            result_event = JWTValidated(self._admin_id)
           else:
             result_event = JWTValidated(self._validate_jwt(cmd.token))
     except Exception as error:
