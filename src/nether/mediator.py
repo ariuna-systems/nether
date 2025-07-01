@@ -170,8 +170,8 @@ class Mediator:
     try:
       await self.register_context(mediator_context)
       yield mediator_context
-    except Exception as e:
-      logger.error(f"Error during MediatorContext lifecycle: {e}")
+    except Exception:
+      raise
     finally:
       await mediator_context.close()
       if mediator_context:
