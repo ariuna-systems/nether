@@ -1,15 +1,19 @@
 import argparse
 import asyncio
-import threading
-import time
+import logging
 from dataclasses import dataclass
 from typing import cast
 
 from nether import Application
 from nether.common import Command
+from nether.console import configure_logger
 from nether.mediator import MediatorProtocol
 from nether.server import HTTPInterfaceService
 from nether.service import Service
+from nether.transaction import TransactionContext
+
+logger = logging.getLogger(__name__)
+configure_logger(logger, 1)
 
 
 class MyApplication(Application):
@@ -25,9 +29,9 @@ class ProducedCommand(Command):
 class ProducerService(Service):
   def __init__(self):
     super().__init__(self)
-    self.running_thread: threading.Thread | None = None
-    self._stop_event = threading.Event()
+    self._stop_event = asyncio.Event()  # Use asyncio.Event for async coordination
     self._application = cast(Application, None)
+    self._producer_task: asyncio.Task | None = None  # To hold the background task
 
   def set_application(self, application: Application) -> None:
     self._application = application
@@ -36,30 +40,37 @@ class ProducerService(Service):
     async with self._application.mediator.context() as ctx:
       await ctx.process(command)
 
-  def _worker(self):
-    """Worker function that runs in a separate thread."""
+  async def _worker(self):  # Make _worker an async function
+    """Worker coroutine that runs in the main event loop."""
     number = 0
     while not self._stop_event.is_set():
       number += 1
       command = ProducedCommand(number)
-      print(f"Produced message: {type(command).__name__} {command.number}")
-      asyncio.run(self._produce_command(command))
-      time.sleep(1)
+      logger.info(f"Produced message: {type(command).__name__} {command.number}")
+      asyncio.create_task(self._produce_command(command))  # Await the async call directly
+      try:
+        await asyncio.sleep(1)  # Use asyncio.sleep for non-blocking delay
+      except asyncio.CancelledError:
+        logger.info("ProducerService worker cancelled.")
+        break
 
   async def start(self) -> None:
-    print("ProducerService started.")
+    logger.info("ProducerService started.")
     self._stop_event.clear()
-    self.running_thread = threading.Thread(target=self._worker)
-    self.running_thread.daemon = True  # Thread will stop when main program exits
-    self.running_thread.start()
+    # Start the _worker as a background task in the current event loop
+    self._producer_task = asyncio.create_task(self._worker())
     self._is_running = True
 
   async def stop(self) -> None:
-    print("ProducerService stopped.")
-    if self.running_thread:
-      self._stop_event.set()
-      self.running_thread.join()
-      self.running_thread = None
+    logger.info("ProducerService stopped.")
+    if self._producer_task:
+      self._stop_event.set()  # Signal the worker to stop gracefully
+      self._producer_task.cancel()  # Request cancellation of the task
+      try:
+        await self._producer_task  # Await its completion to clean up
+      except asyncio.CancelledError:
+        pass  # Expected when we cancel it
+      self._producer_task = None
     self._is_running = False
 
   async def handle(self, *_, **__) -> None:
@@ -71,9 +82,6 @@ class ReceiverService(Service[ProducedCommand]):
     super().__init__(self)
     self.mediator = cast(type[MediatorProtocol], None)
 
-  def set_application(self, application: Application) -> None:
-    self._application = application
-
   async def start(self) -> None:
     print("ReceiverService started.")
     self._is_running = True
@@ -82,8 +90,12 @@ class ReceiverService(Service[ProducedCommand]):
     print("ReceiverService stopped.")
     self._is_running = False
 
-  async def handle(self, message, **_) -> None:
+  async def handle(self, message, *, tx_context: TransactionContext, **_) -> None:
     print(f"Received message: {type(message).__name__} {message.number}")
+    conn = await tx_context.connection
+    result = await conn.fetch("SELECT 1;")
+    await asyncio.sleep(10)
+    print(result)
 
 
 class ErrorRaisingService(Service):
@@ -92,7 +104,7 @@ class ErrorRaisingService(Service):
 
   async def start(self) -> None:
     print("ErrorRaisingService started.")
-    raise Exception("ErrorRaisingService error")
+    # raise Exception("ErrorRaisingService error")
     self._is_running = True
 
   async def stop(self) -> None:
@@ -109,7 +121,9 @@ async def main():
   configuration.port = 8080
   server = HTTPInterfaceService(configuration=configuration)
 
-  app = MyApplication(configuration=configuration)
+  app = MyApplication(
+    configuration=configuration, database_dsn="postgresql://postgres:postgres@localhost:5432/postgres", logger=logger
+  )
   app.register_service(server)
   app.register_service(ProducerService())
   app.register_service(ReceiverService())

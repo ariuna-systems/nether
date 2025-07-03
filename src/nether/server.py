@@ -225,7 +225,7 @@ class HTTPInterfaceService(Service[StartServer | StopServer | AddView]):
     configuration: argparse.Namespace,
     logger: logging.Logger = local_logger,
     cors_origins: list[str] | None = None,
-    configure_aiohttp_loggers: bool = True,
+    aiohttp_loggers_verbosity: int = 0,
   ):
     self.app = web.Application()
     self.app["configuration"] = configuration
@@ -244,20 +244,18 @@ class HTTPInterfaceService(Service[StartServer | StopServer | AddView]):
     self.tasks: set[asyncio.Task[Any]] = set()
     self._is_running = False
 
-    # Configure aiohttp loggers
-    if configure_aiohttp_loggers:
-      for logger_name in [
-        "aiohttp.access",
-        "aiohttp.client",
-        "aiohttp.internal",
-        "aiohttp.server",
-        "aiohttp.web",
-        "aiohttp.websocket",
-      ]:
-        aiohttp_logger = logging.getLogger(logger_name)
-        aiohttp_logger.handlers.clear()
-        aiohttp_logger.propagate = False
-        configure_logger(aiohttp_logger)
+    for logger_name in [
+      "aiohttp.access",
+      "aiohttp.client",
+      "aiohttp.internal",
+      "aiohttp.server",
+      "aiohttp.web",
+      "aiohttp.websocket",
+    ]:
+      aiohttp_logger = logging.getLogger(logger_name)
+      aiohttp_logger.handlers.clear()
+      aiohttp_logger.propagate = False
+      configure_logger(aiohttp_logger, verbose=aiohttp_loggers_verbosity)
 
   @web.middleware
   async def track_requests(

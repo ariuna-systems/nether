@@ -4,7 +4,8 @@ from abc import abstractmethod
 from collections.abc import Awaitable, Callable
 from typing import Any, Protocol, TypeVar, get_args
 
-from nether.common import Message
+from .common import Message
+from .transaction import TransactionContext
 
 
 class _NeverMatch: ...
@@ -30,6 +31,7 @@ class ServiceProtocol[T: Message](Protocol):
     *,
     dispatch: Callable[[Message], Awaitable[None]],
     join_stream: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
+    tx_context: TransactionContext,
   ) -> None: ...
 
 
@@ -68,4 +70,5 @@ class Service[T: Message](ServiceProtocol[T]):
     *,
     dispatch: Callable[[Message], Awaitable[None]],
     join_stream: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
+    tx_context: TransactionContext,
   ) -> None: ...
