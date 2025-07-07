@@ -113,6 +113,12 @@ class Application:
 
   async def stop(self) -> None:
     await self._mediator.stop()
+    for service in self.services:
+      try:
+        await service.stop()
+      except Exception as error:
+        self.logger.debug(f"Traceback for error below: {traceback.format_exc()}")
+        self.logger.error(f"Error stopping a service `{type(service).__name__}`: {error}")
     self.logger.info("stop")
 
   async def _before_start(self) -> None:
@@ -124,7 +130,7 @@ class Application:
         self.logger.info(f"Service `{type(service).__name__}` started.")
       except Exception as error:
         self.logger.debug(f"Traceback for error below: {traceback.format_exc()}")
-        self.logger.error(f"Error starting service `{type(service).__name__}`: {error}")
+        self.logger.error(f"Error starting a service `{type(service).__name__}`: {error}")
         sys.exit(1)
 
   @abstractmethod
