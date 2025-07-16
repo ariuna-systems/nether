@@ -2,37 +2,152 @@
 
 *Nether means located beneath or below, lower or under.*
 
-**nether je framework pro rychlé vytváření a nasazení webových služeb.**
+**Nether je framework pro rychlé vytváření a nasazení asynchronních aplikací a webových služeb.**
 
-Tento framework vznikl z interních potřeba <https://arjuna.group>, může ale nemusí vyhovovat tvým potřebám.
-Našim cílem není vytvořit projektt, který bude vyhovovat všem, ale především nám!
-Základnem je vyžít naplno standardní knihovnu; používat minimum externích balíku.
+Tento framework vznikl z interních potřeb <https://arjuna.group>, může ale nemusí vyhovovat tvým potřebám.
+Našim cílem není vytvořit projekt, který bude vyhovovat všem, ale především nám!
+Základem je využít naplno standardní knihovnu a používat minimum externích balíčků.
+
+## Charakteristiky
+
+- **Type-safe**: Využívá Python 3.12+ generics a protocols pro type safety
+- **Message-oriented**: Komunikace přes typed messages (Command, Query, Event)
+- **Mediator pattern**: Centralizované směrování zpráv přes mediator
+- **Async-first**: Postaveno na asyncio pro neblokující operace
+- **Service isolation**: Selhání jedné služby neovlivní ostatní
+- **Context management**: Izolované zpracování požadavků přes MediatorContext
 
 ## Požadavky
 
-Naše představa, co by měl tento framework umožňovat a splňovat:
+- Python 3.12+
+- aiohttp (pro HTTP server)
+- aiohttp-middlewares (CORS podpora)
+- python-dotenv (konfigurace)
 
-- Uživatel by měl být schopný nastartovat aplikační server a vybrat (registrovat) vybrané služby. Tyto služby mohou být součástí tohoto frameworku, např. webpage služba může servírovat HTML stránky, WebSocket služba umožňuje komunikovat se serverem pomocí webových socketů, autentizační služba umožnuje ověřit oprávnění před použitím jiné služby.
-- Uživatel by také měl bých schopný spustit jednoduše službu zpracovávjíci úlohy na pozadí (background processing) ve stanovéném intervalu nebo načasování (scheduled). Nakonec všechny služby by měli být schopné komunikovat pomocí zpráv přes zabudovaný publish-subscribe mechanizmus pomocí mediátoru (message-bus).
-- Důležitým požadavkem je, že selhání jakékoliv služby neshodí celou aplikaci. To jak služba ošetřuje chybové stavy je její záležitost a v nejhorším případě může informovat aplikaci o neošetřitelném stavu. Aplikace se pak může rozhodnout, jak bude reagovat.
-- Aplikace by měla zpracovávat požadavky asychronně tj. neblokujícím způsobem IO operace a zároveň umožňovat efektivně spouštět CPU intenzivní úlohy (zřejmě na vláknech).
-- Nesmí docházek k tomu, že se spouští vlákna, která nelze jednoduše monitorovat a případně ukončit.
+## Základní použití
 
-Problém: Neumíme zrušit běžící tasky, pokud zmáčkneme CTRL+C.
+```python
+import argparse
+from nether import Application, run_main
+from nether.service import Service
+from nether.server import HTTPInterfaceService
+
+class MyApplication(Application):
+    async def main(self) -> None:
+        # Registrace HTTP serveru
+        http_service = HTTPInterfaceService()
+        self.register_service(http_service)
+        
+        # Spuštění serveru
+        async with self.mediator.context() as ctx:
+            await ctx.process(StartServer(host="localhost", port=8080))
+
+if __name__ == "__main__":
+    config = argparse.Namespace()
+    app = MyApplication(configuration=config)
+    run_main(app.start())
+```
 
 ## Architektura
 
-### Application
+### Klíčové komponenty
 
-Na vrcholu hierarchie stojí třída `Application` ze které dědí každá aplikace postavená na knihovně Nether.
+- **Application**: Hlavní třída aplikace s lifecycle managementem
+- **Service**: Bazová třída pro služby s typed message handling
+- **Mediator**: Centrální dispatcher pro zprávy mezi službami
+- **MediatorContext**: Izolované prostředí pro zpracování unit of work
+- **Messages**: Typed zprávy (Command, Query, Event) pro komunikaci
 
-Application je centrální přístupový bod program. Applikace registruje služby, které mohou komunikovat interne i externě
-přes aplikaci pomocí zpráv (publish/subscribe).
+### Message Types
 
-## Roadmap
+```python
+from dataclasses import dataclass
+from nether.common import Command, Query, Event
 
-### 01
+@dataclass(frozen=True)
+class CreateUser(Command):
+    name: str
+    email: str
 
-Nejdříve výtvoříme jádro knihovny, kdy naším cílem je spustit server, který umí
-komunikovat přes HTTP. Server je schopen zaregistrovat další službu a komunikovat
-s ní asynchrnonně. V této fázi nechceme řešit clean architecture ani domain driven design.
+@dataclass(frozen=True)
+class GetUser(Query):
+    user_id: int
+
+@dataclass(frozen=True)
+class UserCreated(Event):
+    user_id: int
+    name: str
+```
+
+### Service Implementation
+
+```python
+from nether.service import Service
+from nether.common import Message
+
+class UserService(Service[CreateUser | GetUser]):
+    async def handle(self, message: Message, *, dispatch, join_stream) -> None:
+        match message:
+            case CreateUser(name=name, email=email):
+                # Zpracování vytvoření uživatele
+                user_id = await self.create_user(name, email)
+                await dispatch(UserCreated(user_id=user_id, name=name))
+            case GetUser(user_id=user_id):
+                # Zpracování dotazu na uživatele
+                user = await self.get_user(user_id)
+                await dispatch(UserFound(user=user))
+```
+
+## Implementované funkce
+
+### ✅ Hotovo
+
+- **Core Framework**: Application, Service, Mediator
+- **Type Safety**: Generics a protocols pro compile-time checking
+- **HTTP Server**: HTTPInterfaceService s aiohttp
+- **Message System**: Command/Query/Event pattern
+- **Context Management**: Izolované zpracování požadavků
+- **Service Lifecycle**: Start/stop management s graceful shutdown
+- **Error Handling**: Izolace chyb mezi službami
+- **Signal Handling**: Graceful shutdown na SIGINT/SIGTERM
+
+### 🔄 Extensions
+
+- **nether-access**: Autentizace a autorizace (v extensions/)
+
+### 📋 Roadmap
+
+- **WebSocket podpora**: Real-time komunikace
+- **Background Jobs**: Scheduled a interval-based úlohy  
+- **Database integrace**: ORM/Query builder
+- **Metrics & Monitoring**: Performance a health monitoring
+- **Configuration Management**: Centralizované nastavení
+- **Plugin System**: Dynamické načítání extensions
+
+## Struktura projektu
+
+```text
+nether/
+├── src/nether/           # Core framework
+│   ├── application.py    # Application base class
+│   ├── service.py        # Service base a protocols
+│   ├── mediator.py       # Message mediator
+│   ├── server.py         # HTTP server service
+│   ├── common.py         # Message types
+│   └── exceptions.py     # Error handling
+├── extensions/           # Framework extensions
+│   └── nether-access/    # Auth/authz extension
+└── examples/             # Example applications
+    └── server-simple.py  # Basic HTTP server
+```
+
+## Filozofie
+
+Nether je postaven na těchto principech:
+
+1. **Type Safety First**: Využívá moderní Python typing pro minimalizaci runtime chyb
+2. **Message-Oriented**: Loosely coupled komunikace přes typed messages
+3. **Isolation**: Služby jsou izolované a jejich selhání neovlivní ostatní
+4. **Async Native**: Celý framework je postaven na asyncio
+5. **Minimal Dependencies**: Používá jen nezbytné externí knihovny
+6. **Czech-First**: Dokumentace a komentáře v češtině pro český tým

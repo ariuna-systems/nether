@@ -4,7 +4,7 @@ import pyotp
 
 from nether.common import Event
 from nether.exceptions import ServiceError, AlreadyExistsError
-from nether.service import Service
+from nether.extension import Service
 
 from ._domain import (
   Account,

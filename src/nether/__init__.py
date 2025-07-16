@@ -1,4 +1,4 @@
 from .application import Application as Application
-from .application import run_main as run_main
+from .application import execute as execute
 
-__version__ = "0.13.0"
+__version__ = "0.20.0"

@@ -20,6 +20,10 @@ version = { attr = "nether.__version__" }
 where = ["src"]
 include = ["nether"]
 
+
+[tool.setuptools.package-data]
+"nether" = ["py.typed"]
+
 [tool.ruff]
 extend-include = ["*.ipynb"]
 line-length = 120

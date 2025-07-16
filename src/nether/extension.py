@@ -2,6 +2,7 @@ import asyncio
 import logging
 from abc import abstractmethod
 from collections.abc import Awaitable, Callable
+from enum import StrEnum, unique
 from typing import Any, Protocol, TypeVar, get_args
 
 from nether.common import Message
@@ -10,20 +11,36 @@ from nether.common import Message
 class _NeverMatch: ...
 
 
-class ServiceProtocol[T: Message](Protocol):
+@unique
+class ExtensionState(StrEnum):
+  STARTED = "started"
+  PENDING = "pending"
+  RUNNING = "running"
+  STOPPED = "stopped"
+
+
+class ExtensionProtocol[T: Message](Protocol):
+  """Extension extends a framework with specific funcionality
+  e.g background processing, system monitoring etc.
+
+  We called i service or module in the past but it can be confusing because it clash
+  with domain driven design terminology or Python naming.
+  """
+
   @property
   def supports(self) -> type[T] | type[_NeverMatch]:
-    """Supported message type."""
+    """Supported message types."""
 
   @property
-  def is_running(self) -> bool: ...
+  def state(self) -> ExtensionState: ...
 
-  def set_application(self, application) -> None: ...
+  @abstractmethod
+  async def on_start(self) -> None: ...
 
-  async def start(self) -> None: ...
+  @abstractmethod
+  async def on_stop(self) -> None: ...
 
-  async def stop(self) -> None: ...
-
+  @abstractmethod
   async def handle(
     self,
     message: Message,
@@ -32,9 +49,12 @@ class ServiceProtocol[T: Message](Protocol):
     join_stream: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
   ) -> None: ...
 
+  # async def main(self): ...
 
-class Service[T: Message](ServiceProtocol[T]):
-  def __init__(self, *_, logger: logging.Logger | None = None, **__) -> None:
+
+class Extension[T: Message](ExtensionProtocol[T]):
+  def __init__(self, application, *_, logger: logging.Logger | None = None, **__) -> None:
+    self.application = application
     if logger is not None:
       self._logger = logger
     else:
@@ -50,16 +70,14 @@ class Service[T: Message](ServiceProtocol[T]):
     return supports_type
 
   @property
-  def is_running(self) -> bool:
-    return self._is_running
+  def state(self) -> ExtensionState:
+    return self._is_running  # TODO: return current state
 
-  def set_application(self, application) -> None: ...
+  async def on_start(self) -> None:
+    self._state = ExtensionState.STARTED
 
-  async def start(self) -> None:
-    self._is_running = True
-
-  async def stop(self) -> None:
-    self._is_running = False
+  async def on_stop(self) -> None:
+    self._state = ExtensionState.STOPPED
 
   @abstractmethod
   async def handle(
@@ -69,3 +87,5 @@ class Service[T: Message](ServiceProtocol[T]):
     dispatch: Callable[[Message], Awaitable[None]],
     join_stream: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
   ) -> None: ...
+
+  # async def main(self): ...
