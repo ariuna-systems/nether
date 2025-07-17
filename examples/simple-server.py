@@ -1,3 +1,5 @@
+# All references to Service have been replaced with Component.
+
 import argparse
 import asyncio
 import threading
@@ -8,8 +10,7 @@ from typing import Any
 
 from nether import Application, execute
 from nether.common import Command, Event, Message
-from nether.extension import Service
-from nether.server import Server, StartServer
+from nether.component import Component
 
 
 class Showcase(Application):
@@ -31,7 +32,7 @@ class Produced(Event):  # Changed back to Event
   value: int = 0
 
 
-class Producer(Service[Produce]):
+class Producer(Component[Produce]):
   def __init__(self, application: Application):
     super().__init__(application)
     print(f"Producer supports: {self.supports}")
@@ -74,7 +75,7 @@ class Producer(Service[Produce]):
       self.running_thread.join(timeout=2.0)  # Wait max 2 seconds
       self.running_thread = None
     await super().stop()
-    print("ProducerService stopped.")
+    print("Producer stopped.")
 
   async def handle(
     self,
@@ -90,7 +91,7 @@ class Producer(Service[Produce]):
     await dispatch(produced_event)
 
 
-class Consumer(Service[Produced]):
+class Consumer(Component[Produced]):
   def __init__(self, application: Application):
     super().__init__(application)
     print(f"Consumer supports: {self.supports}")

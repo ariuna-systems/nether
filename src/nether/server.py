@@ -13,8 +13,8 @@ from aiohttp_middlewares import cors
 
 from .common import Command, Event, FailureEvent, Message, SuccessEvent
 from .exceptions import ServiceError
-from .logging import configure_logger
 from .extension import Service
+from .logging import configure_logger
 
 local_logger = logging.getLogger(__name__)
 local_logger.propagate = False

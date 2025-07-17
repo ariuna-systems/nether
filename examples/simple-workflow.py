@@ -15,8 +15,7 @@ from typing import Any
 
 from nether import Application, execute
 from nether.common import Command, Event, Message
-from nether.extension import Service
-
+from nether.component import Component
 
 # =============================================================================
 # 1. WORKFLOW COMMANDS AND EVENTS
@@ -209,7 +208,7 @@ class CycleDetector:
 # =============================================================================
 
 
-class WorkflowOrchestrator(Service[StartWorkflow | WorkflowStep]):
+class WorkflowOrchestrator(Component[StartWorkflow | WorkflowStep]):
   """Orchestrates workflow execution and step coordination"""
 
   def __init__(self, application: Application):
@@ -355,7 +354,7 @@ class WorkflowOrchestrator(Service[StartWorkflow | WorkflowStep]):
 # =============================================================================
 
 
-class OrderValidationProcessor(Service[WorkflowStep]):
+class OrderValidationProcessor(Component[WorkflowStep]):
   """Processes order validation steps"""
 
   async def handle(
@@ -372,7 +371,7 @@ class OrderValidationProcessor(Service[WorkflowStep]):
       # The WorkflowOrchestrator will handle step completion
 
 
-class InventoryProcessor(Service[WorkflowStep]):
+class InventoryProcessor(Component[WorkflowStep]):
   """Processes inventory-related steps"""
 
   async def handle(
@@ -387,7 +386,7 @@ class InventoryProcessor(Service[WorkflowStep]):
       await asyncio.sleep(0.3)
 
 
-class PaymentProcessor(Service[WorkflowStep]):
+class PaymentProcessor(Component[WorkflowStep]):
   """Processes payment-related steps"""
 
   async def handle(
@@ -407,7 +406,7 @@ class PaymentProcessor(Service[WorkflowStep]):
 # =============================================================================
 
 
-class WorkflowEventListener(Service[WorkflowCompleted | WorkflowFailed | StepCompleted]):
+class WorkflowEventListener(Component[WorkflowCompleted | WorkflowFailed | StepCompleted]):
   """Listens to workflow events for monitoring and logging"""
 
   async def handle(
@@ -425,7 +424,7 @@ class WorkflowEventListener(Service[WorkflowCompleted | WorkflowFailed | StepCom
         self._logger.error(f"❌ Workflow {message.workflow_id} failed at {message.step_name}: {message.error}")
 
       case StepCompleted():
-        self._logger.info(f"📋 Step {message.step_name} completed in workflow {message.workflow_id}")
+        self._logger.info(f"Step {message.step_name} completed in workflow {message.workflow_id}")
         if message.next_steps:
           self._logger.info(f"   Next steps: {', '.join(message.next_steps)}")
 
@@ -437,7 +436,7 @@ class WorkflowEventListener(Service[WorkflowCompleted | WorkflowFailed | StepCom
 
 class WorkflowDemoApplication(Application):
   async def main(self) -> None:
-    self.logger.info("🚀 Starting Workflow Demo Application")
+    self.logger.info("Starting Workflow Demo Application")
 
     # Demonstrate cycle detection
     orchestrator = None

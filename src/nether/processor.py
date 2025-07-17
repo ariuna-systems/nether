@@ -1,7 +1,7 @@
-from .extension import Service
+from .component import Component
 
 
-class ProcessingService(Service):
+class ProcessingService(Component):
   def __init__(self, application, *_, logger=None, **__):
     super().__init__(application, logger=logger, **__)
 

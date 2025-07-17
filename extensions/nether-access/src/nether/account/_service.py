@@ -4,7 +4,7 @@ import pyotp
 
 from nether.common import Event
 from nether.exceptions import ServiceError, AlreadyExistsError
-from nether.extension import Service
+from nether.component import Component 
 
 from ._domain import (
   Account,
@@ -25,7 +25,7 @@ from ._storage import AccountRepository
 class AccountServiceError(ServiceError): ...
 
 
-class AccountService(Service[CreateAccount | CreateAccountWithDefaultRole | DeleteAccount | CheckAccountExists]):
+class AccountService(Component[CreateAccount | CreateAccountWithDefaultRole | DeleteAccount | CheckAccountExists]):
   def __init__(self, *, account_repository: AccountRepository) -> None:
     self._repository = account_repository
     self._is_running = False

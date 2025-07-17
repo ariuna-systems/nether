@@ -11,10 +11,10 @@ The Nether framework is a sophisticated event-driven architecture built around t
 ❌ **COMMON MISTAKE**: Putting business workflows and domain logic directly in framework modules
 
 ```python
-# ❌ WRONG - Business logic in framework module
-class OrderProcessingSaga(Module[ProcessOrder]):
+# ❌ WRONG - Business logic in framework component
+class OrderProcessingSaga(Component[ProcessOrder]):
     async def handle(self, message: ProcessOrder, *, dispatch, join_stream):
-        # ❌ Business rules and workflows directly in framework module
+        # ❌ Business rules and workflows directly in framework component
         if message.total_amount > 1000:
             # Apply enterprise discount
             discount = message.total_amount * 0.1
@@ -29,11 +29,11 @@ class OrderProcessingSaga(Module[ProcessOrder]):
 
 ### **The Solution: Proper DDD Layering**
 
-✅ **CORRECT**: Framework modules delegate to application services
+✅ **CORRECT**: Framework components delegate to application services
 
 ```python
-# ✅ RIGHT - Framework module is thin, delegates to application service
-class OrderCommandHandler(Module[ProcessOrder]):
+# ✅ RIGHT - Framework component is thin, delegates to application service
+class OrderCommandHandler(Component[ProcessOrder]):
     def __init__(self, app: Application, order_service: OrderProcessingService):
         super().__init__(app)
         self._order_service = order_service  # Application layer
@@ -152,12 +152,12 @@ Context (Unit of Work)
 Modules (Message Handlers)
 ```
 
-### 3. **Modules** (`module.py`)
+### 3. **Components** (`component.py`)
 
 Self-contained units that handle specific message types.
 
 ```python
-class Module[T: Message](ModuleProtocol[T]):
+class Component[T: Message](ComponentProtocol[T]):
     @property
     def supports(self) -> type[T]:
         # Automatically determined from generic type parameter

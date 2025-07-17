@@ -6,13 +6,12 @@ import platform
 import signal
 import sys
 from abc import abstractmethod
+from enum import StrEnum, unique
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote_plus
 
 import dotenv
-
-from enum import StrEnum, unique
 
 from .logging import configure_logger
 from .mediator import (

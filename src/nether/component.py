@@ -1,3 +1,6 @@
+# This file was renamed from extension.py to component.py
+# All classes and references have been updated to use Component terminology.
+
 import asyncio
 import logging
 from abc import abstractmethod
@@ -12,18 +15,18 @@ class _NeverMatch: ...
 
 
 @unique
-class ExtensionState(StrEnum):
+class ComponentState(StrEnum):
   STARTED = "started"
   PENDING = "pending"
   RUNNING = "running"
   STOPPED = "stopped"
 
 
-class ExtensionProtocol[T: Message](Protocol):
-  """Extension extends a framework with specific funcionality
+class ComponentProtocol[T: Message](Protocol):
+  """Component extends a framework with specific functionality
   e.g background processing, system monitoring etc.
 
-  We called i service or module in the past but it can be confusing because it clash
+  We called it service or module in the past but it can be confusing because it clashes
   with domain driven design terminology or Python naming.
   """
 
@@ -32,7 +35,7 @@ class ExtensionProtocol[T: Message](Protocol):
     """Supported message types."""
 
   @property
-  def state(self) -> ExtensionState: ...
+  def state(self) -> ComponentState: ...
 
   @abstractmethod
   async def on_start(self) -> None: ...
@@ -52,7 +55,7 @@ class ExtensionProtocol[T: Message](Protocol):
   # async def main(self): ...
 
 
-class Extension[T: Message](ExtensionProtocol[T]):
+class Component[T: Message](ComponentProtocol[T]):
   def __init__(self, application, *_, logger: logging.Logger | None = None, **__) -> None:
     self.application = application
     if logger is not None:
@@ -70,14 +73,14 @@ class Extension[T: Message](ExtensionProtocol[T]):
     return supports_type
 
   @property
-  def state(self) -> ExtensionState:
+  def state(self) -> ComponentState:
     return self._is_running  # TODO: return current state
 
   async def on_start(self) -> None:
-    self._state = ExtensionState.STARTED
+    self._state = ComponentState.STARTED
 
   async def on_stop(self) -> None:
-    self._state = ExtensionState.STOPPED
+    self._state = ComponentState.STOPPED
 
   @abstractmethod
   async def handle(
