@@ -3,7 +3,7 @@ import uuid
 import pyotp
 
 from nether.common import Event
-from nether.exceptions import ServiceError, AlreadyExistsError
+from nether.exception import ServiceError, AlreadyExistsError
 from nether.component import Component 
 
 from ._domain import (

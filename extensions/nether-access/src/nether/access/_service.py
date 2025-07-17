@@ -15,7 +15,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
 
 from nether.common import Event
-from nether.exceptions import ServiceError, NotFoundError
+from nether.exception import ServiceError, NotFoundError
 from nether.component import Component
 from nether import console
 

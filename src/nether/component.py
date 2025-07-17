@@ -8,7 +8,7 @@ from collections.abc import Awaitable, Callable
 from enum import StrEnum, unique
 from typing import Any, Protocol, TypeVar, get_args
 
-from nether.common import Message
+from nether.message import Message
 
 
 class _NeverMatch: ...

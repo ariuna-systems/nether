@@ -5,10 +5,10 @@ import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable, Coroutine
 from typing import Any, Protocol, Self
 
-from nether.extension import ServiceProtocol
+from nether.component import ComponentProtocol
 
-from .common import Command, Event, Message, Query
 from .logging import configure_logger
+from .message import Command, Event, Message, Query
 
 __all__ = [
   "Context",
@@ -104,7 +104,7 @@ class Context:
 
 class MediatorProtocol(Protocol):
   @property
-  def services(self) -> set[ServiceProtocol[Any]]: ...
+  def services(self) -> set[ComponentProtocol[Any]]: ...
 
   async def stop(self) -> None: ...
 
@@ -117,9 +117,9 @@ class MediatorProtocol(Protocol):
 
   async def handle_message(self, message: Message, context: ContextProtocol) -> None: ...
 
-  async def register_module(self, module: ServiceProtocol[Any]) -> None: ...
+  async def register_module(self, module: ComponentProtocol[Any]) -> None: ...
 
-  async def unregister_module(self, module: ServiceProtocol[Any]) -> None: ...
+  async def unregister_module(self, module: ComponentProtocol[Any]) -> None: ...
 
 
 class Mediator:
@@ -134,7 +134,7 @@ class Mediator:
     return cls._instance  # type: ignore[no-any-return, unused-ignore]
 
   def __init_bus(self) -> None:
-    self._modules: set[ServiceProtocol[Any]] = set()
+    self._modules: set[ComponentProtocol[Any]] = set()
     self._contexts: dict[uuid.UUID, ContextProtocol] = {}
     self._context_locks: dict[uuid.UUID, asyncio.Lock] = {}
 
@@ -153,13 +153,13 @@ class Mediator:
       await self.unregister_context(context)
 
   @property
-  def modules(self) -> set[ServiceProtocol[Any]]:
+  def modules(self) -> set[ComponentProtocol[Any]]:
     return self._modules
 
   async def stop(self) -> None:
     logger.info("deleted services")
     for module in self._modules:
-      await module.stop()
+      await module.on_stop()
     del self._modules
     self._instance = None
 
@@ -183,7 +183,7 @@ class Mediator:
   @staticmethod
   async def _handling_task(
     *,
-    module: ServiceProtocol[Any],
+    module: ComponentProtocol[Any],
     message: Message,
     dispatch: Callable[[Message], Awaitable[None]],
     join_stream: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
@@ -233,12 +233,12 @@ class Mediator:
     if not handled:
       logger.critical(f"No handler found for message: {message}")
 
-  def register_module(self, module: ServiceProtocol[Any]) -> None:
+  def register_module(self, module: ComponentProtocol[Any]) -> None:
     """Register a service."""
     logger.info(f"Module {type(module).__name__} registered.")
     self._modules.add(module)
 
-  def unregister_module(self, module: ServiceProtocol[Any]) -> None:
+  def unregister_module(self, module: ComponentProtocol[Any]) -> None:
     """Unregister a service."""
     logger.info(f"module {type(module).__name__} unregistered.")
     self._modules.remove(module)

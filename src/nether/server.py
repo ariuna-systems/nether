@@ -11,10 +11,10 @@ from aiohttp import hdrs as headers
 from aiohttp import web, web_urldispatcher
 from aiohttp_middlewares import cors
 
-from .common import Command, Event, FailureEvent, Message, SuccessEvent
-from .exceptions import ServiceError
-from .extension import Service
+from .component import Component
+from .exception import ServiceError
 from .logging import configure_logger
+from .message import Command, Event, FailureEvent, Message, SuccessEvent
 
 local_logger = logging.getLogger(__name__)
 local_logger.propagate = False
@@ -223,7 +223,7 @@ class _DynamicRouter:
       return web.Response(status=500, text="Internal Server Error")
 
 
-class Server(Service[StartServer | StopServer | AddView]):
+class Server(Component[StartServer | StopServer | AddView]):
   def __init__(
     self,
     application,

@@ -14,11 +14,9 @@ from urllib.parse import quote_plus
 import dotenv
 
 from .logging import configure_logger
-from .mediator import (
-  Mediator,
-  MediatorProtocol,
-  ServiceProtocol,
-)
+from .mediator import Mediator, MediatorProtocol
+
+from .component import ComponentProtocol
 
 __all__ = ["Application"]
 
@@ -219,17 +217,17 @@ class Application:
     return self._mediator
 
   @property
-  def modules(self) -> set[ServiceProtocol[Any]]:
+  def modules(self) -> set[ComponentProtocol[Any]]:
     """Get the registered modules."""
     return self._mediator.modules
 
-  def register_module(self, *modules: ServiceProtocol[Any]) -> None:
+  def register_module(self, *modules: ComponentProtocol[Any]) -> None:
     for module in modules:
       if module not in self._mediator.modules:
         self._mediator.register_module(module)
         # TODO: Udržovat služby na aplikaci a předat mediatoru instanci aplikace
 
-  def unregister_module(self, *modules: ServiceProtocol[Any]) -> None:
+  def unregister_module(self, *modules: ComponentProtocol[Any]) -> None:
     for module in modules:
       if module in self._mediator.modules:
         self._mediator.unregister(module)
@@ -268,7 +266,7 @@ class Application:
   async def _before_start(self) -> None:
     for module in self.modules:
       try:
-        await module.start()
+        await module.on_start()
         self.logger.info(f"module `{type(module).__name__}` started.")
       except Exception as error:
         self.logger.error(f"Error starting module `{type(module).__name__}`: {error}")

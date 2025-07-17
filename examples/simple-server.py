@@ -1,5 +1,3 @@
-# All references to Service have been replaced with Component.
-
 import argparse
 import asyncio
 import threading
@@ -9,8 +7,9 @@ from dataclasses import dataclass
 from typing import Any
 
 from nether import Application, execute
-from nether.common import Command, Event, Message
 from nether.component import Component
+from nether.message import Command, Event, Message
+from nether.server import Server
 
 
 class Showcase(Application):
@@ -60,21 +59,21 @@ class Producer(Component[Produce]):
         loop.close()
       time.sleep(0.5)
 
-  async def start(self) -> None:
+  async def on_start(self) -> None:
     self._logger.info(f"{self.__class__.__name__} started.")
     self._stop_event.clear()
     self.running_thread = threading.Thread(target=self._worker)
     self.running_thread.daemon = True  # Thread will stop when main program exits
     self.running_thread.start()
-    await super().start()
+    await super().on_start()
 
-  async def stop(self) -> None:
+  async def on_stop(self) -> None:
     self._logger.info(f"{self.__class__.__name__} stopped.")
     if self.running_thread:
       self._stop_event.set()
       self.running_thread.join(timeout=2.0)  # Wait max 2 seconds
       self.running_thread = None
-    await super().stop()
+    await super().on_stop()
     print("Producer stopped.")
 
   async def handle(
@@ -96,13 +95,13 @@ class Consumer(Component[Produced]):
     super().__init__(application)
     print(f"Consumer supports: {self.supports}")
 
-  async def start(self) -> None:
+  async def on_start(self) -> None:
     self._logger.info(f"{self.__class__.__name__} started.")
-    await super().start()
+    await super().on_start()
 
-  async def stop(self) -> None:
+  async def on_stop(self) -> None:
     self._logger.info(f"{self.__class__.__name__} stopped.")
-    await super().stop()
+    await super().on_stop()
 
   async def handle(
     self,
@@ -120,15 +119,14 @@ class Consumer(Component[Produced]):
 async def main():
   configuration = argparse.Namespace()
   configuration.host = "localhost"
-  configuration.port = 8081  # Changed to avoid port conflict
+  configuration.port = 8080
+  showcase = Showcase(configuration=configuration)
 
-  application = Showcase(configuration=configuration)
+  showcase.register_module(Producer(showcase))
+  showcase.register_module(Consumer(showcase))
+  showcase.register_module(Server(showcase, configuration=configuration))  # Commented out to avoid errors
 
-  application.register_module(Producer(application))
-  application.register_module(Consumer(application))
-  # application.register_module(Server(application, configuration=configuration))  # Commented out to avoid errors
-
-  await application.start()
+  await showcase.start()
 
 
 if __name__ == "__main__":
