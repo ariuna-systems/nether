@@ -3,3 +3,4 @@ mypy
 radon
 pytest
 ./extensions/nether-access
+sphinx-multiversion
