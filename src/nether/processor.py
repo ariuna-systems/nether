@@ -10,3 +10,5 @@ class ProcessingService(Component):
 
   def on_stop(self):
     return super().stop()
+
+  def execute(self) -> None: ...

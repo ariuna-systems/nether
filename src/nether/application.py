@@ -5,6 +5,7 @@ import os
 import platform
 import signal
 import sys
+import traceback
 from abc import abstractmethod
 from enum import StrEnum, unique
 from pathlib import Path
@@ -13,10 +14,9 @@ from urllib.parse import quote_plus
 
 import dotenv
 
+from .component import ComponentProtocol
 from .logging import configure_logger
 from .mediator import Mediator, MediatorProtocol
-
-from .component import ComponentProtocol
 
 __all__ = ["Application"]
 
@@ -201,15 +201,24 @@ class Application:
   ) -> None:
     self.configuration = configuration
     self._mediator = mediator
-    self.logger = logger
     self._stop_event = asyncio.Event()
+    self.logger = logger
+    # self._transaction_manager = TransactionManager(
+    #   logger=logger, dsn=self._database_dsn, min_pool_size=3, max_pool_size=10
+    # )
+    self._services: set[ComponentProtocol] = set()
+
     # TODO: uptime, background processing
 
   @property
   def platform(self) -> str | None:
-    """Return a platform name e.g. Windows, Linux or None if unrecognized."""
+    """Return a platform name (e.g. Windows, Linux) or None if unrecognized."""
     platform_name = platform.system()
     return None if platform_name == "" else platform_name
+
+  # @property
+  # def transaction_manager(self) -> TransactionManager:
+  #   return self._transaction_manager
 
   @property
   def mediator(self) -> MediatorProtocol:
@@ -244,7 +253,6 @@ class Application:
 
   async def start(self) -> None:
     try:
-      self._setup_signal_handlers()
       await self._before_start()
       await self.main()
       while not self._stop_event.is_set() and any(module.state for module in self._mediator.modules):
@@ -261,6 +269,12 @@ class Application:
 
   async def stop(self) -> None:
     await self._mediator.stop()
+    for service in self.services:
+      try:
+        await service.stop()
+      except Exception as error:
+        self.logger.debug(f"Traceback for error below: {traceback.format_exc()}")
+        self.logger.error(f"Error stopping a service `{type(service).__name__}`: {error}")
     self.logger.info("stop")
 
   async def _before_start(self) -> None:
@@ -271,7 +285,6 @@ class Application:
       except Exception as error:
         self.logger.error(f"Error starting module `{type(module).__name__}`: {error}")
         sys.exit(1)
-    self.logger.info("before start")
 
   @abstractmethod
   async def main(self) -> None:

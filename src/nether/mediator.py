@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import contextlib
 import logging
@@ -5,8 +7,7 @@ import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable, Coroutine
 from typing import Any, Protocol, Self
 
-from nether.component import ComponentProtocol
-
+from .component import ComponentProtocol
 from .logging import configure_logger
 from .message import Command, Event, Message, Query
 
@@ -17,6 +18,7 @@ __all__ = [
   "Mediator",
   "MediatorProtocol",
 ]
+
 
 logger = logging.getLogger(__name__)
 logger.propagate = False
@@ -53,26 +55,31 @@ class Context:
   ):
     """If mediator is not passed, automatically gets the singleton :class:`Mediator` instance."""
     self._handle_message = handle_message
-
     self._id = uuid.uuid4()
     self._results: asyncio.Queue[Event] = asyncio.Queue()
     self._active_tasks: set[asyncio.Task[None]] = set()
     self._stream: asyncio.Queue[Any] = asyncio.Queue()
     self._stream_stop_event: asyncio.Event = asyncio.Event()
+    self._logger = logger
 
   @property
   def identifier(self) -> uuid.UUID:
     return self._id
 
+  # @property
+  # def tx_context(self) -> TransactionContext:
+  #   """Expose the transaction context for handlers."""
+  #   return self._tx_context
+
   async def _graceful_finish(self) -> None:
     while self._active_tasks:
-      if self._active_tasks:  # If running tasks, wait for at least one to finish
-        _, pending = await asyncio.wait(self._active_tasks, return_when=asyncio.FIRST_COMPLETED)
-        self._active_tasks = pending
+      tasks_to_wait_for = list(self._active_tasks)
+      await asyncio.gather(*tasks_to_wait_for, return_exceptions=True)
+      self._active_tasks.difference_update(tasks_to_wait_for)
 
   async def process(self, message: Message) -> None:
     """Send a message through the bus, where it will be handled."""
-    logger.debug(f"Unit of work `{self._id}` processing message: {message}")
+    self._logger.debug(f"Context `{self._id}` processing message: {message}")
     match message:
       case Event():
         await self._results.put(message)
@@ -81,24 +88,29 @@ class Context:
       case Command() | Query():
         self._active_tasks.add(asyncio.create_task(self._handle_message(message, self)))
       case _:
-        logger.error(f"Invalid message type: {type(message)}")
+        self._logger.error(f"Invalid message type: {type(message)}")
 
   def add_task(self, task: asyncio.Task[None]) -> None:
     self._active_tasks.add(task)
 
   async def close(self) -> None:
-    """Gracefully finish processing and cancel leftover tasks."""
+    """
+    Gracefully finish processing, cancel leftover tasks,
+    and rollback the associated transaction if not already committed.
+    """
+    self._logger.info(f"MediatorContext {self._id} closing. Finishing active tasks...")
     await self._graceful_finish()
     for task in self._active_tasks:
       if not task.done():
         task.cancel()
-    logger.debug(f"Unit of work {self._id} closed.")
+
+    self._logger.info(f"MediatorContext {self._id} closed.")
 
   def join_stream(self) -> tuple[asyncio.Queue[Any], asyncio.Event]:
     return (self._stream, self._stream_stop_event)
 
   async def receive_result(self) -> Event | None:
-    """Await and return the next available event for this unit of work."""
+    """Await and return the next available event for this context."""
     return await self._results.get()
 
 
@@ -147,10 +159,14 @@ class Mediator:
     context = Context(self.handle_message)
     await self.register_context(context)
     try:
+      await self.register_context(context)
       yield context
+    except Exception:
+      raise
     finally:
       await context.close()
-      await self.unregister_context(context)
+      if context:
+        await self.unregister_context(context)
 
   @property
   def modules(self) -> set[ComponentProtocol[Any]]:
@@ -171,14 +187,14 @@ class Mediator:
   async def register_context(self, context: ContextProtocol) -> None:
     """Registers a new unit of work to receive messages."""
     async with self._get_context_lock(context.identifier):
-      logger.debug(f"Unit of work `{context.identifier}` registered.")
+      logger.debug(f"Context `{context.identifier}` registered.")
       self._contexts[context.identifier] = context
 
   async def unregister_context(self, context: ContextProtocol) -> None:
     """Unregisters a unit of work, stopping message routing to it."""
     async with self._get_context_lock(context.identifier):
       if self._contexts.pop(context.identifier, None) is not None:  # Pop without raising
-        logger.debug(f"Unit of work `{context.identifier}` unregistered.")
+        logger.debug(f"Context `{context.identifier}` unregistered.")
 
   @staticmethod
   async def _handling_task(
