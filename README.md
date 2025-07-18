@@ -13,7 +13,6 @@ Nether is a lightweight framework for rapid development and deployment of web se
 - Service failures shouldn't crash the app – services handle their own errors.
 - Focus on observability and graceful shutdown (no orphaned threads).
 - Avoid premature complexity – Clean Architecture & DDD come later.
-<<<<<<< HEAD
 
 ## Features
 
@@ -65,5 +64,3 @@ class MyApp(Application):
 ## License
 
 See LICENSE file.
-=======
->>>>>>> 7bd618766ee643ba796831da0ab491b1d42ac94d
