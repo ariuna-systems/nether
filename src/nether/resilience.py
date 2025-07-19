@@ -1,3 +1,8 @@
+"""
+Contains classes and functions to enforce applications resiliency
+to be fault tolerant.
+"""
+
 import random
 import time
 

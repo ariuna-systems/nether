@@ -1,3 +1,7 @@
+"""
+Mediator pattern for in-process, asynchronous message routing.
+"""
+
 from __future__ import annotations
 
 import asyncio
@@ -153,10 +157,10 @@ class Mediator:
   @contextlib.asynccontextmanager
   async def context(self):
     """
-    The class method context manager to open a new `UnitOfWork`
+    The class method context manager to open a new unit-of-work
     using the existing mediator instance or creating a new one if needed.
     """
-    context = Context(self.handle_message)
+    context = Context(self.handle)
     await self.register_context(context)
     try:
       await self.register_context(context)
@@ -209,7 +213,7 @@ class Mediator:
     except Exception as error:
       logger.critical(f"Uncaught error from {type(module)}: {error}")
 
-  async def handle_message(self, message: Message, context: ContextProtocol) -> None:
+  async def handle(self, message: Message, context: ContextProtocol) -> None:
     """Handles a message in unit of work by dispatching it to the appropriate modules."""
     handled = False
     for module in self._modules:
@@ -223,27 +227,6 @@ class Mediator:
           )
         )
         context.add_task(task)
-        handled = True
-
-    if not handled:
-      logger.critical(f"No handler found for message: {message}")
-
-  async def _handle_global_message(self, message: Message, log_level: int = logging.DEBUG) -> None:
-    """Handles a global message by dispatching it to the appropriate services."""
-
-    async def dispatch_to_logger(message: Message) -> None:
-      """Dispatch function mock for logging."""
-      logger.log(log_level, f"Global message: {message}")
-
-    handled = False
-    for module in self._modules:
-      if isinstance(message, module.supports):
-        await self._handling_task(
-          service=module,
-          message=message,
-          dispatch=dispatch_to_logger,
-          join_stream=lambda: (asyncio.Queue(), asyncio.Event()),
-        )
         handled = True
 
     if not handled:

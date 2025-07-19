@@ -22,7 +22,7 @@ class ComponentState(StrEnum):
   STOPPED = "stopped"
 
 
-class ComponentProtocol[T: Message](Protocol):
+class ComponentProtocol[T: type[Message] | tuple[type[Message], ...]](Protocol):
   """Component extends a framework with specific functionality
   e.g background processing, system monitoring etc.
 
@@ -31,7 +31,7 @@ class ComponentProtocol[T: Message](Protocol):
   """
 
   @property
-  def supports(self) -> type[T] | type[_NeverMatch]:
+  def supports(self) -> type[Message] | tuple[type[Message], ...] | type[_NeverMatch]:
     """Supported message types."""
 
   @property
@@ -55,7 +55,7 @@ class ComponentProtocol[T: Message](Protocol):
   # async def main(self): ...
 
 
-class Component[T: Message](ComponentProtocol[T]):
+class Component[T: type[Message] | tuple[type[Message], ...]](ComponentProtocol[T]):
   def __init__(self, application, *_, logger: logging.Logger | None = None, **__) -> None:
     self.application = application
     if logger is not None:
@@ -66,7 +66,7 @@ class Component[T: Message](ComponentProtocol[T]):
     self._is_running = False
 
   @property
-  def supports(self) -> type[T] | type[_NeverMatch]:
+  def supports(self) -> type[Message] | tuple[type[Message], ...] | type[_NeverMatch]:
     supports_type = get_args(self.__orig_bases__[0])[0]  # type: ignore[attr-defined, no-any-return, unused-ignore]
     if isinstance(supports_type, TypeVar):
       return _NeverMatch
@@ -85,9 +85,9 @@ class Component[T: Message](ComponentProtocol[T]):
   @abstractmethod
   async def handle(
     self,
-    message: Message,
+    message: T,
     *,
-    dispatch: Callable[[Message], Awaitable[None]],
+    dispatch: Callable[[T], Awaitable[None]],
     join_stream: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
   ) -> None: ...
 
