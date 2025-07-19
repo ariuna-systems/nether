@@ -36,7 +36,6 @@ jobs:
         with:
           app_id: ${{ secrets.ARJUNA_BOT_ID }}
           private_key: ${{ secrets.ARJUNA_BOT_PRIVATE_KEY }}
-          installation_id: ${{ secrets.ARJUNA_BOT_INSTALLATION_ID }}
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
