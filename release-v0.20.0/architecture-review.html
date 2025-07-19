@@ -1,0 +1,779 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nether Framework Architecture Review &mdash; Nether 0.20.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=b52c616d"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Package API Documentation" href="api.html" />
+    <link rel="prev" title="Nether documentation" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Nether
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Nether Framework Architecture Review</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#framework-overview">Framework Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#critical-architectural-guidance-ddd-and-separation-of-concerns">⚠️ Critical Architectural Guidance: DDD and Separation of Concerns</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#the-problem-mixing-framework-modules-with-business-logic"><strong>The Problem: Mixing Framework Modules with Business Logic</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-solution-proper-ddd-layering"><strong>The Solution: Proper DDD Layering</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#architecture-layers"><strong>Architecture Layers</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#what-framework-modules-should-do"><strong>What Framework Modules Should Do</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#what-framework-modules-should-not-do"><strong>What Framework Modules Should NOT Do</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#example-proper-separation"><strong>Example: Proper Separation</strong></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#core-components">Core Components</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#message-types-common-py">1. <strong>Message Types</strong> (<code class="docutils literal notranslate"><span class="pre">common.py</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mediator-mediator-py">2. <strong>Mediator</strong> (<code class="docutils literal notranslate"><span class="pre">mediator.py</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#components-component-py">3. <strong>Components</strong> (<code class="docutils literal notranslate"><span class="pre">component.py</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#application-application-py">4. <strong>Application</strong> (<code class="docutils literal notranslate"><span class="pre">application.py</span></code>)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#what-you-can-do-with-event-dispatching-and-commands">What You Can Do with Event Dispatching and Commands</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#simple-command-event-flow">1. <strong>Simple Command-Event Flow</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#chain-of-events-event-sourcing-pattern">2. <strong>Chain of Events (Event Sourcing Pattern)</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#saga-pattern-for-distributed-transactions">3. <strong>Saga Pattern for Distributed Transactions</strong></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#creating-workflows-and-pipelines">Creating Workflows and Pipelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#sequential-workflows">1. <strong>Sequential Workflows</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#parallel-processing-pipelines">2. <strong>Parallel Processing Pipelines</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#conditional-workflows">3. <strong>Conditional Workflows</strong></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#cycle-detection-in-workflows">Cycle Detection in Workflows</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#why-cycle-detection-matters">Why Cycle Detection Matters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#implementation-approaches">Implementation Approaches</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#depth-first-search-dfs-cycle-detection">1. <strong>Depth-First Search (DFS) Cycle Detection</strong></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#topological-sort-for-execution-order">2. <strong>Topological Sort for Execution Order</strong></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#runtime-cycle-prevention">3. <strong>Runtime Cycle Prevention</strong></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#advanced-patterns">Advanced Patterns</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#event-streaming-with-join-streams">1. <strong>Event Streaming with Join Streams</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#message-aggregation">2. <strong>Message Aggregation</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#circuit-breaker-pattern">3. <strong>Circuit Breaker Pattern</strong></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#workflow-examples-and-use-cases">Workflow Examples and Use Cases</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#e-commerce-order-processing">1. <strong>E-commerce Order Processing</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#data-processing-pipeline">2. <strong>Data Processing Pipeline</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#content-publishing-workflow">3. <strong>Content Publishing Workflow</strong></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#compensation-and-error-handling">Compensation and Error Handling</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#saga-pattern-with-compensation">1. <strong>Saga Pattern with Compensation</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#circuit-breaker-for-external-services">2. <strong>Circuit Breaker for External Services</strong></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#benefits-of-this-architecture">Benefits of This Architecture</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#best-practices">Best Practices</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#message-design">1. <strong>Message Design</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-responsibility">2. <strong>Module Responsibility</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#workflow-design">3. <strong>Workflow Design</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#performance-considerations">4. <strong>Performance Considerations</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#error-handling">5. <strong>Error Handling</strong></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#testing-strategies">6. <strong>Testing Strategies</strong></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">Package API Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Nether</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Nether Framework Architecture Review</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/architecture-review.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="nether-framework-architecture-review">
+<h1>Nether Framework Architecture Review<a class="headerlink" href="#nether-framework-architecture-review" title="Link to this heading"></a></h1>
+<section id="framework-overview">
+<h2>Framework Overview<a class="headerlink" href="#framework-overview" title="Link to this heading"></a></h2>
+<p>The Nether framework is a sophisticated event-driven architecture built around the <strong>Mediator Pattern</strong> with support for asynchronous message processing, modular design, and workflow orchestration.</p>
+</section>
+<section id="critical-architectural-guidance-ddd-and-separation-of-concerns">
+<h2>⚠️ Critical Architectural Guidance: DDD and Separation of Concerns<a class="headerlink" href="#critical-architectural-guidance-ddd-and-separation-of-concerns" title="Link to this heading"></a></h2>
+<section id="the-problem-mixing-framework-modules-with-business-logic">
+<h3><strong>The Problem: Mixing Framework Modules with Business Logic</strong><a class="headerlink" href="#the-problem-mixing-framework-modules-with-business-logic" title="Link to this heading"></a></h3>
+<p>❌ <strong>COMMON MISTAKE</strong>: Putting business workflows and domain logic directly in framework modules</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># ❌ WRONG - Business logic in framework component</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">OrderProcessingSaga</span><span class="p">(</span><span class="n">Component</span><span class="p">[</span><span class="n">ProcessOrder</span><span class="p">]):</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="n">ProcessOrder</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">dispatch</span><span class="p">,</span> <span class="n">join_stream</span><span class="p">):</span>
+        <span class="c1"># ❌ Business rules and workflows directly in framework component</span>
+        <span class="k">if</span> <span class="n">message</span><span class="o">.</span><span class="n">total_amount</span> <span class="o">&gt;</span> <span class="mi">1000</span><span class="p">:</span>
+            <span class="c1"># Apply enterprise discount</span>
+            <span class="n">discount</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">total_amount</span> <span class="o">*</span> <span class="mf">0.1</span>
+        
+        <span class="c1"># ❌ Domain logic mixed with message handling</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_inventory</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">items</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">InvalidInventoryError</span><span class="p">()</span>
+        
+        <span class="c1"># ❌ Complex business workflow in infrastructure layer</span>
+        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_payment_with_retry_logic</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="the-solution-proper-ddd-layering">
+<h3><strong>The Solution: Proper DDD Layering</strong><a class="headerlink" href="#the-solution-proper-ddd-layering" title="Link to this heading"></a></h3>
+<p>✅ <strong>CORRECT</strong>: Framework components delegate to application services</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># ✅ RIGHT - Framework component is thin, delegates to application service</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">OrderCommandHandler</span><span class="p">(</span><span class="n">Component</span><span class="p">[</span><span class="n">ProcessOrder</span><span class="p">]):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">Application</span><span class="p">,</span> <span class="n">order_service</span><span class="p">:</span> <span class="n">OrderProcessingService</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_order_service</span> <span class="o">=</span> <span class="n">order_service</span>  <span class="c1"># Application layer</span>
+    
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="n">ProcessOrder</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">dispatch</span><span class="p">,</span> <span class="n">join_stream</span><span class="p">):</span>
+        <span class="c1"># ✅ Delegate to application service</span>
+        <span class="n">success</span><span class="p">,</span> <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_order_service</span><span class="o">.</span><span class="n">process_order</span><span class="p">(</span>
+            <span class="n">message</span><span class="o">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">customer_id</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">items</span>
+        <span class="p">)</span>
+        
+        <span class="c1"># ✅ Framework only handles coordination and events</span>
+        <span class="k">if</span> <span class="n">success</span><span class="p">:</span>
+            <span class="k">await</span> <span class="n">dispatch</span><span class="p">(</span><span class="n">OrderCreated</span><span class="p">(</span><span class="n">order_id</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">order_id</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">await</span> <span class="n">dispatch</span><span class="p">(</span><span class="n">OrderFailed</span><span class="p">(</span><span class="n">order_id</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="n">result</span><span class="p">))</span>
+</pre></div>
+</div>
+</section>
+<section id="architecture-layers">
+<h3><strong>Architecture Layers</strong><a class="headerlink" href="#architecture-layers" title="Link to this heading"></a></h3>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>┌─────────────────────────────────────────┐
+│ INFRASTRUCTURE LAYER                    │
+│ • Framework Modules (Message Handlers)  │ ← Nether modules go here
+│ • Repositories (Implementations)        │
+│ • External Service Adapters            │
+└─────────────────────────────────────────┘
+                    ↓
+┌─────────────────────────────────────────┐
+│ APPLICATION LAYER                       │
+│ • Application Services (Use Cases)      │ ← Business workflows go here
+│ • Command/Query Handlers                │
+│ • Workflow Orchestration                │
+└─────────────────────────────────────────┘
+                    ↓
+┌─────────────────────────────────────────┐
+│ DOMAIN LAYER                           │
+│ • Entities &amp; Value Objects             │ ← Business logic goes here
+│ • Domain Services                      │
+│ • Business Rules &amp; Invariants          │
+└─────────────────────────────────────────┘
+</pre></div>
+</div>
+</section>
+<section id="what-framework-modules-should-do">
+<h3><strong>What Framework Modules Should Do</strong><a class="headerlink" href="#what-framework-modules-should-do" title="Link to this heading"></a></h3>
+<p>✅ <strong>Framework modules should be THIN and only handle:</strong></p>
+<ol class="arabic simple">
+<li><p><strong>Message Routing</strong>: Dispatch messages to appropriate application services</p></li>
+<li><p><strong>Event Emission</strong>: Convert service results into domain events</p></li>
+<li><p><strong>Coordination</strong>: Orchestrate calls between different services</p></li>
+<li><p><strong>Cross-cutting Concerns</strong>: Logging, metrics, error handling</p></li>
+</ol>
+</section>
+<section id="what-framework-modules-should-not-do">
+<h3><strong>What Framework Modules Should NOT Do</strong><a class="headerlink" href="#what-framework-modules-should-not-do" title="Link to this heading"></a></h3>
+<p>❌ <strong>Framework modules should NEVER contain:</strong></p>
+<ol class="arabic simple">
+<li><p><strong>Business Rules</strong>: Domain logic belongs in domain/application layers</p></li>
+<li><p><strong>Workflow Logic</strong>: Complex business processes belong in application services</p></li>
+<li><p><strong>Data Validation</strong>: Business validation belongs in domain entities</p></li>
+<li><p><strong>State Management</strong>: Domain state belongs in entities and aggregates</p></li>
+</ol>
+</section>
+<section id="example-proper-separation">
+<h3><strong>Example: Proper Separation</strong><a class="headerlink" href="#example-proper-separation" title="Link to this heading"></a></h3>
+<p>See <a class="reference internal" href="#../examples/proper_ddd_example.py"><span class="xref myst"><code class="docutils literal notranslate"><span class="pre">examples/proper_ddd_example.py</span></code></span></a> for a complete demonstration of:</p>
+<ul class="simple">
+<li><p>✅ Domain entities with business logic</p></li>
+<li><p>✅ Application services with use cases</p></li>
+<li><p>✅ Framework modules that only handle messages</p></li>
+<li><p>✅ Clear dependency flow: Infrastructure → Application → Domain</p></li>
+</ul>
+</section>
+</section>
+<section id="core-components">
+<h2>Core Components<a class="headerlink" href="#core-components" title="Link to this heading"></a></h2>
+<section id="message-types-common-py">
+<h3>1. <strong>Message Types</strong> (<code class="docutils literal notranslate"><span class="pre">common.py</span></code>)<a class="headerlink" href="#message-types-common-py" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">kw_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Message</span><span class="p">:</span>
+    <span class="n">created_at</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">tz</span><span class="o">=</span><span class="n">UTC</span><span class="p">))</span>
+
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Command</span><span class="p">(</span><span class="n">Message</span><span class="p">):</span> <span class="o">...</span>    <span class="c1"># Intent to change state</span>
+
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  
+<span class="k">class</span><span class="w"> </span><span class="nc">Query</span><span class="p">(</span><span class="n">Message</span><span class="p">):</span> <span class="o">...</span>      <span class="c1"># Request for information</span>
+
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Event</span><span class="p">(</span><span class="n">Message</span><span class="p">):</span> <span class="o">...</span>      <span class="c1"># Something that happened</span>
+</pre></div>
+</div>
+<p><strong>Key Features:</strong></p>
+<ul class="simple">
+<li><p><strong>Commands</strong>: Represent intent to perform an action (imperative)</p></li>
+<li><p><strong>Queries</strong>: Request information without side effects</p></li>
+<li><p><strong>Events</strong>: Notifications about something that occurred (past tense)</p></li>
+<li><p>All messages are immutable (<code class="docutils literal notranslate"><span class="pre">frozen=True</span></code>) and include timestamps</p></li>
+</ul>
+</section>
+<section id="mediator-mediator-py">
+<h3>2. <strong>Mediator</strong> (<code class="docutils literal notranslate"><span class="pre">mediator.py</span></code>)<a class="headerlink" href="#mediator-mediator-py" title="Link to this heading"></a></h3>
+<p>The central orchestrator that routes messages between modules.</p>
+<p><strong>Key Features:</strong></p>
+<ul class="simple">
+<li><p><strong>Singleton Pattern</strong>: Ensures single instance across application</p></li>
+<li><p><strong>Context Management</strong>: Isolated units of work with dedicated queues</p></li>
+<li><p><strong>Asynchronous Processing</strong>: Non-blocking message handling</p></li>
+<li><p><strong>Module Registration</strong>: Dynamic service discovery and routing</p></li>
+</ul>
+<p><strong>Architecture:</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Application
+    ↓
+Mediator (Singleton)
+    ↓
+Context (Unit of Work)
+    ↓
+Modules (Message Handlers)
+</pre></div>
+</div>
+</section>
+<section id="components-component-py">
+<h3>3. <strong>Components</strong> (<code class="docutils literal notranslate"><span class="pre">component.py</span></code>)<a class="headerlink" href="#components-component-py" title="Link to this heading"></a></h3>
+<p>Self-contained units that handle specific message types.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Component</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="n">Message</span><span class="p">](</span><span class="n">ComponentProtocol</span><span class="p">[</span><span class="n">T</span><span class="p">]):</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">supports</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">[</span><span class="n">T</span><span class="p">]:</span>
+        <span class="c1"># Automatically determined from generic type parameter</span>
+        
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="n">Message</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">dispatch</span><span class="p">,</span> <span class="n">join_stream</span><span class="p">):</span>
+        <span class="c1"># Process the message and optionally dispatch new messages</span>
+</pre></div>
+</div>
+</section>
+<section id="application-application-py">
+<h3>4. <strong>Application</strong> (<code class="docutils literal notranslate"><span class="pre">application.py</span></code>)<a class="headerlink" href="#application-application-py" title="Link to this heading"></a></h3>
+<p>The main application container that manages the lifecycle.</p>
+</section>
+</section>
+<section id="what-you-can-do-with-event-dispatching-and-commands">
+<h2>What You Can Do with Event Dispatching and Commands<a class="headerlink" href="#what-you-can-do-with-event-dispatching-and-commands" title="Link to this heading"></a></h2>
+<section id="simple-command-event-flow">
+<h3>1. <strong>Simple Command-Event Flow</strong><a class="headerlink" href="#simple-command-event-flow" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Command: Intent to do something</span>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">kw_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ProcessOrder</span><span class="p">(</span><span class="n">Command</span><span class="p">):</span>
+    <span class="n">order_id</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">customer_id</span><span class="p">:</span> <span class="nb">str</span>
+
+<span class="c1"># Event: Something that happened</span>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">kw_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">OrderProcessed</span><span class="p">(</span><span class="n">Event</span><span class="p">):</span>
+    <span class="n">order_id</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">status</span><span class="p">:</span> <span class="nb">str</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">OrderProcessor</span><span class="p">(</span><span class="n">Module</span><span class="p">[</span><span class="n">ProcessOrder</span><span class="p">]):</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="n">ProcessOrder</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">dispatch</span><span class="p">,</span> <span class="n">join_stream</span><span class="p">):</span>
+        <span class="c1"># Process the order</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_order</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">order_id</span><span class="p">)</span>
+        
+        <span class="c1"># Dispatch result event</span>
+        <span class="k">await</span> <span class="n">dispatch</span><span class="p">(</span><span class="n">OrderProcessed</span><span class="p">(</span>
+            <span class="n">order_id</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">order_id</span><span class="p">,</span>
+            <span class="n">status</span><span class="o">=</span><span class="s2">&quot;completed&quot;</span>
+        <span class="p">))</span>
+</pre></div>
+</div>
+</section>
+<section id="chain-of-events-event-sourcing-pattern">
+<h3>2. <strong>Chain of Events (Event Sourcing Pattern)</strong><a class="headerlink" href="#chain-of-events-event-sourcing-pattern" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">OrderEventListener</span><span class="p">(</span><span class="n">Module</span><span class="p">[</span><span class="n">OrderProcessed</span><span class="p">]):</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="n">OrderProcessed</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">dispatch</span><span class="p">,</span> <span class="n">join_stream</span><span class="p">):</span>
+        <span class="c1"># React to order being processed</span>
+        <span class="k">if</span> <span class="n">message</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="s2">&quot;completed&quot;</span><span class="p">:</span>
+            <span class="k">await</span> <span class="n">dispatch</span><span class="p">(</span><span class="n">SendConfirmationEmail</span><span class="p">(</span><span class="n">order_id</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">order_id</span><span class="p">))</span>
+            <span class="k">await</span> <span class="n">dispatch</span><span class="p">(</span><span class="n">UpdateInventory</span><span class="p">(</span><span class="n">order_id</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">order_id</span><span class="p">))</span>
+</pre></div>
+</div>
+</section>
+<section id="saga-pattern-for-distributed-transactions">
+<h3>3. <strong>Saga Pattern for Distributed Transactions</strong><a class="headerlink" href="#saga-pattern-for-distributed-transactions" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">PaymentSaga</span><span class="p">(</span><span class="n">Module</span><span class="p">[</span><span class="n">OrderProcessed</span> <span class="o">|</span> <span class="n">PaymentFailed</span><span class="p">]):</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">dispatch</span><span class="p">,</span> <span class="n">join_stream</span><span class="p">):</span>
+        <span class="k">match</span> <span class="n">message</span><span class="p">:</span>
+            <span class="k">case</span> <span class="n">OrderProcessed</span><span class="p">():</span>
+                <span class="k">await</span> <span class="n">dispatch</span><span class="p">(</span><span class="n">ProcessPayment</span><span class="p">(</span><span class="n">order_id</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">order_id</span><span class="p">))</span>
+            <span class="k">case</span> <span class="n">PaymentFailed</span><span class="p">():</span>
+                <span class="k">await</span> <span class="n">dispatch</span><span class="p">(</span><span class="n">RefundOrder</span><span class="p">(</span><span class="n">order_id</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">order_id</span><span class="p">))</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="creating-workflows-and-pipelines">
+<h2>Creating Workflows and Pipelines<a class="headerlink" href="#creating-workflows-and-pipelines" title="Link to this heading"></a></h2>
+<section id="sequential-workflows">
+<h3>1. <strong>Sequential Workflows</strong><a class="headerlink" href="#sequential-workflows" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Define workflow steps</span>
+<span class="n">steps</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;validate&quot;</span><span class="p">,</span> <span class="s2">&quot;process&quot;</span><span class="p">,</span> <span class="s2">&quot;notify&quot;</span><span class="p">]</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">WorkflowManager</span><span class="p">(</span><span class="n">Module</span><span class="p">[</span><span class="n">StartWorkflow</span><span class="p">]):</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="n">StartWorkflow</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">dispatch</span><span class="p">,</span> <span class="n">join_stream</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="n">steps</span><span class="p">:</span>
+            <span class="k">await</span> <span class="n">dispatch</span><span class="p">(</span><span class="n">WorkflowStep</span><span class="p">(</span>
+                <span class="n">workflow_id</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">workflow_id</span><span class="p">,</span>
+                <span class="n">step_name</span><span class="o">=</span><span class="n">step</span>
+            <span class="p">))</span>
+</pre></div>
+</div>
+</section>
+<section id="parallel-processing-pipelines">
+<h3>2. <strong>Parallel Processing Pipelines</strong><a class="headerlink" href="#parallel-processing-pipelines" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">DataPipeline</span><span class="p">(</span><span class="n">Module</span><span class="p">[</span><span class="n">ProcessData</span><span class="p">]):</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="n">ProcessData</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">dispatch</span><span class="p">,</span> <span class="n">join_stream</span><span class="p">):</span>
+        <span class="c1"># Start parallel processing stages</span>
+        <span class="n">tasks</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">processor</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;validator&quot;</span><span class="p">,</span> <span class="s2">&quot;enricher&quot;</span><span class="p">,</span> <span class="s2">&quot;transformer&quot;</span><span class="p">]:</span>
+            <span class="n">tasks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dispatch</span><span class="p">(</span><span class="n">ProcessDataStage</span><span class="p">(</span>
+                <span class="n">data</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">data</span><span class="p">,</span>
+                <span class="n">processor</span><span class="o">=</span><span class="n">processor</span>
+            <span class="p">)))</span>
+        
+        <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">*</span><span class="n">tasks</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="conditional-workflows">
+<h3>3. <strong>Conditional Workflows</strong><a class="headerlink" href="#conditional-workflows" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">ConditionalWorkflow</span><span class="p">(</span><span class="n">Module</span><span class="p">[</span><span class="n">WorkflowStep</span><span class="p">]):</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="n">WorkflowStep</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">dispatch</span><span class="p">,</span> <span class="n">join_stream</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">message</span><span class="o">.</span><span class="n">step_name</span> <span class="o">==</span> <span class="s2">&quot;decision_point&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_should_approve</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">data</span><span class="p">):</span>
+                <span class="k">await</span> <span class="n">dispatch</span><span class="p">(</span><span class="n">WorkflowStep</span><span class="p">(</span><span class="n">step_name</span><span class="o">=</span><span class="s2">&quot;approve&quot;</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">await</span> <span class="n">dispatch</span><span class="p">(</span><span class="n">WorkflowStep</span><span class="p">(</span><span class="n">step_name</span><span class="o">=</span><span class="s2">&quot;reject&quot;</span><span class="p">))</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="cycle-detection-in-workflows">
+<h2>Cycle Detection in Workflows<a class="headerlink" href="#cycle-detection-in-workflows" title="Link to this heading"></a></h2>
+<section id="why-cycle-detection-matters">
+<h3>Why Cycle Detection Matters<a class="headerlink" href="#why-cycle-detection-matters" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Infinite Loops</strong>: Prevents workflows from running indefinitely</p></li>
+<li><p><strong>Resource Exhaustion</strong>: Avoids memory/CPU consumption from circular dependencies</p></li>
+<li><p><strong>Deadlocks</strong>: Prevents mutual dependencies that can’t be resolved</p></li>
+</ul>
+</section>
+<section id="implementation-approaches">
+<h3>Implementation Approaches<a class="headerlink" href="#implementation-approaches" title="Link to this heading"></a></h3>
+<section id="depth-first-search-dfs-cycle-detection">
+<h4>1. <strong>Depth-First Search (DFS) Cycle Detection</strong><a class="headerlink" href="#depth-first-search-dfs-cycle-detection" title="Link to this heading"></a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">CycleDetector</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">has_cycle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">workflow_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="n">visited</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">rec_stack</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>  <span class="c1"># Recursion stack for DFS</span>
+        
+        <span class="k">def</span><span class="w"> </span><span class="nf">dfs</span><span class="p">(</span><span class="n">node</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+            <span class="n">visited</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+            <span class="n">rec_stack</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+            
+            <span class="k">for</span> <span class="n">neighbor</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="p">[]):</span>
+                <span class="k">if</span> <span class="n">neighbor</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">visited</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">dfs</span><span class="p">(</span><span class="n">neighbor</span><span class="p">):</span>
+                        <span class="k">return</span> <span class="kc">True</span>
+                <span class="k">elif</span> <span class="n">neighbor</span> <span class="ow">in</span> <span class="n">rec_stack</span><span class="p">:</span>  <span class="c1"># Back edge = cycle</span>
+                    <span class="k">return</span> <span class="kc">True</span>
+                    
+            <span class="n">rec_stack</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        
+        <span class="c1"># Check all components</span>
+        <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">workflow_definitions</span><span class="p">[</span><span class="n">workflow_type</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">step</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">visited</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">dfs</span><span class="p">(</span><span class="n">step</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span>
+</pre></div>
+</div>
+</section>
+<section id="topological-sort-for-execution-order">
+<h4>2. <strong>Topological Sort for Execution Order</strong><a class="headerlink" href="#topological-sort-for-execution-order" title="Link to this heading"></a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">get_topological_order</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">workflow_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns execution order if no cycles, None if cycles exist&quot;&quot;&quot;</span>
+    
+    <span class="c1"># Kahn&#39;s Algorithm</span>
+    <span class="n">in_degree</span> <span class="o">=</span> <span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">steps</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    
+    <span class="c1"># Calculate in-degrees</span>
+    <span class="k">for</span> <span class="n">step</span><span class="p">,</span> <span class="n">deps</span> <span class="ow">in</span> <span class="n">workflow_definitions</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">dep</span> <span class="ow">in</span> <span class="n">deps</span><span class="p">:</span>
+            <span class="n">in_degree</span><span class="p">[</span><span class="n">step</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+    
+    <span class="c1"># Start with steps having no dependencies</span>
+    <span class="n">queue</span> <span class="o">=</span> <span class="n">deque</span><span class="p">([</span><span class="n">step</span> <span class="k">for</span> <span class="n">step</span><span class="p">,</span> <span class="n">degree</span> <span class="ow">in</span> <span class="n">in_degree</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">degree</span> <span class="o">==</span> <span class="mi">0</span><span class="p">])</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+    
+    <span class="k">while</span> <span class="n">queue</span><span class="p">:</span>
+        <span class="n">current</span> <span class="o">=</span> <span class="n">queue</span><span class="o">.</span><span class="n">popleft</span><span class="p">()</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current</span><span class="p">)</span>
+        
+        <span class="c1"># Update dependent steps</span>
+        <span class="k">for</span> <span class="n">dependent</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_dependents</span><span class="p">(</span><span class="n">current</span><span class="p">):</span>
+            <span class="n">in_degree</span><span class="p">[</span><span class="n">dependent</span><span class="p">]</span> <span class="o">-=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">in_degree</span><span class="p">[</span><span class="n">dependent</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">queue</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dependent</span><span class="p">)</span>
+    
+    <span class="c1"># If not all steps processed, there&#39;s a cycle</span>
+    <span class="k">return</span> <span class="n">result</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">steps</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="runtime-cycle-prevention">
+<h3>3. <strong>Runtime Cycle Prevention</strong><a class="headerlink" href="#runtime-cycle-prevention" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">WorkflowExecutor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">execution_stack</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+    
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">execute_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">workflow_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">step_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">workflow_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">execution_stack</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">execution_stack</span><span class="p">[</span><span class="n">workflow_id</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+            
+        <span class="k">if</span> <span class="n">step_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">execution_stack</span><span class="p">[</span><span class="n">workflow_id</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">CyclicExecutionError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cycle detected: </span><span class="si">{</span><span class="n">step_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+        <span class="bp">self</span><span class="o">.</span><span class="n">execution_stack</span><span class="p">[</span><span class="n">workflow_id</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">step_name</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_execute_step</span><span class="p">(</span><span class="n">step_name</span><span class="p">)</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">execution_stack</span><span class="p">[</span><span class="n">workflow_id</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">step_name</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="advanced-patterns">
+<h2>Advanced Patterns<a class="headerlink" href="#advanced-patterns" title="Link to this heading"></a></h2>
+<section id="event-streaming-with-join-streams">
+<h3>1. <strong>Event Streaming with Join Streams</strong><a class="headerlink" href="#event-streaming-with-join-streams" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">StreamProcessor</span><span class="p">(</span><span class="n">Module</span><span class="p">[</span><span class="n">DataEvent</span><span class="p">]):</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="n">DataEvent</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">dispatch</span><span class="p">,</span> <span class="n">join_stream</span><span class="p">):</span>
+        <span class="n">stream_queue</span><span class="p">,</span> <span class="n">stop_event</span> <span class="o">=</span> <span class="n">join_stream</span><span class="p">()</span>
+        
+        <span class="c1"># Subscribe to real-time events</span>
+        <span class="k">while</span> <span class="ow">not</span> <span class="n">stop_event</span><span class="o">.</span><span class="n">is_set</span><span class="p">():</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">event_data</span> <span class="o">=</span> <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">wait_for</span><span class="p">(</span>
+                    <span class="n">stream_queue</span><span class="o">.</span><span class="n">get</span><span class="p">(),</span> 
+                    <span class="n">timeout</span><span class="o">=</span><span class="mf">1.0</span>
+                <span class="p">)</span>
+                <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_stream_data</span><span class="p">(</span><span class="n">event_data</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">TimeoutError</span><span class="p">:</span>
+                <span class="k">continue</span>
+</pre></div>
+</div>
+</section>
+<section id="message-aggregation">
+<h3>2. <strong>Message Aggregation</strong><a class="headerlink" href="#message-aggregation" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">OrderAggregator</span><span class="p">(</span><span class="n">Module</span><span class="p">[</span><span class="n">OrderItemProcessed</span><span class="p">]):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">application</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">application</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pending_orders</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+        
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="n">OrderItemProcessed</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">dispatch</span><span class="p">,</span> <span class="n">join_stream</span><span class="p">):</span>
+        <span class="n">order_id</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">order_id</span>
+        <span class="n">item_id</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">item_id</span>
+        
+        <span class="k">if</span> <span class="n">order_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pending_orders</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pending_orders</span><span class="p">[</span><span class="n">order_id</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+            
+        <span class="bp">self</span><span class="o">.</span><span class="n">pending_orders</span><span class="p">[</span><span class="n">order_id</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">item_id</span><span class="p">)</span>
+        
+        <span class="c1"># Check if all items processed</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pending_orders</span><span class="p">[</span><span class="n">order_id</span><span class="p">])</span> <span class="o">&gt;=</span> <span class="n">message</span><span class="o">.</span><span class="n">total_items</span><span class="p">:</span>
+            <span class="k">await</span> <span class="n">dispatch</span><span class="p">(</span><span class="n">OrderFullyProcessed</span><span class="p">(</span><span class="n">order_id</span><span class="o">=</span><span class="n">order_id</span><span class="p">))</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">pending_orders</span><span class="p">[</span><span class="n">order_id</span><span class="p">]</span>
+</pre></div>
+</div>
+</section>
+<section id="circuit-breaker-pattern">
+<h3>3. <strong>Circuit Breaker Pattern</strong><a class="headerlink" href="#circuit-breaker-pattern" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">CircuitBreakerModule</span><span class="p">(</span><span class="n">Module</span><span class="p">[</span><span class="n">ExternalServiceCall</span><span class="p">]):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">application</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">application</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">failure_count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_failure_time</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">circuit_open</span> <span class="o">=</span> <span class="kc">False</span>
+        
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="n">ExternalServiceCall</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">dispatch</span><span class="p">,</span> <span class="n">join_stream</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_should_allow_request</span><span class="p">():</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_external_service</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_on_success</span><span class="p">()</span>
+                <span class="k">await</span> <span class="n">dispatch</span><span class="p">(</span><span class="n">ExternalServiceSuccess</span><span class="p">(</span><span class="n">result</span><span class="o">=</span><span class="n">result</span><span class="p">))</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_on_failure</span><span class="p">()</span>
+                <span class="k">await</span> <span class="n">dispatch</span><span class="p">(</span><span class="n">ExternalServiceFailure</span><span class="p">(</span><span class="n">error</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)))</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="workflow-examples-and-use-cases">
+<h2>Workflow Examples and Use Cases<a class="headerlink" href="#workflow-examples-and-use-cases" title="Link to this heading"></a></h2>
+<section id="e-commerce-order-processing">
+<h3>1. <strong>E-commerce Order Processing</strong><a class="headerlink" href="#e-commerce-order-processing" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Workflow definition with dependencies</span>
+<span class="n">order_workflow</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;validate_order&quot;</span><span class="p">:</span> <span class="p">[],</span>                    <span class="c1"># Entry point</span>
+    <span class="s2">&quot;check_inventory&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;validate_order&quot;</span><span class="p">],</span>   <span class="c1"># Depends on validation</span>
+    <span class="s2">&quot;process_payment&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;validate_order&quot;</span><span class="p">],</span>   <span class="c1"># Parallel with inventory</span>
+    <span class="s2">&quot;ship_order&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;check_inventory&quot;</span><span class="p">,</span> <span class="s2">&quot;process_payment&quot;</span><span class="p">],</span>  <span class="c1"># Waits for both</span>
+    <span class="s2">&quot;send_confirmation&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;ship_order&quot;</span><span class="p">]</span>      <span class="c1"># Final step</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>Flow Visualization:</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>validate_order
+    ↓
+[check_inventory] [process_payment]
+    ↓                ↓
+    └── ship_order ──┘
+           ↓
+    send_confirmation
+</pre></div>
+</div>
+</section>
+<section id="data-processing-pipeline">
+<h3>2. <strong>Data Processing Pipeline</strong><a class="headerlink" href="#data-processing-pipeline" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># ETL Pipeline with sequential dependencies</span>
+<span class="n">data_pipeline</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;extract_data&quot;</span><span class="p">:</span> <span class="p">[],</span>
+    <span class="s2">&quot;validate_data&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;extract_data&quot;</span><span class="p">],</span>
+    <span class="s2">&quot;transform_data&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;validate_data&quot;</span><span class="p">],</span>
+    <span class="s2">&quot;enrich_data&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;transform_data&quot;</span><span class="p">],</span>
+    <span class="s2">&quot;load_data&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;enrich_data&quot;</span><span class="p">],</span>
+    <span class="s2">&quot;generate_report&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;load_data&quot;</span><span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="content-publishing-workflow">
+<h3>3. <strong>Content Publishing Workflow</strong><a class="headerlink" href="#content-publishing-workflow" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Complex workflow with multiple branches</span>
+<span class="n">publishing_workflow</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;draft_content&quot;</span><span class="p">:</span> <span class="p">[],</span>
+    <span class="s2">&quot;review_content&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;draft_content&quot;</span><span class="p">],</span>
+    <span class="s2">&quot;approve_content&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;review_content&quot;</span><span class="p">],</span>
+    <span class="s2">&quot;format_content&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;approve_content&quot;</span><span class="p">],</span>
+    <span class="s2">&quot;generate_thumbnail&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;approve_content&quot;</span><span class="p">],</span>
+    <span class="s2">&quot;publish_content&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;format_content&quot;</span><span class="p">,</span> <span class="s2">&quot;generate_thumbnail&quot;</span><span class="p">],</span>
+    <span class="s2">&quot;notify_subscribers&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;publish_content&quot;</span><span class="p">],</span>
+    <span class="s2">&quot;update_analytics&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;publish_content&quot;</span><span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="compensation-and-error-handling">
+<h2>Compensation and Error Handling<a class="headerlink" href="#compensation-and-error-handling" title="Link to this heading"></a></h2>
+<section id="saga-pattern-with-compensation">
+<h3>1. <strong>Saga Pattern with Compensation</strong><a class="headerlink" href="#saga-pattern-with-compensation" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">OrderSaga</span><span class="p">(</span><span class="n">Module</span><span class="p">[</span><span class="n">OrderEvent</span><span class="p">]):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">application</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">application</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compensation_stack</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+    
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="n">OrderEvent</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">dispatch</span><span class="p">,</span> <span class="n">join_stream</span><span class="p">):</span>
+        <span class="k">match</span> <span class="n">message</span><span class="p">:</span>
+            <span class="k">case</span> <span class="n">PaymentFailed</span><span class="p">():</span>
+                <span class="c1"># Execute compensation in reverse order</span>
+                <span class="n">compensations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compensation_stack</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">order_id</span><span class="p">,</span> <span class="p">[])</span>
+                <span class="k">for</span> <span class="n">action</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">compensations</span><span class="p">):</span>
+                    <span class="k">await</span> <span class="n">dispatch</span><span class="p">(</span><span class="n">CompensationAction</span><span class="p">(</span><span class="n">action</span><span class="o">=</span><span class="n">action</span><span class="p">))</span>
+</pre></div>
+</div>
+</section>
+<section id="circuit-breaker-for-external-services">
+<h3>2. <strong>Circuit Breaker for External Services</strong><a class="headerlink" href="#circuit-breaker-for-external-services" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">ExternalServiceModule</span><span class="p">(</span><span class="n">Module</span><span class="p">[</span><span class="n">ExternalCall</span><span class="p">]):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">application</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">application</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">circuit_breaker</span> <span class="o">=</span> <span class="n">CircuitBreaker</span><span class="p">(</span>
+            <span class="n">failure_threshold</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+            <span class="n">recovery_time</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
+            <span class="n">expected_exception</span><span class="o">=</span><span class="n">ServiceUnavailableError</span>
+        <span class="p">)</span>
+    
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="n">ExternalCall</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">dispatch</span><span class="p">,</span> <span class="n">join_stream</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">circuit_breaker</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_make_external_call</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">data</span>
+            <span class="p">)</span>
+            <span class="k">await</span> <span class="n">dispatch</span><span class="p">(</span><span class="n">ExternalCallSuccess</span><span class="p">(</span><span class="n">result</span><span class="o">=</span><span class="n">result</span><span class="p">))</span>
+        <span class="k">except</span> <span class="n">CircuitBreakerOpenError</span><span class="p">:</span>
+            <span class="k">await</span> <span class="n">dispatch</span><span class="p">(</span><span class="n">ExternalCallFailed</span><span class="p">(</span><span class="n">reason</span><span class="o">=</span><span class="s2">&quot;circuit_breaker_open&quot;</span><span class="p">))</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="benefits-of-this-architecture">
+<h2>Benefits of This Architecture<a class="headerlink" href="#benefits-of-this-architecture" title="Link to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p><strong>Loose Coupling</strong>: Modules don’t directly depend on each other</p></li>
+<li><p><strong>Testability</strong>: Easy to test individual components in isolation</p></li>
+<li><p><strong>Scalability</strong>: Can distribute modules across different processes/machines</p></li>
+<li><p><strong>Maintainability</strong>: Clear separation of concerns</p></li>
+<li><p><strong>Flexibility</strong>: Easy to add new features without modifying existing code</p></li>
+<li><p><strong>Error Isolation</strong>: Failures in one module don’t crash the entire system</p></li>
+<li><p><strong>Auditability</strong>: All messages are logged and traceable</p></li>
+<li><p><strong>Workflow Validation</strong>: Built-in cycle detection prevents infinite loops</p></li>
+</ol>
+</section>
+<section id="best-practices">
+<h2>Best Practices<a class="headerlink" href="#best-practices" title="Link to this heading"></a></h2>
+<section id="message-design">
+<h3>1. <strong>Message Design</strong><a class="headerlink" href="#message-design" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Keep messages immutable and focused</p></li>
+<li><p>Use clear, descriptive names (OrderProcessed vs MessageReceived)</p></li>
+<li><p>Include all necessary data to avoid additional lookups</p></li>
+<li><p>Version your messages for backward compatibility</p></li>
+</ul>
+</section>
+<section id="module-responsibility">
+<h3>2. <strong>Module Responsibility</strong><a class="headerlink" href="#module-responsibility" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Each module should have a single responsibility</p></li>
+<li><p>Modules should be stateless where possible</p></li>
+<li><p>Use dependency injection for external services</p></li>
+<li><p>Handle errors gracefully and emit appropriate events</p></li>
+</ul>
+</section>
+<section id="workflow-design">
+<h3>3. <strong>Workflow Design</strong><a class="headerlink" href="#workflow-design" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Always validate workflow definitions for cycles</p></li>
+<li><p>Design for idempotency - steps should be safe to retry</p></li>
+<li><p>Include compensation logic for complex workflows</p></li>
+<li><p>Monitor workflow execution and completion rates</p></li>
+</ul>
+</section>
+<section id="performance-considerations">
+<h3>4. <strong>Performance Considerations</strong><a class="headerlink" href="#performance-considerations" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Monitor message processing times and queue depths</p></li>
+<li><p>Use connection pooling for database/external service calls</p></li>
+<li><p>Implement backpressure handling for high-throughput scenarios</p></li>
+<li><p>Consider batching for bulk operations</p></li>
+</ul>
+</section>
+<section id="error-handling">
+<h3>5. <strong>Error Handling</strong><a class="headerlink" href="#error-handling" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Always handle exceptions and emit appropriate events</p></li>
+<li><p>Implement circuit breakers for external service calls</p></li>
+<li><p>Use exponential backoff for retries</p></li>
+<li><p>Log errors with sufficient context for debugging</p></li>
+</ul>
+</section>
+<section id="testing-strategies">
+<h3>6. <strong>Testing Strategies</strong><a class="headerlink" href="#testing-strategies" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Unit test individual modules in isolation</p></li>
+<li><p>Integration test workflow scenarios</p></li>
+<li><p>Use mock dispatch functions for testing</p></li>
+<li><p>Test error scenarios and compensation logic</p></li>
+</ul>
+<p>This architecture provides a solid foundation for building complex, distributed systems with clear message flows, proper error handling, and scalable workflow orchestration.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Nether documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="api.html" class="btn btn-neutral float-right" title="Package API Documentation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Arjuna Systems.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
