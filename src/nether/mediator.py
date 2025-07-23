@@ -44,7 +44,7 @@ class ContextProtocol(Protocol):
 
   async def add_task(self, task: asyncio.Task[None]) -> None: ...
 
-  async def receive_result(self) -> Event | None: ...
+  async def receive_result(self) -> Event | None: ...https://github.com/arjuna-group/nether/pull/3/conflict?name=src%252Fnether%252Fmediator.py&ancestor_oid=a2008d0a77d9e4f45622233fb8eb44c212b8aa80&base_oid=2a1a2c3998f41f6b015e88f138ed32ba5f913e06&head_oid=70b8a111a0703abfd5e8e959bd086d59e682743d
 
 
 type ContextManager = Callable[[], contextlib.AbstractAsyncContextManager[ContextProtocol]]
@@ -82,7 +82,6 @@ class Context:
     match message:
       case Event():
         await self._results.put(message)
-        # Also dispatch Events to modules that can handle them
         self._active_tasks.add(asyncio.create_task(self._handle_message(message, self)))
       case Command() | Query():
         self._active_tasks.add(asyncio.create_task(self._handle_message(message, self)))
@@ -226,7 +225,7 @@ class Mediator:
         context.add_task(task)
         handled = True
 
-    if not handled:
+    if not handled and not isinstance(message, Event):
       logger.critical(f"No handler found for message: {message}")
 
   def register_module(self, module: ComponentProtocol[Any]) -> None:

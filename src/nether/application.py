@@ -207,7 +207,6 @@ class Application:
     #   logger=logger, dsn=self._database_dsn, min_pool_size=3, max_pool_size=10
     # )
     self._services: set[ComponentProtocol] = set()
-
     # TODO: uptime, background processing
 
   @property
