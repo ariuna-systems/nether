@@ -106,6 +106,7 @@ class MediatorContext:
     match message:
       case Event():
         await self._results.put(message)
+        self._active_tasks.add(asyncio.create_task(self._handle_message(message, self)))
       case Command() | Query():
         self._active_tasks.add(asyncio.create_task(self._handle_message(message, self)))
       case _:

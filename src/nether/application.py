@@ -44,7 +44,7 @@ class Application:
     self.logger = logger
     self._database_dsn = database_dsn
     self._transaction_manager = TransactionManager(
-      logger=logger, dsn=self._database_dsn, min_pool_size=3, max_pool_size=10
+      logger=logger, dsn=self._database_dsn, min_pool_size=0, max_pool_size=10
     )
     self._services: set[ServiceProtocol] = set()
 
