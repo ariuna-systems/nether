@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+import random
 import threading
 import time
 from collections.abc import Awaitable, Callable
@@ -16,22 +17,18 @@ class Showcase(Application):
   async def main(self) -> None:
     print("Hello, world!")
 
-    # Start the HTTP server
-    # async with self.mediator.context() as ctx:
-    #   await ctx.process(StartServer(host="localhost", port=8080))
-
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class Produce(Command):
+class Intent(Command):
   value: int = 0
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class Produced(Event):  # Changed back to Event
+class Result(Event):
   value: int = 0
 
 
-class Producer(Component[Produce]):
+class Producer(Component[Intent]):
   def __init__(self, application: Application):
     super().__init__(application)
     print(f"Producer supports: {self.supports}")
@@ -48,7 +45,7 @@ class Producer(Component[Produce]):
     number = 0
     while not self._stop_event.is_set():
       number += 1
-      command = Produce(value=number)
+      command = Intent(value=number)
       print(f"Produced message: {type(command).__name__} {command.value}")
       # Create new event loop for this thread
       loop = asyncio.new_event_loop()
@@ -78,19 +75,19 @@ class Producer(Component[Produce]):
 
   async def handle(
     self,
-    message: Produce,
+    message: Intent,
     *,
     dispatch: Callable[[Message], Awaitable[None]],
     join_stream: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
   ) -> None:
-    # When we receive a Produce command, dispatch a Produced event
+    # When we receive a Intent command, dispatch a Result event.
     print(f"Producer handling: {type(message).__name__} {message.value}")
-    produced_event = Produced(value=message.value)
+    produced_event = Result(value=message.value)
     print(f"Producer dispatching: {type(produced_event).__name__} {produced_event.value}")
     await dispatch(produced_event)
 
 
-class Consumer(Component[Produced]):
+class Consumer(Component[Result]):
   def __init__(self, application: Application):
     super().__init__(application)
     print(f"Consumer supports: {self.supports}")
@@ -105,13 +102,13 @@ class Consumer(Component[Produced]):
 
   async def handle(
     self,
-    message: Produced,
+    message: Result,
     *,
     dispatch: Callable[[Message], Awaitable[None]],
     join_stream: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
   ) -> None:
     print(f"Consumed: {type(message).__name__} {message.value}")
-    await asyncio.sleep(3)  # Simulate some processing time
+    await asyncio.sleep(random.randint(1, 4))
     # You can add more logic here to react to the produced message.
     # For example, you could dispatch another event or perform some processing.
 
@@ -119,15 +116,18 @@ class Consumer(Component[Produced]):
 async def main():
   configuration = argparse.Namespace()
   configuration.host = "localhost"
-  configuration.port = 8080
+  configuration.port = 8081
   showcase = Showcase(configuration=configuration)
 
   showcase.register_module(Producer(showcase))
   showcase.register_module(Consumer(showcase))
-  showcase.register_module(Server(showcase, configuration=configuration))  # Commented out to avoid errors
+  showcase.register_module(Server(showcase, configuration=configuration))
 
   await showcase.start()
 
 
 if __name__ == "__main__":
-  execute(main())
+  try:
+    execute(main())
+  except KeyboardInterrupt:
+    print("Shutting down gracefully...")

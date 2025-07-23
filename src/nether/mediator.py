@@ -70,11 +70,6 @@ class Context:
   def identifier(self) -> uuid.UUID:
     return self._id
 
-  # @property
-  # def tx_context(self) -> TransactionContext:
-  #   """Expose the transaction context for handlers."""
-  #   return self._tx_context
-
   async def _graceful_finish(self) -> None:
     while self._active_tasks:
       tasks_to_wait_for = list(self._active_tasks)
@@ -120,7 +115,7 @@ class Context:
 
 class MediatorProtocol(Protocol):
   @property
-  def services(self) -> set[ComponentProtocol[Any]]: ...
+  def modules(self) -> set[ComponentProtocol[Any]]: ...
 
   async def stop(self) -> None: ...
 
@@ -174,6 +169,8 @@ class Mediator:
 
   @property
   def modules(self) -> set[ComponentProtocol[Any]]:
+    if not hasattr(self, "_modules"):
+      self.__init_bus()
     return self._modules
 
   async def stop(self) -> None:

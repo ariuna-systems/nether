@@ -1,3 +1,7 @@
+"""
+TODO This module implements a long running or CPU intensive process.
+"""
+
 from .component import Component
 
 

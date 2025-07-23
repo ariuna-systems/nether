@@ -269,7 +269,7 @@ class Application:
 
   async def stop(self) -> None:
     await self._mediator.stop()
-    for service in self.services:
+    for service in self.modules:
       try:
         await service.stop()
       except Exception as error:
