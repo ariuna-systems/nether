@@ -233,7 +233,7 @@ class Mediator:
         context.add_task(task)
         handled = True
 
-    if not handled:
+    if not handled and not isinstance(message, Event):
       logger.critical(f"No handler found for message: {message}")
 
   async def _handle_global_message(self, message: Message, log_level: int = logging.DEBUG) -> None:
