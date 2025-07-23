@@ -30,10 +30,17 @@ jobs:
         run: |
           sphinx-build -b html docs/source docs/build/html
 
+      - name: Generate GitHub App token
+        id: app-token
+        uses: tibdex/github-app-token@v2
+        with:
+          app_id: ${{ secrets.ARJUNA_BOT_ID }}
+          private_key: ${{ secrets.ARJUNA_BOT_PRIVATE_KEY }}
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ steps.app-token.outputs.token }}
           publish_dir: docs/build/html
           publish_branch: gh-pages
           destination_dir: ${{ github.ref_name }}
