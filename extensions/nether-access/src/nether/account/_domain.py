@@ -4,7 +4,7 @@ from dataclasses import dataclass
 __all__ = ["Account", "AccountRole", "AccountDomainError"]
 
 from nether.common import Command, Event, FailureEvent
-from nether.exceptions import DomainError
+from nether.exception import DomainError
 
 from ..access import AccountSession
 

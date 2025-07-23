@@ -11,14 +11,19 @@ from aiohttp import hdrs as headers
 from aiohttp import web, web_urldispatcher
 from aiohttp_middlewares import cors
 
-from nether.common import Command, Event, FailureEvent, Message, SuccessEvent
-from nether.console import configure_logger
-from nether.exceptions import ServiceError
-from nether.service import Service
+from .component import Component
+from .exception import ServiceError
+from .logging import configure_logger
+from .message import Command, Event, FailureEvent, Message, SuccessEvent
 
 local_logger = logging.getLogger(__name__)
 local_logger.propagate = False
 configure_logger(local_logger)
+
+
+# ##############################################################
+#                           MESSAGES                           #
+# ##############################################################
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -81,7 +86,7 @@ class HTTPInterfaceServiceError(ServiceError): ...
 
 class _DynamicRouter:
   def __init__(self, app: web.Application, logger: logging.Logger = local_logger):
-    self.app = app
+    self._http_server = app
     self.logger = logger
     self._resource_map: dict[str, list[web_urldispatcher.AbstractResource]] = {}
 
@@ -218,24 +223,29 @@ class _DynamicRouter:
       return web.Response(status=500, text="Internal Server Error")
 
 
-class HTTPInterfaceService(Service[StartServer | StopServer | AddView]):
+class Server(Component[StartServer | StopServer | AddView]):
   def __init__(
     self,
+    application,
     *,
     configuration: argparse.Namespace,
     logger: logging.Logger = local_logger,
     cors_origins: list[str] | None = None,
     aiohttp_loggers_verbosity: int = 0,
   ):
-    self.app = web.Application()
-    self.app["configuration"] = configuration
+    super().__init__(application=application)
+    self._http_server = web.Application()
+    self._http_server["configuration"] = configuration
 
-    dynamic_router = _DynamicRouter(self.app, logger=logger)
-    self.app["dynamic_router"] = dynamic_router
-    self.app.middlewares.append(self.track_requests)
+    dynamic_router = _DynamicRouter(self._http_server, logger=logger)
+
+    self._http_server["dynamic_router"] = dynamic_router
+    self._http_server.middlewares.append(self.track_requests)
+
     if cors_origins is not None:
-      self.app.middlewares.append(cors.cors_middleware(origins=cors_origins))
-    self.app.middlewares.append(dynamic_router.middleware)
+      self._http_server.middlewares.append(cors.cors_middleware(origins=cors_origins))
+    self._http_server.middlewares.append(dynamic_router.middleware)
+
     self.host = configuration.host
     self.port = configuration.port
 
@@ -262,30 +272,26 @@ class HTTPInterfaceService(Service[StartServer | StopServer | AddView]):
     self, request: web.Request, handler: Callable[[web.Request], Awaitable[web.StreamResponse]]
   ) -> web.StreamResponse:
     task = asyncio.current_task()
-    if task:
+    if task is not None:
       self.tasks.add(task)
     try:
-      response = await handler(request)
-      return response
+      return await handler(request)
     finally:
-      if task:
+      if task is not None:
         self.tasks.remove(task)
 
-  async def start(self) -> None:
-    host = self.host
-    port = self.port
-
+  async def on_start(self) -> None:
     if self.runner is not None:
       raise HTTPInterfaceServiceError("Server is already running.")
 
-    self.runner = web.AppRunner(self.app)
+    self.runner = web.AppRunner(self._http_server)
     await self.runner.setup()
-    tcp_site = web.TCPSite(self.runner, host, port)
+    tcp_site = web.TCPSite(self.runner, self.host, self.port)
     await tcp_site.start()
-    self.logger.info(f"Server started on {host}:{port}.")
+    self.logger.info(f"Server started on {self.host}:{self.port}.")
     self._is_running = True
 
-  async def stop(self) -> None:
+  async def on_stop(self) -> None:
     if self.runner is None:
       raise HTTPInterfaceServiceError("Server is not running.")
 
@@ -330,14 +336,14 @@ class HTTPInterfaceService(Service[StartServer | StopServer | AddView]):
 
   async def _add_view(self, *, route: str, view: type[web.View]) -> None:
     """If app frozen, adds the view to the dynamic route manager; otherwise, adds it to the router."""
-    if self.app.frozen:
-      self.app["dynamic_router"].add_dynamic_view(route, view)
+    if self._http_server.frozen:
+      self._http_server["dynamic_router"].add_dynamic_view(route, view)
     else:
-      self.app.router.add_view(route, view)
+      self._http_server.router.add_view(route, view)
     self.logger.info(f"View `{view.__name__}` assigned to route {route}")
 
   async def _add_static(self, prefix: str, path: Path, **kwargs) -> None:
-    if self.app.frozen:
-      self.app["dynamic_router"].add_static(prefix, path, **kwargs)
+    if self._http_server.frozen:
+      self._http_server["dynamic_router"].add_static(prefix, path, **kwargs)
     else:
-      self.app.router.add_static(prefix, path, **kwargs)
+      self._http_server.router.add_static(prefix, path, **kwargs)

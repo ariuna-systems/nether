@@ -1,83 +1,64 @@
+"""
+Mediator pattern for in-process, asynchronous message routing.
+"""
+
 from __future__ import annotations
 
 import asyncio
 import contextlib
 import logging
 import uuid
-from typing import TYPE_CHECKING, Any, Protocol, Self
+from collections.abc import AsyncIterator, Awaitable, Callable, Coroutine
+from typing import Any, Protocol, Self
 
-from .common import Command, Event, Message, Query
-from .console import configure_logger
+from .component import ComponentProtocol
+from .logging import configure_logger
+from .message import Command, Event, Message, Query
 
-if TYPE_CHECKING:
-  from collections.abc import AsyncIterator, Awaitable, Callable, Coroutine
+__all__ = [
+  "Context",
+  "ContextManager",
+  "ContextProtocol",
+  "Mediator",
+  "MediatorProtocol",
+]
 
-  from .application import Application
-  from .service import ServiceProtocol
-  from .transaction import TransactionContext
 
 logger = logging.getLogger(__name__)
 logger.propagate = False
+
 configure_logger(logger)
 
 
-class MediatorContextProtocol(Protocol):
-  def __init__(self, handle_message: Callable[[Message, MediatorContextProtocol], Coroutine[Any, Any, None]] = ...): ...
+class ContextProtocol(Protocol):
+  def __init__(self, handle_message: Callable[[Message, Self], Coroutine[Any, Any, None]] = ...): ...
 
   @property
   def identifier(self) -> uuid.UUID: ...
-
-  @property
-  def tx_context(self) -> TransactionContext: ...
 
   async def process(self, message: Message) -> None: ...
 
   async def close(self) -> None: ...
 
-  def join_stream(self) -> tuple[asyncio.Queue[Any], asyncio.Event]: ...
+  async def join_stream(self) -> tuple[asyncio.Queue[Any], asyncio.Event]: ...
 
-  def add_task(self, task: asyncio.Task[None]) -> None: ...
+  async def add_task(self, task: asyncio.Task[None]) -> None: ...
 
-  async def receive_result(self) -> Event | None: ...
-
-
-type MediatorContextManager = Callable[[], contextlib.AbstractAsyncContextManager[MediatorContextProtocol]]
+  async def receive_result(self) -> Event | None: ...https://github.com/arjuna-group/nether/pull/3/conflict?name=src%252Fnether%252Fmediator.py&ancestor_oid=a2008d0a77d9e4f45622233fb8eb44c212b8aa80&base_oid=2a1a2c3998f41f6b015e88f138ed32ba5f913e06&head_oid=70b8a111a0703abfd5e8e959bd086d59e682743d
 
 
-class MediatorProtocol(Protocol):
-  def set_application(self, application: Application) -> None: ...
-
-  @property
-  def services(self) -> set[ServiceProtocol[Any]]: ...
-
-  async def stop(self) -> None: ...
-
-  @contextlib.asynccontextmanager
-  def context(self) -> AsyncIterator[MediatorContextProtocol]: ...
-
-  async def register_context(self, context: MediatorContextProtocol) -> None: ...
-
-  async def unregister_context(self, context: MediatorContextProtocol) -> None: ...
-
-  async def handle_message(self, message: Message, context: MediatorContextProtocol) -> None: ...
-
-  async def _handle_global_message(self, message: Message, log_level: int = logging.DEBUG) -> None: ...
+type ContextManager = Callable[[], contextlib.AbstractAsyncContextManager[ContextProtocol]]
 
 
-class MediatorContext:
-  """
-  Context manager for a context, providing isolated queues and a database transaction.
-  The TransactionContext is provided directly at initialization.
-  """
+class Context:
+  """Context represents a unit of work, providing isolated queues."""
 
   def __init__(
     self,
-    handle_message: Callable[[Message, MediatorContextProtocol], Coroutine[Any, Any, None]],
-    tx_context: TransactionContext,  # Direct TransactionContext instance
-    logger: logging.Logger,
+    handle_message: Callable[[Message, ContextProtocol], Coroutine[Any, Any, None]],
   ):
+    """If mediator is not passed, automatically gets the singleton :class:`Mediator` instance."""
     self._handle_message = handle_message
-    self._tx_context = tx_context  # Store the provided TransactionContext
     self._id = uuid.uuid4()
     self._results: asyncio.Queue[Event] = asyncio.Queue()
     self._active_tasks: set[asyncio.Task[None]] = set()
@@ -88,11 +69,6 @@ class MediatorContext:
   @property
   def identifier(self) -> uuid.UUID:
     return self._id
-
-  @property
-  def tx_context(self) -> TransactionContext:
-    """Expose the transaction context for handlers."""
-    return self._tx_context
 
   async def _graceful_finish(self) -> None:
     while self._active_tasks:
@@ -126,7 +102,6 @@ class MediatorContext:
       if not task.done():
         task.cancel()
 
-    await self._tx_context.rollback()
     self._logger.info(f"MediatorContext {self._id} closed.")
 
   def join_stream(self) -> tuple[asyncio.Queue[Any], asyncio.Event]:
@@ -137,6 +112,26 @@ class MediatorContext:
     return await self._results.get()
 
 
+class MediatorProtocol(Protocol):
+  @property
+  def modules(self) -> set[ComponentProtocol[Any]]: ...
+
+  async def stop(self) -> None: ...
+
+  @contextlib.asynccontextmanager
+  async def context(self) -> AsyncIterator[ContextProtocol]: ...
+
+  async def register_context(self, context: ContextProtocol) -> None: ...
+
+  async def unregister_context(self, context: ContextProtocol) -> None: ...
+
+  async def handle_message(self, message: Message, context: ContextProtocol) -> None: ...
+
+  async def register_module(self, module: ComponentProtocol[Any]) -> None: ...
+
+  async def unregister_module(self, module: ComponentProtocol[Any]) -> None: ...
+
+
 class Mediator:
   """Mediator dispatches messages to handlers."""
 
@@ -145,44 +140,43 @@ class Mediator:
   def __new__(cls) -> Self:
     if cls._instance is None:
       cls._instance = super().__new__(cls)
-      cls._instance._init_bus()
-    return cls._instance
+      cls._instance.__init_bus()
+    return cls._instance  # type: ignore[no-any-return, unused-ignore]
 
-  def _init_bus(self) -> None:
-    self._contexts: dict[uuid.UUID, MediatorContextProtocol] = {}
+  def __init_bus(self) -> None:
+    self._modules: set[ComponentProtocol[Any]] = set()
+    self._contexts: dict[uuid.UUID, ContextProtocol] = {}
     self._context_locks: dict[uuid.UUID, asyncio.Lock] = {}
-    self._application: Application
-
-  def set_application(self, application: Application) -> None:
-    self._application = application
-
-  @property
-  def application(self) -> Application:
-    return self._application
 
   @contextlib.asynccontextmanager
   async def context(self):
     """
-    Classmethod context manager to open a new context
+    The class method context manager to open a new unit-of-work
     using the existing mediator instance or creating a new one if needed.
     """
-    tx_context = self.application.transaction_manager.context()
-    mediator_context = MediatorContext(self.handle_message, tx_context, logger=logger)
+    context = Context(self.handle)
+    await self.register_context(context)
     try:
-      await self.register_context(mediator_context)
-      yield mediator_context
+      await self.register_context(context)
+      yield context
     except Exception:
       raise
     finally:
-      await mediator_context.close()
-      if mediator_context:
-        await self.unregister_context(mediator_context)
+      await context.close()
+      if context:
+        await self.unregister_context(context)
 
   @property
-  def services(self) -> set[ServiceProtocol[Any]]:
-    return self._application.services
+  def modules(self) -> set[ComponentProtocol[Any]]:
+    if not hasattr(self, "_modules"):
+      self.__init_bus()
+    return self._modules
 
   async def stop(self) -> None:
+    logger.info("deleted services")
+    for module in self._modules:
+      await module.on_stop()
+    del self._modules
     self._instance = None
 
   def _get_context_lock(self, context_id: uuid.UUID) -> asyncio.Lock:
@@ -190,14 +184,14 @@ class Mediator:
       self._context_locks[context_id] = asyncio.Lock()
     return self._context_locks[context_id]
 
-  async def register_context(self, context: MediatorContextProtocol) -> None:
-    """Registers a new context to receive messages."""
+  async def register_context(self, context: ContextProtocol) -> None:
+    """Registers a new unit of work to receive messages."""
     async with self._get_context_lock(context.identifier):
       logger.debug(f"Context `{context.identifier}` registered.")
       self._contexts[context.identifier] = context
 
-  async def unregister_context(self, context: MediatorContextProtocol) -> None:
-    """Unregisters a context, stopping message routing to it."""
+  async def unregister_context(self, context: ContextProtocol) -> None:
+    """Unregisters a unit of work, stopping message routing to it."""
     async with self._get_context_lock(context.identifier):
       if self._contexts.pop(context.identifier, None) is not None:  # Pop without raising
         logger.debug(f"Context `{context.identifier}` unregistered.")
@@ -205,29 +199,27 @@ class Mediator:
   @staticmethod
   async def _handling_task(
     *,
-    service: ServiceProtocol[Any],
+    module: ComponentProtocol[Any],
     message: Message,
     dispatch: Callable[[Message], Awaitable[None]],
     join_stream: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
-    tx_context: TransactionContext,
   ) -> None:
     try:
-      await service.handle(message, dispatch=dispatch, join_stream=join_stream, tx_context=tx_context)
+      await module.handle(message, dispatch=dispatch, join_stream=join_stream)
     except Exception as error:
-      logger.critical(f"Uncaught error from {type(service)}: {error}")
+      logger.critical(f"Uncaught error from {type(module)}: {error}")
 
-  async def handle_message(self, message: Message, context: MediatorContextProtocol) -> None:
-    """Handles a message in context by dispatching it to the appropriate services."""
+  async def handle(self, message: Message, context: ContextProtocol) -> None:
+    """Handles a message in unit of work by dispatching it to the appropriate modules."""
     handled = False
-    for service in self.services:
-      if isinstance(message, service.supports):
+    for module in self._modules:
+      if isinstance(message, module.supports):
         task = asyncio.create_task(
-          Mediator._handling_task(
-            service=service,
+          self._handling_task(
+            module=module,
             message=message,
             dispatch=context.process,
             join_stream=context.join_stream,
-            tx_context=context.tx_context,
           )
         )
         context.add_task(task)
@@ -236,26 +228,12 @@ class Mediator:
     if not handled and not isinstance(message, Event):
       logger.critical(f"No handler found for message: {message}")
 
-  async def _handle_global_message(self, message: Message, log_level: int = logging.DEBUG) -> None:
-    """Handles a global message by dispatching it to the appropriate services."""
+  def register_module(self, module: ComponentProtocol[Any]) -> None:
+    """Register a service."""
+    logger.info(f"Module {type(module).__name__} registered.")
+    self._modules.add(module)
 
-    async def dispatch_to_logger(message: Message) -> None:
-      """Dispatch function mock for logging."""
-      logger.log(log_level, f"Global message: {message}")
-
-    tx_context = self.application.transaction_manager.context()
-    handled = False
-    for service in self.services:
-      if isinstance(message, service.supports):
-        await self._handling_task(
-          service=service,
-          message=message,
-          dispatch=dispatch_to_logger,
-          join_stream=lambda: (asyncio.Queue(), asyncio.Event()),
-          tx_context=tx_context,
-        )
-        handled = True
-
-    await tx_context.rollback()
-    if not handled:
-      logger.critical(f"No handler found for message: {message}")
+  def unregister_module(self, module: ComponentProtocol[Any]) -> None:
+    """Unregister a service."""
+    logger.info(f"module {type(module).__name__} unregistered.")
+    self._modules.remove(module)

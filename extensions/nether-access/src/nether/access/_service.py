@@ -15,8 +15,8 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
 
 from nether.common import Event
-from nether.exceptions import ServiceError, NotFoundError
-from nether.service import Service
+from nether.exception import ServiceError, NotFoundError
+from nether.component import Component
 from nether import console
 
 from ..account import Account
@@ -51,7 +51,7 @@ console.configure_logger(local_logger)
 class AccessServiceError(ServiceError): ...
 
 
-class AccessService(Service[Authorize | ValidateAccount | ValidateAccountOneTimePassword | ValidateJWT]):
+class AccessService(Component[Authorize | ValidateAccount | ValidateAccountOneTimePassword | ValidateJWT]):
   def __init__(
     self,
     *,
