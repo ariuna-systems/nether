@@ -18,7 +18,7 @@ from enum import StrEnum
 from typing import Any
 
 from nether import Application, execute
-from nether.common import Command, Event, Message
+from nether.protocol import Command, Event, Message
 from nether.component import Component
 
 # =============================================================================

@@ -2,7 +2,7 @@ import uuid
 
 import pyotp
 
-from nether.common import Event
+from nether.protocol import Event
 from nether.exception import ServiceError, AlreadyExistsError
 from nether.component import Component 
 

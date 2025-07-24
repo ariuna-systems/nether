@@ -14,9 +14,9 @@ from urllib.parse import quote_plus
 
 import dotenv
 
-from .component import ComponentProtocol
+from .component import Component
 from .logging import configure_logger
-from .mediator import Mediator, MediatorProtocol
+from .mediator import Mediator
 
 __all__ = ["Application"]
 
@@ -195,19 +195,15 @@ class Application:
   def __init__(
     self,
     *,
-    mediator: MediatorProtocol = Mediator(),  # noqa: B008
-    configuration: argparse.Namespace,
+    mediator=Mediator(),  # noqa: B008
+    configuration: argparse.Namespace,  # TODO Configuration class
     logger: logging.Logger = local_logger,
   ) -> None:
     self.configuration = configuration
     self._mediator = mediator
     self._stop_event = asyncio.Event()
     self.logger = logger
-    # self._transaction_manager = TransactionManager(
-    #   logger=logger, dsn=self._database_dsn, min_pool_size=3, max_pool_size=10
-    # )
-    self._services: set[ComponentProtocol] = set()
-    # TODO: uptime, background processing
+    self._services: set[Component] = set()
 
   @property
   def platform(self) -> str | None:
@@ -215,30 +211,25 @@ class Application:
     platform_name = platform.system()
     return None if platform_name == "" else platform_name
 
-  # @property
-  # def transaction_manager(self) -> TransactionManager:
-  #   return self._transaction_manager
-
   @property
-  def mediator(self) -> MediatorProtocol:
+  def mediator(self) -> Mediator:
     """Get the mediator instance."""
     return self._mediator
 
   @property
-  def modules(self) -> set[ComponentProtocol[Any]]:
-    """Get the registered modules."""
-    return self._mediator.modules
+  def components(self) -> set[Component[Any]]:
+    """Get the registered components."""
+    return self._mediator.components
 
-  def register_module(self, *modules: ComponentProtocol[Any]) -> None:
-    for module in modules:
-      if module not in self._mediator.modules:
-        self._mediator.register_module(module)
-        # TODO: Udržovat služby na aplikaci a předat mediatoru instanci aplikace
+  def attach(self, *components: Component[Any]) -> None:
+    for component in components:
+      if component not in self._mediator.components:
+        self._mediator.attach(component)
 
-  def unregister_module(self, *modules: ComponentProtocol[Any]) -> None:
-    for module in modules:
-      if module in self._mediator.modules:
-        self._mediator.unregister(module)
+  def detach(self, *components: Component[Any]) -> None:
+    for component in components:
+      if component in self._mediator.components:
+        self._mediator.detach(component)
 
   def _setup_signal_handlers(self) -> None:
     """Setup handlers for interrupt signals"""
@@ -252,11 +243,16 @@ class Application:
 
   async def start(self) -> None:
     try:
-      await self._before_start()
+      for component in self.components:
+        try:
+          await component.on_start()
+          self.logger.info(f"component `{type(component).__name__}` started.")
+        except Exception as error:
+          self.logger.error(f"component `{type(component).__name__}` failed: {error}")
+          sys.exit(1)
       await self.main()
-      while not self._stop_event.is_set() and any(module.state for module in self._mediator.modules):
+      while not self._stop_event.is_set() and any(component.state for component in self._mediator.components):
         await asyncio.sleep(0.25)
-
     except asyncio.CancelledError:
       self.logger.info("Application cancelled")
     except Exception as e:
@@ -268,22 +264,13 @@ class Application:
 
   async def stop(self) -> None:
     await self._mediator.stop()
-    for service in self.modules:
+    for component in self.components:
       try:
-        await service.stop()
+        await component.stop()
       except Exception as error:
         self.logger.debug(f"Traceback for error below: {traceback.format_exc()}")
-        self.logger.error(f"Error stopping a service `{type(service).__name__}`: {error}")
+        self.logger.error(f"Error stopping a service `{type(component).__name__}`: {error}")
     self.logger.info("stop")
-
-  async def _before_start(self) -> None:
-    for module in self.modules:
-      try:
-        await module.on_start()
-        self.logger.info(f"module `{type(module).__name__}` started.")
-      except Exception as error:
-        self.logger.error(f"Error starting module `{type(module).__name__}`: {error}")
-        sys.exit(1)
 
   @abstractmethod
   async def main(self) -> None:

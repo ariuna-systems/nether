@@ -5,10 +5,11 @@ import asyncio
 import logging
 from abc import abstractmethod
 from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
 from enum import StrEnum, unique
-from typing import Any, Protocol, TypeVar, get_args
+from typing import Any, TypeVar, get_args
 
-from nether.message import Message
+from nether.message import Command, Message
 
 
 class _NeverMatch: ...
@@ -22,40 +23,26 @@ class ComponentState(StrEnum):
   STOPPED = "stopped"
 
 
-class ComponentProtocol[T: type[Message] | tuple[type[Message], ...]](Protocol):
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ComponentPauseExecution(Command): ...
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ComponentResumeExecution(Command): ...
+
+
+class Component[T: type[Message] | tuple[type[Message], ...]]:
   """Component extends a framework with specific functionality
   e.g background processing, system monitoring etc.
+
+  Component can handle specified type of messages with :meth:`handle` method.
+  Componnet has a lifecycle and state, can be started, paused, resumed or stopped.
+  Component can have initilization and finilization phase.
 
   We called it service or module in the past but it can be confusing because it clashes
   with domain driven design terminology or Python naming.
   """
 
-  @property
-  def supports(self) -> type[Message] | tuple[type[Message], ...] | type[_NeverMatch]:
-    """Supported message types."""
-
-  @property
-  def state(self) -> ComponentState: ...
-
-  @abstractmethod
-  async def on_start(self) -> None: ...
-
-  @abstractmethod
-  async def on_stop(self) -> None: ...
-
-  @abstractmethod
-  async def handle(
-    self,
-    message: Message,
-    *,
-    dispatch: Callable[[Message], Awaitable[None]],
-    join_stream: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
-  ) -> None: ...
-
-  # async def main(self): ...
-
-
-class Component[T: type[Message] | tuple[type[Message], ...]](ComponentProtocol[T]):
   def __init__(self, application, *_, logger: logging.Logger | None = None, **__) -> None:
     self.application = application
     if logger is not None:
@@ -77,9 +64,11 @@ class Component[T: type[Message] | tuple[type[Message], ...]](ComponentProtocol[
     return self._is_running  # TODO: return current state
 
   async def on_start(self) -> None:
+    """Called when a component is in initializing phase."""
     self._state = ComponentState.STARTED
 
   async def on_stop(self) -> None:
+    """Called when a component is in finalizing phase."""
     self._state = ComponentState.STOPPED
 
   @abstractmethod
@@ -91,4 +80,5 @@ class Component[T: type[Message] | tuple[type[Message], ...]](ComponentProtocol[
     join_stream: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
   ) -> None: ...
 
-  # async def main(self): ...
+  async def main(self):
+    """The main component work."""

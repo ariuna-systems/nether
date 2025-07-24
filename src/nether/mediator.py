@@ -1,26 +1,23 @@
 """
-Mediator pattern for in-process, asynchronous message routing.
+Mediator for in-process asynchronous message routing and handling.
 """
 
 from __future__ import annotations
 
 import asyncio
-import contextlib
 import logging
 import uuid
-from collections.abc import AsyncIterator, Awaitable, Callable, Coroutine
-from typing import Any, Protocol, Self
+from collections.abc import Awaitable, Callable, Coroutine
+from contextlib import asynccontextmanager
+from typing import Any, Self
 
-from .component import ComponentProtocol
+from .component import Component
 from .logging import configure_logger
 from .message import Command, Event, Message, Query
 
 __all__ = [
   "Context",
-  "ContextManager",
-  "ContextProtocol",
   "Mediator",
-  "MediatorProtocol",
 ]
 
 
@@ -30,33 +27,13 @@ logger.propagate = False
 configure_logger(logger)
 
 
-class ContextProtocol(Protocol):
-  def __init__(self, handle_message: Callable[[Message, Self], Coroutine[Any, Any, None]] = ...): ...
-
-  @property
-  def identifier(self) -> uuid.UUID: ...
-
-  async def process(self, message: Message) -> None: ...
-
-  async def close(self) -> None: ...
-
-  async def join_stream(self) -> tuple[asyncio.Queue[Any], asyncio.Event]: ...
-
-  async def add_task(self, task: asyncio.Task[None]) -> None: ...
-
-  async def receive_result(self) -> Event | None: ...https://github.com/arjuna-group/nether/pull/3/conflict?name=src%252Fnether%252Fmediator.py&ancestor_oid=a2008d0a77d9e4f45622233fb8eb44c212b8aa80&base_oid=2a1a2c3998f41f6b015e88f138ed32ba5f913e06&head_oid=70b8a111a0703abfd5e8e959bd086d59e682743d
-
-
-type ContextManager = Callable[[], contextlib.AbstractAsyncContextManager[ContextProtocol]]
-
-
 class Context:
   """Context represents a unit of work, providing isolated queues."""
 
   def __init__(
     self,
-    handle_message: Callable[[Message, ContextProtocol], Coroutine[Any, Any, None]],
-  ):
+    handle_message: Callable[[Message, Self], Coroutine[Any, Any, None]],
+  ) -> None:
     """If mediator is not passed, automatically gets the singleton :class:`Mediator` instance."""
     self._handle_message = handle_message
     self._id = uuid.uuid4()
@@ -112,28 +89,9 @@ class Context:
     return await self._results.get()
 
 
-class MediatorProtocol(Protocol):
-  @property
-  def modules(self) -> set[ComponentProtocol[Any]]: ...
-
-  async def stop(self) -> None: ...
-
-  @contextlib.asynccontextmanager
-  async def context(self) -> AsyncIterator[ContextProtocol]: ...
-
-  async def register_context(self, context: ContextProtocol) -> None: ...
-
-  async def unregister_context(self, context: ContextProtocol) -> None: ...
-
-  async def handle_message(self, message: Message, context: ContextProtocol) -> None: ...
-
-  async def register_module(self, module: ComponentProtocol[Any]) -> None: ...
-
-  async def unregister_module(self, module: ComponentProtocol[Any]) -> None: ...
-
-
 class Mediator:
-  """Mediator dispatches messages to handlers."""
+  """Mediator routes messages to registered components (handlers),
+  allowing decoupled asynchronous communication between components."""
 
   _instance: Self | None = None
 
@@ -144,39 +102,36 @@ class Mediator:
     return cls._instance  # type: ignore[no-any-return, unused-ignore]
 
   def __init_bus(self) -> None:
-    self._modules: set[ComponentProtocol[Any]] = set()
-    self._contexts: dict[uuid.UUID, ContextProtocol] = {}
+    self._contexts: dict[uuid.UUID, Context] = {}
     self._context_locks: dict[uuid.UUID, asyncio.Lock] = {}
+    self._components: set[Component[Any]] = set()
 
-  @contextlib.asynccontextmanager
+  @asynccontextmanager
   async def context(self):
     """
-    The class method context manager to open a new unit-of-work
-    using the existing mediator instance or creating a new one if needed.
+    Context manager to start a new unit-of-work using the mediator instance.
+    Registers the context, yields it, and ensures cleanup on exit.
     """
     context = Context(self.handle)
-    await self.register_context(context)
+    await self.attach_context(context)
     try:
-      await self.register_context(context)
       yield context
-    except Exception:
-      raise
     finally:
       await context.close()
-      if context:
-        await self.unregister_context(context)
+      await self.detach_context(context)
 
   @property
-  def modules(self) -> set[ComponentProtocol[Any]]:
-    if not hasattr(self, "_modules"):
+  def components(self) -> set[Component[Any]]:
+    if not hasattr(self, "_components"):
       self.__init_bus()
-    return self._modules
+    return self._components
 
   async def stop(self) -> None:
-    logger.info("deleted services")
-    for module in self._modules:
-      await module.on_stop()
-    del self._modules
+    """Stop all registered services."""
+    logger.info(f"{self.__class__.__name__} stopping")
+    for component in self.components:
+      await component.on_stop()
+    del self._components
     self._instance = None
 
   def _get_context_lock(self, context_id: uuid.UUID) -> asyncio.Lock:
@@ -184,56 +139,73 @@ class Mediator:
       self._context_locks[context_id] = asyncio.Lock()
     return self._context_locks[context_id]
 
-  async def register_context(self, context: ContextProtocol) -> None:
+  def attach(self, component: Component[Any]) -> None:
+    """Register a service component.
+    :param component: The component to add to registered components.
+    """
+    self._components.add(component)
+    logger.info(f"component {type(component).__name__} attached")
+
+  def detach(self, component: Component[Any]) -> None:
+    """Unregister a service component.
+    :param component: The component to remove from registered components.
+    """
+    self._components.remove(component)
+    logger.info(f"component {type(component).__name__} detached")
+
+  async def attach_context(self, context: Context) -> None:
     """Registers a new unit of work to receive messages."""
     async with self._get_context_lock(context.identifier):
-      logger.debug(f"Context `{context.identifier}` registered.")
+      logger.debug(f"context `{context.identifier}` attached")
       self._contexts[context.identifier] = context
 
-  async def unregister_context(self, context: ContextProtocol) -> None:
+  async def detach_context(self, context: Context) -> None:
     """Unregisters a unit of work, stopping message routing to it."""
     async with self._get_context_lock(context.identifier):
-      if self._contexts.pop(context.identifier, None) is not None:  # Pop without raising
-        logger.debug(f"Context `{context.identifier}` unregistered.")
+      if self._contexts.pop(context.identifier, None) is not None:
+        logger.debug(f"context `{context.identifier}` detached")
 
-  @staticmethod
-  async def _handling_task(
-    *,
-    module: ComponentProtocol[Any],
-    message: Message,
-    dispatch: Callable[[Message], Awaitable[None]],
-    join_stream: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
-  ) -> None:
-    try:
-      await module.handle(message, dispatch=dispatch, join_stream=join_stream)
-    except Exception as error:
-      logger.critical(f"Uncaught error from {type(module)}: {error}")
+  async def handle(self, message: Message, context: Context = None) -> None:
+    """
+    Handles a message in the specified context (unit-of-work).
+    """
 
-  async def handle(self, message: Message, context: ContextProtocol) -> None:
-    """Handles a message in unit of work by dispatching it to the appropriate modules."""
-    handled = False
-    for module in self._modules:
-      if isinstance(message, module.supports):
-        task = asyncio.create_task(
-          self._handling_task(
-            module=module,
-            message=message,
-            dispatch=context.process,
-            join_stream=context.join_stream,
+    async def _handle(
+      *,
+      module: Component[Any],
+      message: Message,
+      dispatch: Callable[[Message], Awaitable[None]],
+      join_stream: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
+    ) -> None:
+      try:
+        await module.handle(message, dispatch=dispatch, join_stream=join_stream)
+      except Exception as error:
+        logger.critical(f"Uncaught error from {type(module)}: {error}")
+
+    async def dispatch(message: Message, context: Context) -> None:
+      handled = False
+      for module in self.components:  # FIX: use self.components instead of self._modules
+        supports = module.supports
+        if isinstance(supports, tuple):
+          match_type = any(isinstance(message, t) for t in supports)
+        else:
+          match_type = isinstance(message, supports)
+        if match_type:
+          task = asyncio.create_task(
+            _handle(
+              module=module,
+              message=message,
+              dispatch=context.process,
+              join_stream=context.join_stream,
+            )
           )
-        )
-        context.add_task(task)
-        handled = True
+          context.add_task(task)
+          handled = True
+      if not handled:
+        logger.critical(f"Handler not found for message {message}")
 
-    if not handled and not isinstance(message, Event):
-      logger.critical(f"No handler found for message: {message}")
-
-  def register_module(self, module: ComponentProtocol[Any]) -> None:
-    """Register a service."""
-    logger.info(f"Module {type(module).__name__} registered.")
-    self._modules.add(module)
-
-  def unregister_module(self, module: ComponentProtocol[Any]) -> None:
-    """Unregister a service."""
-    logger.info(f"module {type(module).__name__} unregistered.")
-    self._modules.remove(module)
+    if context is None:
+      async with self.context() as context:
+        await dispatch(message, context)
+    else:
+      await dispatch(message, context)

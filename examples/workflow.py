@@ -1,6 +1,5 @@
 """
 Framework Architecture Review and Workflow Examples
-====================================================
 
 This file demonstrates various patterns for event dispatching, commands,
 workflows, and pipeline creation using the Nether framework.
@@ -14,12 +13,10 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from nether import Application, execute
-from nether.common import Command, Event, Message
 from nether.component import Component
+from nether.message import Command, Event, Message
 
-# =============================================================================
 # 1. WORKFLOW COMMANDS AND EVENTS
-# =============================================================================
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -69,9 +66,7 @@ class StepCompleted(Event):
   next_steps: list[str] = field(default_factory=list)
 
 
-# =============================================================================
 # 2. PIPELINE COMMANDS AND EVENTS
-# =============================================================================
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -111,9 +106,7 @@ class StageProcessed(Event):
   next_stage: str | None = None
 
 
-# =============================================================================
 # 3. CYCLE DETECTION UTILITIES
-# =============================================================================
 
 
 class CycleDetector:
@@ -203,9 +196,7 @@ class CycleDetector:
     return result if len(result) == len(steps) else None
 
 
-# =============================================================================
 # 4. WORKFLOW ORCHESTRATOR MODULE
-# =============================================================================
 
 
 class WorkflowOrchestrator(Component[StartWorkflow | WorkflowStep]):
@@ -349,9 +340,7 @@ class WorkflowOrchestrator(Component[StartWorkflow | WorkflowStep]):
       del self.active_workflows[workflow_id]
 
 
-# =============================================================================
 # 5. STEP PROCESSORS
-# =============================================================================
 
 
 class OrderValidationProcessor(Component[WorkflowStep]):
@@ -401,9 +390,7 @@ class PaymentProcessor(Component[WorkflowStep]):
       await asyncio.sleep(0.7)
 
 
-# =============================================================================
 # 6. EVENT LISTENERS
-# =============================================================================
 
 
 class WorkflowEventListener(Component[WorkflowCompleted | WorkflowFailed | StepCompleted]):
@@ -429,9 +416,7 @@ class WorkflowEventListener(Component[WorkflowCompleted | WorkflowFailed | StepC
           self._logger.info(f"   Next steps: {', '.join(message.next_steps)}")
 
 
-# =============================================================================
 # 7. DEMONSTRATION APPLICATION
-# =============================================================================
 
 
 class WorkflowDemoApplication(Application):
@@ -487,9 +472,7 @@ class WorkflowDemoApplication(Application):
       await asyncio.sleep(3)
 
 
-# =============================================================================
 # 8. MAIN EXECUTION
-# =============================================================================
 
 
 async def main():
@@ -499,17 +482,15 @@ async def main():
   configuration.host = "localhost"
   configuration.port = 8082
 
-  # Configure logging
   logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
   application = WorkflowDemoApplication(configuration=configuration)
 
-  # Register modules
-  application.register_module(WorkflowOrchestrator(application))
-  application.register_module(OrderValidationProcessor(application))
-  application.register_module(InventoryProcessor(application))
-  application.register_module(PaymentProcessor(application))
-  application.register_module(WorkflowEventListener(application))
+  application.attach(WorkflowOrchestrator(application))
+  application.attach(OrderValidationProcessor(application))
+  application.attach(InventoryProcessor(application))
+  application.attach(PaymentProcessor(application))
+  application.attach(WorkflowEventListener(application))
 
   await application.start()
 

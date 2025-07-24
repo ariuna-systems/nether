@@ -1,7 +1,7 @@
 import uuid
 
 import psycopg
-from nether.common import AsyncConnectorProtocol
+from nether.protocol import AsyncConnectorProtocol
 
 from ..access import AccountSession
 from ._domain import Account, AccountRole
