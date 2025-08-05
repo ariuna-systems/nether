@@ -2,10 +2,10 @@
 TODO This module implements a long running or CPU intensive process.
 """
 
-from .component import Component
+from . import Component
 
 
-class ProcessingService(Component):
+class ProcessingComponent(Component):
   def __init__(self, application, *_, logger=None, **__):
     super().__init__(application, logger=logger, **__)
 

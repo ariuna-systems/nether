@@ -1,6 +1,6 @@
-from ..component import Component
+from . import Component
 
 
-class Storage(Component):
+class StorageComponent(Component):
   def __init__(self, application, *_, **__) -> None:
     super().__init__(self, application)

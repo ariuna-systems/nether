@@ -1,4 +1,4 @@
-# Nether documentation
+# Nether
 
 Welcome to the Nether documentation!
 
@@ -16,12 +16,20 @@ class Application(nether.Application):
     def __init__(self, ...) -> None:
         super().__init__(...)
 
-    def on_start(self) -> None: ...
-    def on_stop(self) -> None: ...
-
+    def on_start(self) -> None:
+        print(f"Start {self.__class__.__name__}")
+    
+    def on_stop(self) -> None:
+        print(f"Stop {self.__class__.__name__}")
 ```
 
-The app will be running until you stop it by pressing `Ctrl+C`.
+The app will be running until you stop it by pressing `Ctrl + C`.
+
+### Components
+
+Nether framework is build in a modular fashion. It is based on components. Component can be registere on application and can expose a views to the user. Each view has a route through which it can be accessed.
+
+Example: Account component expose REST API on  `/api/account/` and UI on `/account/` route.
 
 ```{toctree}
 :maxdepth: 2

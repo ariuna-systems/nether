@@ -4,6 +4,8 @@ from typing import Protocol
 
 
 class ConnectorProtocol[T, C](Protocol):
+  """FIXME What is this for?"""
+
   def connect(self) -> C: ...
 
   @contextmanager
@@ -11,6 +13,8 @@ class ConnectorProtocol[T, C](Protocol):
 
 
 class AsyncConnectorProtocol[T, C](Protocol):
+  """FIXME What is this for?"""
+
   async def connect(self) -> C: ...
 
   @asynccontextmanager

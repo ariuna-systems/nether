@@ -14,7 +14,7 @@ import pyotp
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
 
-from nether.common import Event
+from nether.protocol import Event
 from nether.exception import ServiceError, NotFoundError
 from nether.component import Component
 from nether import console
