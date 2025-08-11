@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nether documentation &mdash; Nether 0.20.0 documentation</title>
+  <title>Nether &mdash; Nether 0.20.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
@@ -61,7 +61,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Nether documentation</li>
+      <li class="breadcrumb-item active">Nether</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/index.md.txt" rel="nofollow"> View page source</a>
       </li>
@@ -71,8 +71,8 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="nether-documentation">
-<h1>Nether documentation<a class="headerlink" href="#nether-documentation" title="Link to this heading"></a></h1>
+  <section id="nether">
+<h1>Nether<a class="headerlink" href="#nether" title="Link to this heading"></a></h1>
 <p>Welcome to the Nether documentation!</p>
 <p>Add your content using <strong>Markdown</strong> syntax. See the <a class="reference external" href="https://myst-parser.readthedocs.io/en/latest/">MyST documentation</a> for details.</p>
 <section id="reference">
@@ -81,16 +81,26 @@
 <h3>Application<a class="headerlink" href="#application" title="Link to this heading"></a></h3>
 <p>Application class is a central point of your project which acts as an orchestrates and coordinator.
 There should exactly one instance of an application when your process starts. You should inherit from  :class:nether.Applicaton`.</p>
-<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Application</span><span class="p">(</span><span class="n">nether</span><span class="o">.</span><span class="n">Application</span><span class="p">):</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Application</span><span class="p">(</span><span class="n">nether</span><span class="o">.</span><span class="n">Application</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">on_start</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">on_stop</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
-
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_start</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Start </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_stop</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Stop </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>The app will be running until you stop it by pressing <code class="docutils literal notranslate"><span class="pre">Ctrl+C</span></code>.</p>
+<p>The app will be running until you stop it by pressing <code class="docutils literal notranslate"><span class="pre">Ctrl</span> <span class="pre">+</span> <span class="pre">C</span></code>.</p>
+</section>
+<section id="components">
+<h3>Components<a class="headerlink" href="#components" title="Link to this heading"></a></h3>
+<p>The framework is designed with modularity at its core. Each part of the system is called a component, representing a distinct unit of functionality. Components can be thought of as the internal building blocks of the framework, responsible for specific features or services.</p>
+<p>At the same time, components are designed to be extensible. This means they can also function as extensions—optional modules that can be added, replaced, or removed to customize or enhance the system’s capabilities. This dual nature allows developers to treat components both as essential internal parts and as plug-in extensions, similar to how modern modular platforms operate.</p>
+<p>By following this approach, the framework supports both a robust core and flexible expansion, making it easy to adapt to new requirements or integrate third-party features.</p>
+<p>Nether framework is build in a modular fashion. It is based on components. Component can be registere on application and can expose a views to the user. Each view has a route through which it can be accessed.</p>
+<p>Example: Account component expose REST API on  <code class="docutils literal notranslate"><span class="pre">/api/account/</span></code> and UI on <code class="docutils literal notranslate"><span class="pre">/account/</span></code> route.</p>
 <div class="toctree-wrapper compound">
 <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
