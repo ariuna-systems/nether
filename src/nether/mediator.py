@@ -191,11 +191,15 @@ class Mediator:
         else:
           match_type = isinstance(message, supports)
         if match_type:
+          # Create a simple dispatch function that doesn't recurse
+          async def simple_dispatch(msg: Message) -> None:
+            await context.process(msg)
+
           task = asyncio.create_task(
             _handle(
               module=module,
               message=message,
-              dispatch=context.process,
+              dispatch=simple_dispatch,
               join_stream=context.join_stream,
             )
           )

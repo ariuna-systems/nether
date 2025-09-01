@@ -12,7 +12,7 @@ from nether.message import Command, Event, Message
 from nether.server import Server
 
 
-class Application(nether.Application):
+class Application(nether.Nether):
   async def main(self) -> None:
     print("Started")
 

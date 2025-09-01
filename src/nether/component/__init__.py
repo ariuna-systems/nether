@@ -35,12 +35,12 @@ class Component[T: type[Message] | tuple[type[Message], ...]]:
   """Component extends a framework with specific functionality
   e.g background processing, system monitoring etc.
 
-  Component can handle specified type of messages with :meth:`handle` method.
-  Componnet has a lifecycle and state, can be started, paused, resumed or stopped.
-  Component can have initilization and finilization phase.
+  * Component can handle specified type of signals with :meth:`handle` method.
+  * Componnet has a lifecycle and state, can be started, paused, resumed or stopped.
+  * Component has initilization and finilization phase.
 
-  We called it service or module in the past but it can be confusing because it clashes
-  with domain driven design terminology or Python naming.
+  .. note: It can be called service or module but it is confusing because it clashes
+  with Python and Domain-Driven Design terminology.
   """
 
   def __init__(self, application, *_, logger: logging.Logger | None = None, **__) -> None:
@@ -71,13 +71,15 @@ class Component[T: type[Message] | tuple[type[Message], ...]]:
     """Called when a component is in finalizing phase."""
     self._state = ComponentState.STOPPED
 
+  async def on_error(self) -> None: ...
+
   @abstractmethod
   async def handle(
     self,
     message: T,
     *,
-    dispatch: Callable[[T], Awaitable[None]],
-    join_stream: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
+    callback: Callable[[T], Awaitable[None]],
+    channel: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
   ) -> None: ...
 
   async def main(self):

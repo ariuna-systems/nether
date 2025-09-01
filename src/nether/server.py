@@ -22,63 +22,84 @@ configure_logger(local_logger)
 
 
 # ##############################################################
-#                           MESSAGES                           #
+#                           SIGNALS                            #
 # ##############################################################
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class StartServer(Command):
   host: str
   port: int
 
+  def __post_init__(self) -> None:
+    if self.port <= 0:
+      raise ValueError("port must be positive number")
+    # TODO validate host
 
-@dataclass(frozen=True)
+
+@dataclass(frozen=True, kw_only=True, slots=True)
 class ServerStarted(SuccessEvent): ...
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class StartServerFailure(FailureEvent): ...
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class StopServer(Command): ...
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class ServerStopped(SuccessEvent): ...
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class StopServerFailure(FailureEvent): ...
 
 
-@dataclass(frozen=True, kw_only=True)
-class AddView(Command):
+@dataclass(frozen=True, kw_only=True, slots=True)
+class RegisterView(Command):
   route: str
   view: type[web.View]
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class ViewAdded(SuccessEvent): ...
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class AddViewFailure(FailureEvent): ...
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class AddStatic(Command):
   prefix: str
   path: Path
   kwargs: dict[str, Any] = field(default_factory=lambda: {})
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class StaticAdded(SuccessEvent): ...
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class AddStaticFailure(FailureEvent): ...
+
+
+type ServerSignals = (
+  StartServer
+  | ServerStarted
+  | StartServerFailure
+  | StopServer
+  | ServerStopped
+  | StopServerFailure
+  | RegisterView
+  | ViewAdded
+  | AddViewFailure
+  | AddStatic
+  | StaticAdded
+  | AddStaticFailure
+)
 
 
 class HTTPInterfaceServiceError(ServiceError): ...
@@ -223,7 +244,12 @@ class _DynamicRouter:
       return web.Response(status=500, text="Internal Server Error")
 
 
-class Server(Component[StartServer | StopServer | AddView]):
+# ##############################################################
+#                           SERVICE                            #
+# ##############################################################
+
+
+class Server(Component[StartServer | StopServer | RegisterView]):
   def __init__(
     self,
     application,
@@ -319,7 +345,7 @@ class Server(Component[StartServer | StopServer | AddView]):
     result_event: Event
     try:
       match message:
-        case AddView():
+        case RegisterView():
           await self._add_view(route=message.route, view=message.view)
           result_event = ViewAdded()
         case AddStatic():
@@ -327,7 +353,7 @@ class Server(Component[StartServer | StopServer | AddView]):
           result_event = StaticAdded()
     except Exception as error:
       match message:
-        case AddView():
+        case RegisterView():
           result_event = AddViewFailure(error=error)
         case AddStatic():
           result_event = AddStaticFailure(error=error)
