@@ -1,83 +1,130 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "nether"
-description = "The foundation library"
+description = "Actor Model Framework for building message-driven systems in Python"
 dynamic = ["readme", "version"]
 requires-python = ">=3.12"
 license = { text = "MIT" }
-dependencies = ["aiohttp", "aiohttp-middlewares", "python-dotenv", "asyncpg"]
-
-[project.optional-dependencies]
-windows = ["pywin32"]
-access = [
-    "nether-access @ git+ssh://git@github.com/arjuna-group/nether.git#subdirectory=extensions/nether-access",
+authors = [
+    { name = "David Landa", email = "david.landa@proton.me" },
+    { name = "Daniel Randsdrof", email = "daniel.randsdrof@proton.me" },
+]
+maintainers = [
+    { name = "David Landa", email = "david.landa@proton.me" },
+]
+keywords = ["actor-model", "async", "messaging", "framework", "event-driven"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Distributed Computing",
+    "Framework :: AsyncIO",
+]
+dependencies = [
+    "aiohttp>=3.9.0",
+    "aiohttp-middlewares>=2.0.0",
+    "python-dotenv>=1.0.0",
+    "asyncpg>=0.29.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/wavelet-space/nether"
+Repository = "https://github.com/wavelet-space/nether"
+Documentation = "https://github.com/wavelet-space/nether/tree/main/docs"
+Issues = "https://github.com/wavelet-space/nether/issues"
+
+[project.optional-dependencies]
+windows = ["pywin32>=306"]
+
 [tool.setuptools.dynamic]
-readme = { file = ["README.md"] }
+readme = { file = ["README.md"], content-type = "text/markdown" }
 version = { attr = "nether.__version__" }
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["nether"]
-
+include = ["nether*"]
 
 [tool.setuptools.package-data]
 "nether" = ["py.typed"]
 
 [tool.ruff]
-extend-include = ["*.ipynb"]
-line-length = 120
 target-version = "py312"
-indent-width = 2
-exclude = [
-    "extensions",
-    "docs",
-    ".eggs",
-    ".git",
-    ".mypy_cache",
-    ".ruff_cache",
-    ".venv",
-    "__pypackages__",
-    "_build",
-    "build",
-    "dist",
-    "venv",
-]
+line-length = 120
+indent-width = 4
 
 [tool.ruff.lint]
 select = [
-    "E",   # pycodestyle - Error
-    "W",   # pycodestyle - Warning
-    "F",   # PyFlakes
-    "C4",  # flake8 - Comprehensions
-    "B",   # flake8 - Bugbear
-    "I",   # Import sort
-    "N",   # pep8 - Naming
-    "PTH", # use pathlib
-    "UP",  # PyUpgrade (new syntax)
+    "E",
+    "W",
+    "F",
+    "UP",
+    "B",
+    "SIM",
+    "I",
+    "N",
+    "C4",
+    "PTH",
+    "RUF",
+    "ASYNC",
 ]
-ignore = []
+ignore = [
+    "E501",
+    "B008",
+]
 fixable = ["ALL"]
 unfixable = []
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"]  # Allow assert statements in tests
 
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
+docstring-code-format = true
 
 [tool.mypy]
-files = ["src", "examples/server-simple.py"]
-ignore_missing_imports = true
-show_error_codes = true
+python_version = "3.12"
+files = ["src", "tests", "examples"]
+strict = true
+warn_unreachable = true
 warn_unused_ignores = true
-warn_unused_configs = true
+warn_redundant_casts = true
+show_error_codes = true
 show_column_numbers = true
-check_untyped_defs = true
-exclude = ['venv', '.venv']
+exclude = [
+    "build/",
+    "dist/",
+    ".venv/",
+    "venv/",
+    ".mypy_cache/",
+]
+
+[[tool.mypy.overrides]]
+module = [
+    "aiohttp_middlewares.*",
+]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
 python_files = ["test_*.py", "*_test.py"]
-addopts = "-v --tb=short"
+addopts = [
+    "-v",
+    "--tb=short",
+    "--strict-markers",
+    "--strict-config",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+]

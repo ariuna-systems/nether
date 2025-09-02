@@ -4,8 +4,8 @@ from datetime import UTC, datetime
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class Message:
-  created_at: datetime = field(default_factory=lambda: datetime.now(tz=UTC))
-  created_by: str | type | None = None
+    created_at: datetime = field(default_factory=lambda: datetime.now(tz=UTC))
+    created_by: str | type | None = None
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -26,9 +26,9 @@ class SuccessEvent(Event): ...
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class FailureEvent(Event):
-  error: Exception
+    error: Exception
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class StopProducer(Command):
-  """Signal to stop producing events."""
+    """Signal to stop producing events."""

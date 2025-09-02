@@ -11,18 +11,18 @@ These handle communication with message brokers, event buses, or other messaging
 
 
 class EventPublisher:
-  def __init__(self, broker):
-    self.broker = broker
+    def __init__(self, broker):
+        self.broker = broker
 
-  def publish(self, event):
-    """Serialize and send event to broker."""
-    pass
+    def publish(self, event):
+        """Serialize and send event to broker."""
+        pass
 
 
 class EventSubscriber:
-  def __init__(self, broker):
-    self.broker = broker
+    def __init__(self, broker):
+        self.broker = broker
 
-  def subscribe(self, topic, handler):
-    """Listen for messages and call handler."""
-    pass
+    def subscribe(self, topic, handler):
+        """Listen for messages and call handler."""
+        pass
