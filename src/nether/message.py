@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 @dataclass(frozen=True, kw_only=True, slots=True)
 class Message:
   created_at: datetime = field(default_factory=lambda: datetime.now(tz=UTC))
-  created_by: str | None = None
+  created_by: str | type | None = None
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -31,4 +31,4 @@ class FailureEvent(Event):
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class StopProducer(Command):
-  """Message to signal producer to stop producing events."""
+  """Signal to stop producing events."""

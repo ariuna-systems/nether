@@ -9,10 +9,10 @@ class ProcessingComponent(Component):
   def __init__(self, application, *_, logger=None, **__):
     super().__init__(application, logger=logger, **__)
 
-  def on_start(self):
-    return super().start()
+  async def on_start(self):
+    return await super().on_start()
 
-  def on_stop(self):
-    return super().stop()
+  async def on_stop(self):
+    return await super().on_stop()
 
   def execute(self) -> None: ...

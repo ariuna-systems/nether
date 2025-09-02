@@ -28,12 +28,13 @@ class Repository(_t.Protocol):
   def __init__(self, *_, **__) -> None: ...
 
 
-class ReporitoryError(Exception): ...
+class RepositoryError(Exception): ...
 
 
 class RevertibleRepository(Repository):
   def __init__(self, *_, **__) -> None:
-    super().__init__(_, __)
+    # Repository is a Protocol, no need to call super().__init__()
+    pass
 
   def commit(self) -> None: ...
 

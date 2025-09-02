@@ -18,12 +18,11 @@ from .component import Component
 from .logging import configure_logger
 from .mediator import Mediator
 
-__all__ = ["Application"]
+__all__ = ["Nether"]
 
 
 local_logger = logging.getLogger(__name__)
 local_logger.propagate = False
-
 
 configure_logger(local_logger)
 
@@ -184,7 +183,7 @@ def execute(coroutine):
   asyncio.run(coroutine)
 
 
-class Application:
+class Nether:
   """Represent an application singleton instance."""
 
   @unique
