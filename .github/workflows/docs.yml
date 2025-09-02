@@ -46,7 +46,7 @@ jobs:
       - name: Deploy to GitHub Pages (arjuna-systems)
         uses: peaceiris/actions-gh-pages@v4
         with:
-          github_token: ${{ steps.app-token.outputs.token }}
+          personal_token: ${{ steps.app-token.outputs.token }}
           external_repository: arjuna-systems/nether
           publish_dir: docs/build/html
           publish_branch: gh-pages
