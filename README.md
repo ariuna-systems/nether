@@ -74,7 +74,7 @@ class OrderProcessor(Component[ProcessOrder]):
         # Send completion event
         await handler(OrderProcessed(order_id=message.order_id))
 
-class App(Nether):
+class System(Nether):
     async def main(self):
         self.attach(OrderProcessor(self))
         
