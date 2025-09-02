@@ -35,6 +35,8 @@ class Component[T: type[Message] | tuple[type[Message], ...]]:
   """Component extends a framework with specific functionality
   e.g background processing, system monitoring etc.
 
+  You can think of the component as an actor (actor model).
+
   * Component can handle specified type of signals with :meth:`handle` method.
   * Componnet has a lifecycle and state, can be started, paused, resumed or stopped.
   * Component has initilization and finilization phase.
@@ -78,7 +80,7 @@ class Component[T: type[Message] | tuple[type[Message], ...]]:
     self,
     message: T,
     *,
-    callback: Callable[[T], Awaitable[None]],
+    handler: Callable[[T], Awaitable[None]],
     channel: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
   ) -> None: ...
 

@@ -170,8 +170,8 @@ class OrderProcessingSaga(Component[ProcessOrder | InventoryValidated | PaymentP
     self,
     message: ProcessOrder | InventoryValidated | PaymentProcessed | PaymentFailed,
     *,
-    dispatch: Callable[[Message], Awaitable[None]],
-    join_stream: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
+    handler: Callable[[Message], Awaitable[None]],
+    channel: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
   ) -> None:
     match message:
       case ProcessOrder():
@@ -184,7 +184,7 @@ class OrderProcessingSaga(Component[ProcessOrder | InventoryValidated | PaymentP
         await self._handle_payment_failure(message, dispatch)
 
   async def _start_order_processing(
-    self, command: ProcessOrder, dispatch: Callable[[Message], Awaitable[None]]
+    self, command: ProcessOrder, handler: Callable[[Message], Awaitable[None]]
   ) -> None:
     """Initialize order processing"""
     self._logger.info(f"🛒 Starting order processing for {command.order_id}")
@@ -200,13 +200,13 @@ class OrderProcessingSaga(Component[ProcessOrder | InventoryValidated | PaymentP
     }
 
     # Emit status change event
-    await dispatch(OrderStatusChanged(order_id=command.order_id, old_status="", new_status=OrderStatus.PENDING.value))
+    await handler(OrderStatusChanged(order_id=command.order_id, old_status="", new_status=OrderStatus.PENDING.value))
 
     # Start inventory validation
-    await dispatch(ValidateInventory(order_id=command.order_id, items=command.items))
+    await handler(ValidateInventory(order_id=command.order_id, items=command.items))
 
   async def _handle_inventory_validation(
-    self, event: InventoryValidated, dispatch: Callable[[Message], Awaitable[None]]
+    self, event: InventoryValidated, handler: Callable[[Message], Awaitable[None]]
   ) -> None:
     """Handle inventory validation results"""
     order_id = event.order_id
@@ -222,7 +222,7 @@ class OrderProcessingSaga(Component[ProcessOrder | InventoryValidated | PaymentP
       order_state["compensation_stack"].append("release_inventory")
 
       # Update status and proceed to payment
-      await dispatch(
+      await handler(
         OrderStatusChanged(
           order_id=order_id, old_status=order_state["status"].value, new_status=OrderStatus.VALIDATED.value
         )
@@ -231,17 +231,17 @@ class OrderProcessingSaga(Component[ProcessOrder | InventoryValidated | PaymentP
       order_state["status"] = OrderStatus.VALIDATED
 
       # Process payment
-      await dispatch(
+      await handler(
         ProcessPayment(order_id=order_id, customer_id=order_state["customer_id"], amount=order_state["total_amount"])
       )
     else:
       self._logger.warning(f"❌ Inventory validation failed for order {order_id}")
-      await dispatch(
+      await handler(
         CompensationRequired(order_id=order_id, failed_step="inventory_validation", compensation_actions=[])
       )
 
   async def _handle_payment_success(
-    self, event: PaymentProcessed, dispatch: Callable[[Message], Awaitable[None]]
+    self, event: PaymentProcessed, handler: Callable[[Message], Awaitable[None]]
   ) -> None:
     """Handle successful payment"""
     order_id = event.order_id
@@ -256,7 +256,7 @@ class OrderProcessingSaga(Component[ProcessOrder | InventoryValidated | PaymentP
     order_state["payment_id"] = event.payment_id
 
     # Update status
-    await dispatch(
+    await handler(
       OrderStatusChanged(
         order_id=order_id, old_status=order_state["status"].value, new_status=OrderStatus.PAYMENT_PROCESSED.value
       )
@@ -265,14 +265,14 @@ class OrderProcessingSaga(Component[ProcessOrder | InventoryValidated | PaymentP
     order_state["status"] = OrderStatus.PAYMENT_PROCESSED
 
     # Proceed to shipping
-    await dispatch(
+    await handler(
       ShipOrder(
         order_id=order_id,
         shipping_address={"street": "123 Main St", "city": "Anytown"},  # Mock address
       )
     )
 
-  async def _handle_payment_failure(self, event: PaymentFailed, dispatch: Callable[[Message], Awaitable[None]]) -> None:
+  async def _handle_payment_failure(self, event: PaymentFailed, handler: Callable[[Message], Awaitable[None]]) -> None:
     """Handle payment failure - trigger compensation"""
     order_id = event.order_id
     order_state = self.order_states.get(order_id)
@@ -283,7 +283,7 @@ class OrderProcessingSaga(Component[ProcessOrder | InventoryValidated | PaymentP
     self._logger.error(f"💳❌ Payment failed for order {order_id}: {event.reason}")
 
     # Trigger compensation for all completed steps
-    await dispatch(
+    await handler(
       CompensationRequired(
         order_id=order_id,
         failed_step="payment_processing",
@@ -306,8 +306,8 @@ class InventoryService(Component[ValidateInventory]):
     self,
     message: ValidateInventory,
     *,
-    dispatch: Callable[[Message], Awaitable[None]],
-    join_stream: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
+    handler: Callable[[Message], Awaitable[None]],
+    channel: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
   ) -> None:
     self._logger.info(f"📦 Validating inventory for order {message.order_id}")
 
@@ -324,7 +324,7 @@ class InventoryService(Component[ValidateInventory]):
       # Simulate some items being unavailable
       unavailable_items = [item["id"] for item in message.items[:1]]  # First item unavailable
 
-    await dispatch(InventoryValidated(order_id=message.order_id, valid=is_valid, unavailable_items=unavailable_items))
+    await handler(InventoryValidated(order_id=message.order_id, valid=is_valid, unavailable_items=unavailable_items))
 
 
 class PaymentService(Component[ProcessPayment]):
@@ -372,12 +372,12 @@ class PaymentService(Component[ProcessPayment]):
     self,
     message: ProcessPayment,
     *,
-    dispatch: Callable[[Message], Awaitable[None]],
-    join_stream: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
+    handler: Callable[[Message], Awaitable[None]],
+    channel: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
   ) -> None:
     if not self._should_allow_request():
       self._logger.warning("🚫 Payment request rejected - circuit breaker open")
-      await dispatch(PaymentFailed(order_id=message.order_id, reason="service_unavailable", amount=message.amount))
+      await handler(PaymentFailed(order_id=message.order_id, reason="service_unavailable", amount=message.amount))
       return
 
     self._logger.info(f"💳 Processing payment for order {message.order_id}: ${message.amount}")
@@ -396,7 +396,7 @@ class PaymentService(Component[ProcessPayment]):
       payment_id = f"pay_{message.order_id}_{int(time.time())}"
       self._record_success()
 
-      await dispatch(
+      await handler(
         PaymentProcessed(
           order_id=message.order_id, payment_id=payment_id, status=PaymentStatus.CAPTURED, amount=message.amount
         )
@@ -406,7 +406,7 @@ class PaymentService(Component[ProcessPayment]):
       self._record_failure()
       self._logger.error(f"💳❌ Payment failed for order {message.order_id}: {str(e)}")
 
-      await dispatch(PaymentFailed(order_id=message.order_id, reason=str(e), amount=message.amount))
+      await handler(PaymentFailed(order_id=message.order_id, reason=str(e), amount=message.amount))
 
 
 class ShippingService(Component[ShipOrder]):
@@ -416,8 +416,8 @@ class ShippingService(Component[ShipOrder]):
     self,
     message: ShipOrder,
     *,
-    dispatch: Callable[[Message], Awaitable[None]],
-    join_stream: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
+    handler: Callable[[Message], Awaitable[None]],
+    channel: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
   ) -> None:
     self._logger.info(f"📮 Shipping order {message.order_id}")
 
@@ -426,7 +426,7 @@ class ShippingService(Component[ShipOrder]):
 
     tracking_number = f"TRK{message.order_id}{int(time.time())}"
 
-    await dispatch(
+    await handler(
       OrderShipped(order_id=message.order_id, tracking_number=tracking_number, estimated_delivery="2024-01-15")
     )
 
@@ -441,8 +441,8 @@ class CompensationHandler(Component[CompensationRequired]):
     self,
     message: CompensationRequired,
     *,
-    dispatch: Callable[[Message], Awaitable[None]],
-    join_stream: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
+    handler: Callable[[Message], Awaitable[None]],
+    channel: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
   ) -> None:
     self._logger.warning(f"⚠️ Compensation required for order {message.order_id}")
     self._logger.info(f"Failed step: {message.failed_step}")
@@ -452,10 +452,10 @@ class CompensationHandler(Component[CompensationRequired]):
       await self._execute_compensation_action(action, message.order_id, dispatch)
 
     # Cancel the order
-    await dispatch(CancelOrder(order_id=message.order_id, reason=f"compensation_after_{message.failed_step}"))
+    await handler(CancelOrder(order_id=message.order_id, reason=f"compensation_after_{message.failed_step}"))
 
   async def _execute_compensation_action(
-    self, action: str, order_id: str, dispatch: Callable[[Message], Awaitable[None]]
+    self, action: str, order_id: str, handler: Callable[[Message], Awaitable[None]]
   ) -> None:
     """Execute individual compensation action"""
     self._logger.info(f"🔄 Executing compensation: {action}")
@@ -486,8 +486,8 @@ class SystemMonitor(Component[OrderStatusChanged | PaymentFailed | OrderShipped]
     self,
     message: OrderStatusChanged | PaymentFailed | OrderShipped,
     *,
-    dispatch: Callable[[Message], Awaitable[None]],
-    join_stream: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
+    handler: Callable[[Message], Awaitable[None]],
+    channel: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
   ) -> None:
     match message:
       case OrderStatusChanged():
@@ -506,14 +506,14 @@ class SystemMonitor(Component[OrderStatusChanged | PaymentFailed | OrderShipped]
     if self.metrics["orders_processed"] % 5 == 0 and self.metrics["orders_processed"] > 0:
       await self._emit_health_metrics(dispatch)
 
-  async def _emit_health_metrics(self, dispatch: Callable[[Message], Awaitable[None]]) -> None:
+  async def _emit_health_metrics(self, handler: Callable[[Message], Awaitable[None]]) -> None:
     """Emit system health metrics"""
     total_orders = self.metrics["orders_processed"]
     if total_orders > 0:
       success_rate = 1.0 - (self.metrics["orders_failed"] / total_orders)
       payment_failure_rate = self.metrics["payments_failed"] / total_orders
 
-      await dispatch(
+      await handler(
         SystemHealthCheck(
           service_name="order_processing",
           status="healthy" if success_rate > 0.8 else "degraded",
@@ -534,8 +534,8 @@ class EventLogger(Component[OrderStatusChanged | OrderShipped | OrderCancelled |
     self,
     message: OrderStatusChanged | OrderShipped | OrderCancelled | SystemHealthCheck,
     *,
-    dispatch: Callable[[Message], Awaitable[None]],
-    join_stream: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
+    handler: Callable[[Message], Awaitable[None]],
+    channel: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
   ) -> None:
     match message:
       case OrderStatusChanged():

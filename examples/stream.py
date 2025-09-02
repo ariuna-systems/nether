@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from nether.application import Nether
+from nether.system import Nether
 from nether.component import Component
 from nether.message import Command, Event
 

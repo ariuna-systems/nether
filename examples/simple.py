@@ -1,7 +1,4 @@
-import argparse
 import asyncio
-import random
-import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any
@@ -12,13 +9,17 @@ from nether.message import Command, Event, Message
 from nether.server import Server
 
 
-class Application(nether.Nether):
+class System(nether.Nether):
   async def main(self) -> None:
     print("Started")
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class StopProducer(Event): ...
+class StopProducer(Command): ...
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ProducerStopped(Event): ...
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -31,7 +32,7 @@ class Producer(Component[StopProducer]):
   Producer sends a message to mediator until it receives stop event.
   """
 
-  def __init__(self, application: Application):
+  def __init__(self, application: System):
     super().__init__(application)
     self._value = 0
     self._finish = False
@@ -64,20 +65,22 @@ class Producer(Component[StopProducer]):
     await super().on_stop()
     print(f"{self.__class__.__name__} stopped.")
 
+  async def on_error(self) -> None: ...
+
   async def handle(
     self,
     message: StopProducer,
     *,
-    dispatch: Callable[[Message], Awaitable[None]],
-    join_stream: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
+    handler: Callable[[Message], Awaitable[None]],
+    channel: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
   ) -> None:
     self._finish = True
 
 
 class Consumer(Component[Result]):
-  def __init__(self, application: Application, name: str = "Consumer"):
-    super().__init__(application)
-    self.name = name
+  def __init__(self, system: System, name: str | None = None):
+    super().__init__(system)
+    self.name = str(type(self)) if name is None else name
 
   async def on_start(self) -> None:
     print(f"{self.name} started")
@@ -91,30 +94,31 @@ class Consumer(Component[Result]):
     self,
     message: Result,
     *,
-    dispatch: Callable[[Message], Awaitable[None]],
-    join_stream: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
+    handler: Callable[[Message], Awaitable[None]],
+    channel: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
   ) -> None:
     print(f"{self.name} consumed {message.value}")
-    # Only one consumer needs to send StopProducer, but all will receive events
+    # Only one consumer needs to send StopProducer, but all will receive events.
     if message.value >= 5 and self.name == "Consumer-1":
-      await self.application.mediator.handle(StopProducer())
+      await handler(StopProducer())
 
 
 async def main():
   # single-producer/multi-consumer
 
-  configuration = argparse.Namespace()
-  configuration.port = 8081
-  configuration.host = "localhost"
+  system = System(configuration={})
+  system.attach(Producer(system))
+  system.attach(Consumer(system, name="Consumer-1"))
+  system.attach(Consumer(system, name="Consumer-2"))
 
-  application = Application(configuration=configuration)
+  @dataclass(frozen=True, slots=True, kw_only=True)
+  class ServerConfig:
+    port: int = 8081
+    host: str = "localhost"
 
-  application.attach(Producer(application))
-  application.attach(Consumer(application, name="Consumer-1"))
-  application.attach(Consumer(application, name="Consumer-2"))
-  application.attach(Server(application, configuration=configuration))
+  system.attach(Server(system, configuration=ServerConfig()))
 
-  await application.start()
+  await system.start()
 
 
 if __name__ == "__main__":

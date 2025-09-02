@@ -338,7 +338,7 @@ class Server(Component[StartServer | StopServer | RegisterView]):
     self.logger.info("Server stopped.")
     self._is_running = False
 
-  async def handle(self, message: Message, *, dispatch: Callable[[Message], Awaitable[None]], **_: Any) -> None:
+  async def handle(self, message: Message, *, handler: Callable[[Message], Awaitable[None]], **_: Any) -> None:
     if not isinstance(message, self.supports):
       return
 
@@ -358,7 +358,7 @@ class Server(Component[StartServer | StopServer | RegisterView]):
         case AddStatic():
           result_event = AddStaticFailure(error=error)
     finally:
-      await dispatch(result_event)
+      await handler(result_event)
 
   async def _add_view(self, *, route: str, view: type[web.View]) -> None:
     """If app frozen, adds the view to the dynamic route manager; otherwise, adds it to the router."""

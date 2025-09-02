@@ -240,18 +240,16 @@ class WorkflowOrchestrator(Component[StartWorkflow | WorkflowStep]):
     self,
     message: StartWorkflow | WorkflowStep,
     *,
-    dispatch: Callable[[Message], Awaitable[None]],
-    join_stream: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
+    handler: Callable[[Message], Awaitable[None]],
+    channel: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
   ) -> None:
     match message:
       case StartWorkflow():
-        await self._handle_start_workflow(message, dispatch)
+        await self._handle_start_workflow(message, handler)
       case WorkflowStep():
-        await self._handle_workflow_step(message, dispatch)
+        await self._handle_workflow_step(message, handler)
 
-  async def _handle_start_workflow(
-    self, command: StartWorkflow, dispatch: Callable[[Message], Awaitable[None]]
-  ) -> None:
+  async def _handle_start_workflow(self, command: StartWorkflow, handler: Callable[[Message], Awaitable[None]]) -> None:
     """Handle workflow initialization"""
     self._logger.info(f"Starting workflow {command.workflow_id} of type {command.workflow_type}")
 
@@ -259,7 +257,7 @@ class WorkflowOrchestrator(Component[StartWorkflow | WorkflowStep]):
     if self.cycle_detector.has_cycle(command.workflow_type):
       error_msg = f"Workflow {command.workflow_type} contains cycles!"
       self._logger.error(error_msg)
-      await dispatch(WorkflowFailed(workflow_id=command.workflow_id, step_name="initialization", error=error_msg))
+      await handler(WorkflowFailed(workflow_id=command.workflow_id, step_name="initialization", error=error_msg))
       return
 
     # Get execution order
@@ -267,7 +265,7 @@ class WorkflowOrchestrator(Component[StartWorkflow | WorkflowStep]):
     if not execution_order:
       error_msg = f"Could not determine execution order for {command.workflow_type}"
       self._logger.error(error_msg)
-      await dispatch(WorkflowFailed(workflow_id=command.workflow_id, step_name="initialization", error=error_msg))
+      await handler(WorkflowFailed(workflow_id=command.workflow_id, step_name="initialization", error=error_msg))
       return
 
     # Initialize workflow state
@@ -284,9 +282,9 @@ class WorkflowOrchestrator(Component[StartWorkflow | WorkflowStep]):
     initial_steps = [step for step, deps in workflow_def.items() if not deps]
 
     for step in initial_steps:
-      await dispatch(WorkflowStep(workflow_id=command.workflow_id, step_name=step, step_data=command.initial_data))
+      await handler(WorkflowStep(workflow_id=command.workflow_id, step_name=step, step_data=command.initial_data))
 
-  async def _handle_workflow_step(self, command: WorkflowStep, dispatch: Callable[[Message], Awaitable[None]]) -> None:
+  async def _handle_workflow_step(self, command: WorkflowStep, handler: Callable[[Message], Awaitable[None]]) -> None:
     """Handle individual workflow step execution"""
     workflow_id = command.workflow_id
 
@@ -315,7 +313,7 @@ class WorkflowOrchestrator(Component[StartWorkflow | WorkflowStep]):
           next_steps.append(step)
 
     # Emit step completion event
-    await dispatch(
+    await handler(
       StepCompleted(
         workflow_id=workflow_id, step_name=command.step_name, result_data=command.step_data, next_steps=next_steps
       )
@@ -323,7 +321,7 @@ class WorkflowOrchestrator(Component[StartWorkflow | WorkflowStep]):
 
     # Start next steps
     for next_step in next_steps:
-      await dispatch(
+      await handler(
         WorkflowStep(
           workflow_id=workflow_id,
           step_name=next_step,
@@ -334,7 +332,7 @@ class WorkflowOrchestrator(Component[StartWorkflow | WorkflowStep]):
 
     # Check if workflow is complete
     if len(workflow["completed_steps"]) == len(workflow_def):
-      await dispatch(
+      await handler(
         WorkflowCompleted(workflow_id=workflow_id, workflow_type=workflow["type"], final_data=workflow["current_data"])
       )
       del self.active_workflows[workflow_id]
@@ -350,8 +348,8 @@ class OrderValidationProcessor(Component[WorkflowStep]):
     self,
     message: WorkflowStep,
     *,
-    dispatch: Callable[[Message], Awaitable[None]],
-    join_stream: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
+    handler: Callable[[Message], Awaitable[None]],
+    channel: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
   ) -> None:
     if message.step_name == "validate_order":
       self._logger.info(f"Validating order in workflow {message.workflow_id}")
@@ -367,8 +365,8 @@ class InventoryProcessor(Component[WorkflowStep]):
     self,
     message: WorkflowStep,
     *,
-    dispatch: Callable[[Message], Awaitable[None]],
-    join_stream: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
+    handler: Callable[[Message], Awaitable[None]],
+    channel: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
   ) -> None:
     if message.step_name == "check_inventory":
       self._logger.info(f"Checking inventory for workflow {message.workflow_id}")
@@ -382,8 +380,8 @@ class PaymentProcessor(Component[WorkflowStep]):
     self,
     message: WorkflowStep,
     *,
-    dispatch: Callable[[Message], Awaitable[None]],
-    join_stream: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
+    handler: Callable[[Message], Awaitable[None]],
+    channel: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
   ) -> None:
     if message.step_name == "process_payment":
       self._logger.info(f"Processing payment for workflow {message.workflow_id}")
@@ -400,8 +398,8 @@ class WorkflowEventListener(Component[WorkflowCompleted | WorkflowFailed | StepC
     self,
     message: WorkflowCompleted | WorkflowFailed | StepCompleted,
     *,
-    dispatch: Callable[[Message], Awaitable[None]],
-    join_stream: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
+    handler: Callable[[Message], Awaitable[None]],
+    channel: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
   ) -> None:
     match message:
       case WorkflowCompleted():

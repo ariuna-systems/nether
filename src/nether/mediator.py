@@ -81,7 +81,7 @@ class Context:
 
     self._logger.info(f"MediatorContext {self._id} closed.")
 
-  def join_stream(self) -> tuple[asyncio.Queue[Any], asyncio.Event]:
+  def channel(self) -> tuple[asyncio.Queue[Any], asyncio.Event]:
     return (self._stream, self._stream_stop_event)
 
   async def receive_result(self) -> Event | None:
@@ -90,21 +90,25 @@ class Context:
 
 
 class Mediator:
-  """Mediator routes messages to registered components (handlers),
-  allowing decoupled asynchronous communication between components."""
+  """Mediator routes messages to registered components that handles messages.
+  This allows decoupled asynchronous communication between components.
+  """
 
   _instance: Self | None = None
+  _initialized: bool = False
 
   def __new__(cls) -> Self:
     if cls._instance is None:
       cls._instance = super().__new__(cls)
-      cls._instance.__init_bus()
     return cls._instance  # type: ignore[no-any-return, unused-ignore]
 
-  def __init_bus(self) -> None:
-    self._contexts: dict[uuid.UUID, Context] = {}
-    self._context_locks: dict[uuid.UUID, asyncio.Lock] = {}
-    self._components: set[Component[Any]] = set()
+  def __init__(self) -> None:
+    """Initialize the singleton mediator instance only once."""
+    if not self._initialized:
+      self._contexts: dict[uuid.UUID, Context] = {}
+      self._context_locks: dict[uuid.UUID, asyncio.Lock] = {}
+      self._components: set[Component[Any]] = set()
+      self._initialized = True
 
   @asynccontextmanager
   async def context(self):
@@ -122,17 +126,21 @@ class Mediator:
 
   @property
   def components(self) -> set[Component[Any]]:
-    if not hasattr(self, "_components"):
-      self.__init_bus()
+    """Get the set of registered components."""
     return self._components
 
   async def stop(self) -> None:
-    """Stop all registered services."""
+    """Stop all registered services and reset singleton state."""
     logger.info(f"{self.__class__.__name__} stopping")
     for component in self.components:
       await component.on_stop()
-    del self._components
-    self._instance = None
+
+    # Reset singleton state for clean restart
+    self._components.clear()
+    self._contexts.clear()
+    self._context_locks.clear()
+    self.__class__._initialized = False
+    self.__class__._instance = None
 
   def _get_context_lock(self, context_id: uuid.UUID) -> asyncio.Lock:
     if context_id not in self._context_locks:
@@ -140,14 +148,14 @@ class Mediator:
     return self._context_locks[context_id]
 
   def attach(self, component: Component[Any]) -> None:
-    """Register a service component.
+    """Attach and register a component.
     :param component: The component to add to registered components.
     """
     self._components.add(component)
     logger.info(f"component {type(component).__name__} attached")
 
   def detach(self, component: Component[Any]) -> None:
-    """Unregister a service component.
+    """Detach and unregister a component.
     :param component: The component to remove from registered components.
     """
     self._components.remove(component)
@@ -174,33 +182,35 @@ class Mediator:
       *,
       module: Component[Any],
       message: Message,
-      dispatch: Callable[[Message], Awaitable[None]],
-      join_stream: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
+      handler: Callable[[Message], Awaitable[None]],
+      channel: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
     ) -> None:
       try:
-        await module.handle(message, dispatch=dispatch, join_stream=join_stream)
+        await module.handle(message, handler=handler, channel=channel)
       except Exception as error:
         logger.critical(f"Uncaught error from {type(module)}: {error}")
 
     async def dispatch(message: Message, context: Context) -> None:
       handled = False
-      for module in self.components:  # FIX: use self.components instead of self._modules
+
+      for module in self.components:
         supports = module.supports
         if isinstance(supports, tuple):
           match_type = any(isinstance(message, t) for t in supports)
         else:
           match_type = isinstance(message, supports)
         if match_type:
-          # Create a simple dispatch function that doesn't recurse
-          async def simple_dispatch(msg: Message) -> None:
+
+          async def simple_handler(msg: Message) -> None:
+            # Non recursive handle callback.
             await context.process(msg)
 
           task = asyncio.create_task(
             _handle(
               module=module,
               message=message,
-              dispatch=simple_dispatch,
-              join_stream=context.join_stream,
+              handler=simple_handler,
+              channel=context.channel,
             )
           )
           context.add_task(task)
@@ -210,6 +220,8 @@ class Mediator:
 
     if context is None:
       async with self.context() as context:
+        logger.info(f"[?] {message}")  # TODO: SAVE TO AUDIT LOG
         await dispatch(message, context)
+        logger.info(f"[!] {message}")  # TODO: SAVE TO AUDIT LOG
     else:
       await dispatch(message, context)

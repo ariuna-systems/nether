@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from nether.component import Component
 from nether.message import Command, Event
-from nether.application import Nether
+from nether.system import Nether
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -43,20 +43,20 @@ class SensorDataProducer(Component[StartDataCollection | StopDataCollection]):
     super().__init__(application)
     self._producing = False
 
-  async def handle(self, message, *, dispatch, join_stream):
+  async def handle(self, message, *, handler, channel):
     match message:
       case StartDataCollection():
-        await self._start_producing(message, dispatch, join_stream)
+        await self._start_producing(message, handler, channel)
       case StopDataCollection():
         self._producing = False
         # Signal all consumers to stop
-        stream_queue, stop_event = join_stream()
+        stream_queue, stop_event = channel()
         stop_event.set()
         print("🛑 Producer: Stopping data collection")
 
-  async def _start_producing(self, command, dispatch, join_stream):
+  async def _start_producing(self, command, handler, channel):
     """Produce sensor data to the shared stream"""
-    stream_queue, stop_event = join_stream()
+    stream_queue, stop_event = channel()
     self._producing = True
 
     print(f"🔄 Producer: Starting data collection for {command.duration_seconds} seconds")
@@ -82,7 +82,7 @@ class SensorDataProducer(Component[StartDataCollection | StopDataCollection]):
 
       # Check if duration exceeded
       if time.time() - start_time >= command.duration_seconds:
-        await dispatch(StopDataCollection())
+        await handler(StopDataCollection())
         break
 
       await asyncio.sleep(0.5)  # Produce data every 500ms
@@ -95,9 +95,9 @@ class TemperatureProcessor(Component[StartDataCollection]):
     super().__init__(application)
     self.processed_count = 0
 
-  async def handle(self, message, *, dispatch, join_stream):
+  async def handle(self, message, *, handler, channel):
     """Start consuming temperature data from the stream"""
-    stream_queue, stop_event = join_stream()
+    stream_queue, stop_event = channel()
 
     print("🌡️  Temperature Processor: Started monitoring")
 
@@ -117,7 +117,7 @@ class TemperatureProcessor(Component[StartDataCollection]):
 
         # Report progress every 5 readings
         if self.processed_count % 5 == 0:
-          await dispatch(DataProcessed(processor_name="TemperatureProcessor", processed_count=self.processed_count))
+          await handler(DataProcessed(processor_name="TemperatureProcessor", processed_count=self.processed_count))
 
       except asyncio.TimeoutError:
         continue  # Keep waiting for data

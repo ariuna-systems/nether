@@ -4,63 +4,87 @@
 
 ## What is Nether?
 
-Nether is a lightweight framework for rapid development and deployment of web services, built primarily on Python's standard library. Originally created to serve internal needs at Arjuna, it may or may not suit your use case — our goal is not to build a universal framework, but one that works best for us.
+Nether is an **Actor Model Framework** for building **message-driven systems** in Python. Originally created to serve internal needs at Arjuna, it may or may not suit your use case — our goal is not to build a universal framework, but one that works best for us.
+
+Use Nether to build:
+
+- **CRUD applications** with clean separation between business logic and data access
+- **Streaming services** for real-time data processing and event handling  
+- **Reactive systems** that respond to events and scale with demand
+
+Nether's Actor Model and message-driven design make it particularly well-suited for:
+
+- **Event Sourcing** - Natural event handling and state reconstruction
+- **Domain-Driven Design (DDD)** - Clear bounded contexts and domain isolation
+- **Clean Architecture** - Dependency inversion through message passing
+- **CQRS** - Separate command and query handling with type safety
 
 ## Philosophy
 
-- Favor the standard library – minimize external dependencies.
-- Embrace asynchronous IO and efficient background task scheduling.
-- Service failures shouldn't crash the app – services handle their own errors.
-- Focus on observability and graceful shutdown (no orphaned threads).
-- Avoid premature complexity – Clean Architecture & DDD come later.
+- **Actor Model**: Components communicate only through message passing
+- **Async-first**: Built on Python's asyncio for high-performance I/O
+- **Minimal dependencies**: Favor standard library over external packages  
+- **Fault isolation**: Actor failures don't crash the entire system
+- **Graceful operations**: Clean startup, shutdown, and error handling
 
 ## Features
 
-- Asynchronous message bus and mediator pattern
-- Modular service registration and isolation
-- Simple event, command, and query handling
-- Built-in support for background processing and graceful shutdown
-- Minimal dependencies, easy to extend
+- **Message-driven architecture** with Commands, Events, and Queries
+- **Actor-based components** with isolated state and async message handling
+- **Shared streaming** for real-time data processing within contexts
+- **Type-safe message routing** using Python generics
+- **Context isolation** for unit-of-work boundaries
+- **Built-in web server** for HTTP endpoints
 
 ## Architecture
 
-Nether uses a mediator to route messages (commands, events, queries) between modules. Each module handles a specific concern and can be started or stopped independently. Contexts provide isolation for units of work.
+Nether implements the **Actor Model** where:
+
+- **Actors** (Components) handle specific message types
+- **Messages** are the only form of communication between actors
+- **Mediator** routes messages to appropriate actors
+- **Contexts** provide isolated environments for message processing
 
 ## Quick Example
 
 ```python
 from dataclasses import dataclass
-
-from nether import Application
-from nether.common import Command, Event
+from nether import Nether
+from nether.message import Command, Event
 from nether.component import Component
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class MyCommand(Command):
-    pass
+class ProcessOrder(Command):
+    order_id: str
+    amount: float
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class MyEvent(Event):
-    pass
+class OrderProcessed(Event):
+    order_id: str
 
-class MyModule(Component[MyCommand]):
-    async def handle(self, message, *, dispatch, join_stream):
-        await dispatch(MyEvent())
+class OrderProcessor(Component[ProcessOrder]):
+    async def handle(self, message, *, handler, channel):
+        # Process the order
+        print(f"Processing order {message.order_id} for ${message.amount}")
+        
+        # Send completion event
+        await handler(OrderProcessed(order_id=message.order_id))
 
-class MyApp(Application):
+class App(Nether):
     async def main(self):
-        self.register_module(Component(self))
+        self.attach(OrderProcessor(self))
+        
         async with self.mediator.context() as ctx:
-            await ctx.process(MyCommand())
-
+            await ctx.process(ProcessOrder(order_id="123", amount=99.99))
 ```
 
 ## Getting Started
 
-- Clone the repo and install requirements (if any)
-- See `examples/` for usage patterns
-- Run `python examples/workflow_examples.py` for a workflow demo
+1. Clone the repository
+2. Install dependencies: `pip install -r requirements.txt`  
+3. Explore examples: `python examples/simple.py`
+4. Read the [Actor Model documentation](docs/actor-model-analysis.md)
 
 ## License
 
-See LICENSE file.
+See [LICENSE](LICENSE) file.
