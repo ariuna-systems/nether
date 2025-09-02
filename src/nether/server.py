@@ -353,7 +353,7 @@ class Server(Component[StartServer | StopServer | RegisterView]):
     async def _add_view(self, *, route: str, view: type[web.View]) -> None:
         """If app frozen, adds the view to the dynamic route manager; otherwise, adds it to the router."""
         if self._http_server.frozen:
-            self._http_server["dynamic_router"].add_dynamic_view(route, view)
+            self._http_server["dynamic_router"].add_view(route, view)
         else:
             self._http_server.router.add_view(route, view)
         self.logger.info(f"View `{view.__name__}` assigned to route {route}")

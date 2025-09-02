@@ -15,7 +15,7 @@ from urllib.parse import quote_plus
 import dotenv
 
 from .component import Component
-from .logging import configure_logger
+from .logging import configure_global_logging, configure_logger
 from .mediator import Mediator
 
 __all__ = ["Nether"]
@@ -37,6 +37,7 @@ def _create_parser(
     port: bool = False,
     production: bool = False,
     version: str | None = None,
+    logging_args: bool = True,
 ) -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog=prog, description=description)
     if env_file:
@@ -54,6 +55,18 @@ def _create_parser(
             default=0,
             required=False,
             help="Increase the verbosity level.",
+        )
+    if logging_args:
+        parser.add_argument(
+            "--log-level",
+            choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+            default="INFO",
+            help="Set the logging level (default: INFO).",
+        )
+        parser.add_argument(
+            "--log-file",
+            type=Path,
+            help="Path to the log file for file logging (optional).",
         )
     if host:
         parser.add_argument("--host", default="localhost", required=False, help="Set http server host.")
@@ -194,7 +207,7 @@ class Nether:
     def __init__(
         self,
         *,
-        mediator=Mediator(),  # noqa: B008
+        mediator=Mediator(),
         configuration: argparse.Namespace,  # TODO Configuration class
         logger: logging.Logger = local_logger,
     ) -> None:
@@ -203,6 +216,22 @@ class Nether:
         self._stop_event = asyncio.Event()
         self.logger = logger
         self._services: set[Component] = set()
+
+        # Configure global logging if log-level or log-file arguments are present
+        self._configure_logging()
+
+    def _configure_logging(self) -> None:
+        """Configure global logging based on configuration arguments."""
+        if hasattr(self.configuration, "log_level") or hasattr(self.configuration, "log_file"):
+            log_level = getattr(self.configuration, "log_level", "INFO")
+            log_file_str = getattr(self.configuration, "log_file", None)
+            log_file = Path(log_file_str) if log_file_str else None
+            verbose = getattr(self.configuration, "verbose", 0)
+
+            configure_global_logging(log_level=log_level, log_file=log_file, verbose=verbose)
+
+            # Update our logger reference to use the root logger
+            self.logger = logging.getLogger(__name__)
 
     @property
     def platform(self) -> str | None:

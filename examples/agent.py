@@ -669,11 +669,39 @@ class AIAgentSystem(nether.Nether):
 
 async def main():
     """Main function to set up and run the AI agent system."""
+    import argparse
+
+    # Set up command line argument parsing
+    parser = argparse.ArgumentParser(description="AI Agent System with Nether Framework")
+    parser.add_argument("--port", type=int, default=8083, help="Server port (default: 8083)")
+    parser.add_argument("--host", default="localhost", help="Server host (default: localhost)")
+    parser.add_argument(
+        "--log-level",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        default="INFO",
+        help="Set the logging level (default: INFO)",
+    )
+    parser.add_argument(
+        "--log-file",
+        help="Path to the log file for file logging (optional)",
+    )
+    parser.add_argument(
+        "--verbose",
+        "-v",
+        action="count",
+        default=0,
+        help="Increase verbosity level",
+    )
+
+    args = parser.parse_args()
 
     @dataclass(frozen=True, slots=True, kw_only=True)
     class ServerConfig:
-        port: int = 8083
-        host: str = "localhost"
+        port: int = args.port
+        host: str = args.host
+        log_level: str = args.log_level
+        log_file: str | None = args.log_file
+        verbose: int = args.verbose
 
     config = ServerConfig()
     system = AIAgentSystem(configuration=config)
@@ -710,8 +738,11 @@ async def main():
         await ctx.process(register_view_1)
         await ctx.process(register_view_2)
         await ctx.process(register_view_3)
-    print(f"Web interface: http://localhost:{config.port}/")
+    print(f"Web interface: http://{config.host}:{config.port}/")
     print("Available agents: chat, code, analysis")
+    print(f"Logging level: {config.log_level}")
+    if config.log_file:
+        print(f"Log file: {config.log_file}")
 
     await system.start()
 

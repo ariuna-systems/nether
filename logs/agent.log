@@ -1,0 +1,31 @@
+2025-09-02 17:32:08.530 +02:00 - root - INFO - File logging enabled: logs\agent.log
+2025-09-02 17:32:08.530 +02:00 - nether.mediator - INFO - Component ChatAgent attached (supports: <class '__main__.AgentQuery'>)
+2025-09-02 17:32:08.530 +02:00 - nether.mediator - INFO - Component CodeAgent attached (supports: <class '__main__.AgentQuery'>)
+2025-09-02 17:32:08.530 +02:00 - nether.mediator - INFO - Component AnalysisAgent attached (supports: <class '__main__.AgentQuery'>)
+2025-09-02 17:32:08.531 +02:00 - nether.mediator - INFO - Component ConversationManager attached (supports: <class '__main__.GetConversationHistory'>)
+2025-09-02 17:32:08.531 +02:00 - nether.mediator - INFO - Component ViewRegistrationHandler attached (supports: nether.server.ViewRegistered | nether.server.RegisterViewFailure)
+2025-09-02 17:32:08.532 +02:00 - nether.mediator - INFO - Component AgentResponseHandler attached (supports: __main__.AgentResponse | __main__.AgentError)
+2025-09-02 17:32:08.533 +02:00 - nether.mediator - INFO - Component Server attached (supports: nether.server.StartServer | nether.server.StopServer | nether.server.RegisterView)
+2025-09-02 17:32:08.533 +02:00 - nether.mediator - INFO - Attaching context `157c81c1-fc9e-432c-8d3d-e21cbe3b9278`
+2025-09-02 17:32:08.533 +02:00 - nether.mediator - INFO - Context `157c81c1-fc9e-432c-8d3d-e21cbe3b9278` processing message: RegisterView - RegisterView(created_at=datetime.datetime(2025, 9, 2, 15, 32, 8, 533665, tzinfo=datetime.timezone.utc), created_by=None, route='/', view=<class '__main__.AgentWebInterface'>)
+2025-09-02 17:32:08.534 +02:00 - nether.mediator - INFO - Context `157c81c1-fc9e-432c-8d3d-e21cbe3b9278` processing message: RegisterView - RegisterView(created_at=datetime.datetime(2025, 9, 2, 15, 32, 8, 533669, tzinfo=datetime.timezone.utc), created_by=None, route='/agent/query', view=<class '__main__.AgentQueryAPI'>)
+2025-09-02 17:32:08.534 +02:00 - nether.mediator - INFO - Context `157c81c1-fc9e-432c-8d3d-e21cbe3b9278` processing message: RegisterView - RegisterView(created_at=datetime.datetime(2025, 9, 2, 15, 32, 8, 533670, tzinfo=datetime.timezone.utc), created_by=None, route='/agent/history/{conversation_id}', view=<class '__main__.ConversationHistoryAPI'>)
+2025-09-02 17:32:08.534 +02:00 - nether.mediator - INFO - MediatorContext 157c81c1-fc9e-432c-8d3d-e21cbe3b9278 closing. Finishing active tasks...
+2025-09-02 17:32:08.534 +02:00 - nether.mediator - INFO - Dispatching RegisterView: RegisterView(created_at=datetime.datetime(2025, 9, 2, 15, 32, 8, 533665, tzinfo=datetime.timezone.utc), created_by=None, route='/', view=<class '__main__.AgentWebInterface'>)
+2025-09-02 17:32:08.534 +02:00 - nether.mediator - INFO - Message RegisterView dispatched to components: Server
+2025-09-02 17:32:08.535 +02:00 - nether.mediator - INFO - Dispatching RegisterView: RegisterView(created_at=datetime.datetime(2025, 9, 2, 15, 32, 8, 533669, tzinfo=datetime.timezone.utc), created_by=None, route='/agent/query', view=<class '__main__.AgentQueryAPI'>)
+2025-09-02 17:32:08.535 +02:00 - nether.mediator - INFO - Message RegisterView dispatched to components: Server
+2025-09-02 17:32:08.535 +02:00 - nether.mediator - INFO - Dispatching RegisterView: RegisterView(created_at=datetime.datetime(2025, 9, 2, 15, 32, 8, 533670, tzinfo=datetime.timezone.utc), created_by=None, route='/agent/history/{conversation_id}', view=<class '__main__.ConversationHistoryAPI'>)
+2025-09-02 17:32:08.535 +02:00 - nether.mediator - INFO - Message RegisterView dispatched to components: Server
+2025-09-02 17:32:08.535 +02:00 - nether.mediator - INFO - Context `157c81c1-fc9e-432c-8d3d-e21cbe3b9278` processing message: ViewRegistered - ViewRegistered(created_at=datetime.datetime(2025, 9, 2, 15, 32, 8, 535816, tzinfo=datetime.timezone.utc), created_by=None)
+2025-09-02 17:32:08.536 +02:00 - nether.mediator - INFO - Context `157c81c1-fc9e-432c-8d3d-e21cbe3b9278` processing message: ViewRegistered - ViewRegistered(created_at=datetime.datetime(2025, 9, 2, 15, 32, 8, 536106, tzinfo=datetime.timezone.utc), created_by=None)
+2025-09-02 17:32:08.536 +02:00 - nether.mediator - INFO - Context `157c81c1-fc9e-432c-8d3d-e21cbe3b9278` processing message: ViewRegistered - ViewRegistered(created_at=datetime.datetime(2025, 9, 2, 15, 32, 8, 536566, tzinfo=datetime.timezone.utc), created_by=None)
+2025-09-02 17:32:08.536 +02:00 - nether.mediator - INFO - Dispatching ViewRegistered: ViewRegistered(created_at=datetime.datetime(2025, 9, 2, 15, 32, 8, 535816, tzinfo=datetime.timezone.utc), created_by=None)
+2025-09-02 17:32:08.537 +02:00 - nether.mediator - INFO - Message ViewRegistered dispatched to components: ViewRegistrationHandler
+2025-09-02 17:32:08.537 +02:00 - nether.mediator - INFO - Dispatching ViewRegistered: ViewRegistered(created_at=datetime.datetime(2025, 9, 2, 15, 32, 8, 536106, tzinfo=datetime.timezone.utc), created_by=None)
+2025-09-02 17:32:08.537 +02:00 - nether.mediator - INFO - Message ViewRegistered dispatched to components: ViewRegistrationHandler
+2025-09-02 17:32:08.537 +02:00 - nether.mediator - INFO - Dispatching ViewRegistered: ViewRegistered(created_at=datetime.datetime(2025, 9, 2, 15, 32, 8, 536566, tzinfo=datetime.timezone.utc), created_by=None)
+2025-09-02 17:32:08.537 +02:00 - nether.mediator - INFO - Message ViewRegistered dispatched to components: ViewRegistrationHandler
+2025-09-02 17:32:08.538 +02:00 - nether.mediator - INFO - MediatorContext 157c81c1-fc9e-432c-8d3d-e21cbe3b9278 closed.
+2025-09-02 17:32:08.538 +02:00 - nether.mediator - INFO - Detached context `157c81c1-fc9e-432c-8d3d-e21cbe3b9278`
+2025-09-02 17:32:31.425 +02:00 - nether.mediator - INFO - Mediator stopping

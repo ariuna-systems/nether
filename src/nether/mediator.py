@@ -12,7 +12,6 @@ from contextlib import asynccontextmanager
 from typing import Any, Self
 
 from .component import Component
-from .logging import configure_logger
 from .message import Command, Event, Message, Query
 
 __all__ = [
@@ -22,9 +21,6 @@ __all__ = [
 
 
 logger = logging.getLogger(__name__)
-logger.propagate = False
-
-configure_logger(logger)
 
 
 class Context:
@@ -55,15 +51,19 @@ class Context:
 
     async def process(self, message: Message) -> None:
         """Send a message through the bus, where it will be handled."""
-        self._logger.debug(f"Context `{self._id}` processing message: {message}")
+        self._logger.info(f"Context `{self._id}` processing message: {type(message).__name__} - {message}")
+        self._logger.debug(f"Context `{self._id}` message details: {message}")
         match message:
             case Event():
                 await self._results.put(message)
                 self._active_tasks.add(asyncio.create_task(self._handle_message(message, self)))
+                self._logger.debug(f"Context `{self._id}` queued event: {type(message).__name__}")
             case Command() | Query():
                 self._active_tasks.add(asyncio.create_task(self._handle_message(message, self)))
+                self._logger.debug(f"Context `{self._id}` dispatched {type(message).__name__}")
             case _:
-                self._logger.error(f"Invalid message type: {type(message)}")
+                self._logger.error(f"Context `{self._id}` - Invalid message type: {type(message)}")
+                raise ValueError(f"Invalid message type: {type(message)}")
 
     def add_task(self, task: asyncio.Task[None]) -> None:
         self._active_tasks.add(task)
@@ -151,27 +151,34 @@ class Mediator:
         """Attach and register a component.
         :param component: The component to add to registered components.
         """
+        component_name = type(component).__name__
         self._components.add(component)
-        logger.info(f"component {type(component).__name__} attached")
+        logger.info(f"Component {component_name} attached (supports: {component.supports})")
 
     def detach(self, component: Component[Any]) -> None:
         """Detach and unregister a component.
         :param component: The component to remove from registered components.
         """
-        self._components.remove(component)
-        logger.info(f"component {type(component).__name__} detached")
+        component_name = type(component).__name__
+        if component in self._components:
+            self._components.remove(component)
+            logger.info(f"Component {component_name} detached")
+        else:
+            logger.warning(f"Attempted to detach non-registered component {component_name}")
 
     async def attach_context(self, context: Context) -> None:
         """Registers a new unit of work to receive messages."""
         async with self._get_context_lock(context.identifier):
-            logger.debug(f"context `{context.identifier}` attached")
+            logger.info(f"Attaching context `{context.identifier}`")
             self._contexts[context.identifier] = context
 
     async def detach_context(self, context: Context) -> None:
         """Unregisters a unit of work, stopping message routing to it."""
         async with self._get_context_lock(context.identifier):
             if self._contexts.pop(context.identifier, None) is not None:
-                logger.debug(f"context `{context.identifier}` detached")
+                logger.info(f"Detached context `{context.identifier}`")
+            else:
+                logger.warning(f"Attempted to detach non-existent context `{context.identifier}`")
 
     async def handle(self, message: Message, context: Context = None) -> None:
         """
@@ -185,13 +192,21 @@ class Mediator:
             handler: Callable[[Message], Awaitable[None]],
             channel: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
         ) -> None:
+            component_name = type(module).__name__
+            message_type = type(message).__name__
+            logger.debug(f"Handling {message_type} with component {component_name}")
             try:
                 await module.handle(message, handler=handler, channel=channel)
+                logger.debug(f"Successfully handled {message_type} with {component_name}")
             except Exception as error:
-                logger.critical(f"Uncaught error from {type(module)}: {error}")
+                logger.critical(f"Uncaught error from {component_name} handling {message_type}: {error}")
+                logger.debug(f"Error details for {component_name}: {error}", exc_info=True)
 
         async def dispatch(message: Message, context: Context) -> None:
+            message_type = type(message).__name__
+            logger.info(f"Dispatching {message_type}: {message}")
             handled = False
+            matching_components = []
 
             for module in self.components:
                 supports = module.supports
@@ -199,10 +214,13 @@ class Mediator:
                     match_type = any(isinstance(message, t) for t in supports)
                 else:
                     match_type = isinstance(message, supports)
+
                 if match_type:
+                    matching_components.append(type(module).__name__)
 
                     async def simple_handler(msg: Message) -> None:
                         # Non recursive handle callback.
+                        logger.debug(f"Simple handler processing: {type(msg).__name__}")
                         await context.process(msg)
 
                     task = asyncio.create_task(
@@ -215,13 +233,16 @@ class Mediator:
                     )
                     context.add_task(task)
                     handled = True
-            if not handled:
-                logger.critical(f"Handler not found for message {message}")
+
+            if handled:
+                logger.info(f"Message {message_type} dispatched to components: {', '.join(matching_components)}")
+            else:
+                logger.critical(f"Handler not found for message {message_type}: {message}")
 
         if context is None:
             async with self.context() as context:
-                logger.info(f"[?] {message}")  # TODO: SAVE TO AUDIT LOG
+                logger.info(f"[MEDIATOR-IN] {type(message).__name__}: {message}")
                 await dispatch(message, context)
-                logger.info(f"[!] {message}")  # TODO: SAVE TO AUDIT LOG
+                logger.info(f"[MEDIATOR-OUT] {type(message).__name__} processing completed")
         else:
             await dispatch(message, context)

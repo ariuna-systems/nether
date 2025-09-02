@@ -35,6 +35,9 @@ class Component[T: type[Message] | tuple[type[Message], ...]]:
     """Component extends a framework with specific functionality
     e.g background processing, system monitoring etc.
 
+    T: consumed messages
+    U: produced messages
+            U: type[Message] | tuple[type[Message]]
     You can think of the component as an actor (actor model).
 
     * Component can handle specified type of signals with :meth:`handle` method.
