@@ -21,11 +21,6 @@ local_logger.propagate = False
 configure_logger(local_logger)
 
 
-# ##############################################################
-#                           SIGNALS                            #
-# ##############################################################
-
-
 @dataclass(frozen=True, kw_only=True, slots=True)
 class StartServer(Command):
     host: str
@@ -64,11 +59,11 @@ class RegisterView(Command):
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
-class ViewAdded(SuccessEvent): ...
+class ViewRegistered(SuccessEvent): ...
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
-class AddViewFailure(FailureEvent): ...
+class RegisterViewFailure(FailureEvent): ...
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -94,8 +89,8 @@ type ServerSignals = (
     | ServerStopped
     | StopServerFailure
     | RegisterView
-    | ViewAdded
-    | AddViewFailure
+    | ViewRegistered
+    | RegisterViewFailure
     | AddStatic
     | StaticAdded
     | AddStaticFailure
@@ -244,11 +239,6 @@ class _DynamicRouter:
             return web.Response(status=500, text="Internal Server Error")
 
 
-# ##############################################################
-#                           SERVICE                            #
-# ##############################################################
-
-
 class Server(Component[StartServer | StopServer | RegisterView]):
     def __init__(
         self,
@@ -347,14 +337,14 @@ class Server(Component[StartServer | StopServer | RegisterView]):
             match message:
                 case RegisterView():
                     await self._add_view(route=message.route, view=message.view)
-                    result_event = ViewAdded()
+                    result_event = ViewRegistered()
                 case AddStatic():
                     await self._add_static(prefix=message.prefix, path=message.path, **message.kwargs)
                     result_event = StaticAdded()
         except Exception as error:
             match message:
                 case RegisterView():
-                    result_event = AddViewFailure(error=error)
+                    result_event = RegisterViewFailure(error=error)
                 case AddStatic():
                     result_event = AddStaticFailure(error=error)
         finally:

@@ -175,13 +175,13 @@ class OrderProcessingSaga(Component[ProcessOrder | InventoryValidated | PaymentP
     ) -> None:
         match message:
             case ProcessOrder():
-                await self._start_order_processing(message, dispatch)
+                await self._start_order_processing(message, handler)
             case InventoryValidated():
-                await self._handle_inventory_validation(message, dispatch)
+                await self._handle_inventory_validation(message, handler)
             case PaymentProcessed():
-                await self._handle_payment_success(message, dispatch)
+                await self._handle_payment_success(message, handler)
             case PaymentFailed():
-                await self._handle_payment_failure(message, dispatch)
+                await self._handle_payment_failure(message, handler)
 
     async def _start_order_processing(
         self, command: ProcessOrder, handler: Callable[[Message], Awaitable[None]]
@@ -462,7 +462,7 @@ class CompensationHandler(Component[CompensationRequired]):
 
         # Execute compensation actions in reverse order (LIFO)
         for action in reversed(message.compensation_actions):
-            await self._execute_compensation_action(action, message.order_id, dispatch)
+            await self._execute_compensation_action(action, message.order_id, handler)
 
         # Cancel the order
         await handler(CancelOrder(order_id=message.order_id, reason=f"compensation_after_{message.failed_step}"))
@@ -517,7 +517,7 @@ class SystemMonitor(Component[OrderStatusChanged | PaymentFailed | OrderShipped]
 
         # Log metrics periodically
         if self.metrics["orders_processed"] % 5 == 0 and self.metrics["orders_processed"] > 0:
-            await self._emit_health_metrics(dispatch)
+            await self._emit_health_metrics(handler)
 
     async def _emit_health_metrics(self, handler: Callable[[Message], Awaitable[None]]) -> None:
         """Emit system health metrics"""

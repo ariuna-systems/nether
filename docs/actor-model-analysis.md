@@ -21,7 +21,7 @@ The Actor Model is a concurrent computation model where:
 | **Actor Model Concept** | **Component Implementation** | **Code Evidence** |
 |-------------------------|----------------------------|-------------------|
 | **Encapsulated State** | Private instance variables | `self._is_running`, `self._logger`, `self.processed_count` |
-| **Message Passing** | `handle(message, *, dispatch, ...)` | Only communicates via messages |
+| **Message Passing** | `handle(message, *, handler, ...)` | Only communicates via messages |
 | **No Shared Memory** | Isolated component instances | Each component manages own state |
 | **Asynchronous Processing** | `async def handle(...)` | Built on asyncio |
 | **Actor Address/Reference** | Message type subscription `Component[T]` | Mediator routes by message type |
@@ -36,13 +36,13 @@ class TemperatureProcessor(Component[StartDataCollection]):  # 🎭 Actor
         super().__init__(application)
         self.processed_count = 0  # 🔒 Private state
         
-    async def handle(self, message, *, dispatch, join_stream):  # 📨 Message handler
+    async def handle(self, message, *, handler, channel):  # 📨 Message handler
         # Process the message
         temp = self._analyze_temperature(message.data)
         
         # Send messages to other actors (no direct calls)
         if temp > 25.0:
-            await dispatch(TemperatureAlert(temp=temp))  # 📤 Message passing
+            await handler(TemperatureAlert(temp=temp))  # 📤 Message passing
 ```
 
 ## Enhanced Actor Model Features
@@ -55,21 +55,21 @@ Traditional actor systems use string-based addressing. Nether uses Python's type
 # Traditional Actor: actor.send("temperature_processor", message)
 # Nether Actor: Automatic routing by message type
 class TemperatureProcessor(Component[TemperatureReading]):
-    async def handle(self, message: TemperatureReading, *, dispatch, join_stream):
+    async def handle(self, message: TemperatureReading, *, handler, channel):
         # Only receives TemperatureReading messages
 ```
 
 ### 2. **Shared Streaming within Context**
 
-**Innovation**: The `join_stream` parameter adds shared data streaming capabilities while maintaining Actor isolation:
+**Innovation**: The `channel` parameter adds shared data streaming capabilities while maintaining Actor isolation:
 
 ```python
-async def handle(self, message, *, dispatch, join_stream):
+async def handle(self, message, *, handler, channel):
     # Classic Actor: Isolated message passing
-    await dispatch(SomeMessage())
+    await handler(SomeMessage())
     
     # Enhanced Actor: Shared data streams within context
-    stream_queue, stop_event = join_stream()  # 🌊 Shared stream access
+    stream_queue, stop_event = channel()  # 🌊 Shared stream access
     data = await stream_queue.get()
 ```
 
@@ -101,16 +101,16 @@ class OrderProcessor(Component[ProcessOrder]):
         super().__init__(application)
         self.orders_processed = 0  # Actor state
         
-    async def handle(self, message: ProcessOrder, *, dispatch, join_stream):
+    async def handle(self, message: ProcessOrder, *, handler, channel):
         # Process order logic
         success = await self._process_order(message.order_id, message.amount)
         self.orders_processed += 1
         
         # Send result to other actors
         if success:
-            await dispatch(OrderCompleted(order_id=message.order_id))
+            await handler(OrderCompleted(order_id=message.order_id))
         else:
-            await dispatch(OrderFailed(order_id=message.order_id))
+            await handler(OrderFailed(order_id=message.order_id))
 ```
 
 ### Streaming Data Actor
@@ -121,8 +121,8 @@ class SensorDataProcessor(Component[StartMonitoring]):
         super().__init__(application)
         self.readings_count = 0
         
-    async def handle(self, message, *, dispatch, join_stream):
-        stream_queue, stop_event = join_stream()
+    async def handle(self, message, *, handler, channel):
+        stream_queue, stop_event = channel()
         
         print("📡 Sensor Actor: Started monitoring")
         
@@ -133,7 +133,7 @@ class SensorDataProcessor(Component[StartMonitoring]):
                 
                 # Process data
                 if sensor_data['temperature'] > 30:
-                    await dispatch(HighTemperatureAlert(
+                    await handler(HighTemperatureAlert(
                         temp=sensor_data['temperature']
                     ))
                 
@@ -151,18 +151,18 @@ class SystemMonitor(Component[tuple[SystemStart, SystemStop, HealthCheck]]):
         super().__init__(application)
         self.status = "stopped"
         
-    async def handle(self, message, *, dispatch, join_stream):
+    async def handle(self, message, *, handler, channel):
         match message:
             case SystemStart():
                 self.status = "running"
-                await dispatch(SystemStatusChanged(status="running"))
+                await handler(SystemStatusChanged(status="running"))
                 
             case SystemStop():
                 self.status = "stopped" 
-                await dispatch(SystemStatusChanged(status="stopped"))
+                await handler(SystemStatusChanged(status="stopped"))
                 
             case HealthCheck():
-                await dispatch(HealthReport(
+                await handler(HealthReport(
                     status=self.status,
                     uptime=self._get_uptime()
                 ))
@@ -227,18 +227,18 @@ Actors have lifecycle hooks:
 ### 1. **Fire-and-Forget**
 
 ```python
-await dispatch(LogEvent(message="Order processed"))
+await handler(LogEvent(message="Order processed"))
 ```
 
 ### 2. **Request-Response** (via Events)
 
 ```python
 # Send command
-await dispatch(ProcessPayment(amount=100))
+await handler(ProcessPayment(amount=100))
 
 # Handle response in another actor
 class PaymentResultHandler(Component[PaymentCompleted]):
-    async def handle(self, message, *, dispatch, join_stream):
+    async def handle(self, message, *, handler, channel):
         print(f"Payment completed: {message.transaction_id}")
 ```
 
@@ -246,8 +246,8 @@ class PaymentResultHandler(Component[PaymentCompleted]):
 
 ```python
 # Multiple actors process the same stream
-async def handle(self, message, *, dispatch, join_stream):
-    stream_queue, stop_event = join_stream()
+async def handle(self, message, *, handler, channel):
+    stream_queue, stop_event = channel()
     # TemperatureProcessor, HumidityProcessor, DataAggregator
     # all process the same sensor data stream
 ```
@@ -306,6 +306,6 @@ The nether framework successfully implements a modern, async-first Actor Model t
 
 While maintaining core Actor principles of encapsulation, message passing, and isolation, nether enhances the pattern with practical features for modern web service development.
 
-The `join_stream` parameter represents a novel extension to the Actor Model, enabling shared data processing while preserving actor isolation—making it ideal for real-time data processing scenarios.
+The `channel` parameter represents a novel extension to the Actor Model, enabling shared data processing while preserving actor isolation—making it ideal for real-time data processing scenarios.
 
 This design makes nether both a **pure Actor framework** and a **practical web service foundation**, bridging the gap between academic actor models and real-world application needs.

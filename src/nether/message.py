@@ -27,8 +27,3 @@ class SuccessEvent(Event): ...
 @dataclass(frozen=True, kw_only=True, slots=True)
 class FailureEvent(Event):
     error: Exception
-
-
-@dataclass(frozen=True, kw_only=True, slots=True)
-class StopProducer(Command):
-    """Signal to stop producing events."""
