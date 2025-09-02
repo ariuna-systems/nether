@@ -43,19 +43,32 @@ class AnalyticsAPIView(web.View):
                 "avg_session_duration": "4m 23s",
                 "conversion_rate": 0.034,
                 "revenue": 45678.90,
-                "growth": {
-                    "pageviews": "+12.5%",
-                    "visitors": "+8.3%",
-                    "bounce_rate": "-5.2%",
-                    "revenue": "+18.7%"
-                }
+                "growth": {"pageviews": "+12.5%", "visitors": "+8.3%", "bounce_rate": "-5.2%", "revenue": "+18.7%"},
             },
             "traffic_sources": [
                 {"source": "Direct", "visitors": 5420, "percentage": 43.9, "growth": "+15.2%", "revenue": 18234.50},
-                {"source": "Google Search", "visitors": 3982, "percentage": 32.3, "growth": "+8.7%", "revenue": 15678.20},
-                {"source": "Social Media", "visitors": 1521, "percentage": 12.3, "growth": "+22.1%", "revenue": 6789.40},
-                {"source": "Email Campaigns", "visitors": 845, "percentage": 6.8, "growth": "+5.4%", "revenue": 3456.80},
-                {"source": "Referrals", "visitors": 573, "percentage": 4.6, "growth": "-2.1%", "revenue": 1520.00}
+                {
+                    "source": "Google Search",
+                    "visitors": 3982,
+                    "percentage": 32.3,
+                    "growth": "+8.7%",
+                    "revenue": 15678.20,
+                },
+                {
+                    "source": "Social Media",
+                    "visitors": 1521,
+                    "percentage": 12.3,
+                    "growth": "+22.1%",
+                    "revenue": 6789.40,
+                },
+                {
+                    "source": "Email Campaigns",
+                    "visitors": 845,
+                    "percentage": 6.8,
+                    "growth": "+5.4%",
+                    "revenue": 3456.80,
+                },
+                {"source": "Referrals", "visitors": 573, "percentage": 4.6, "growth": "-2.1%", "revenue": 1520.00},
             ],
             "page_views_daily": [
                 {"date": "2024-03-14", "views": 2250, "unique": 1420, "bounce": 0.31},
@@ -64,17 +77,33 @@ class AnalyticsAPIView(web.View):
                 {"date": "2024-03-17", "views": 2580, "unique": 1650, "bounce": 0.24},
                 {"date": "2024-03-18", "views": 2780, "unique": 1750, "bounce": 0.22},
                 {"date": "2024-03-19", "views": 3120, "unique": 1980, "bounce": 0.25},
-                {"date": "2024-03-20", "views": 2950, "unique": 1820, "bounce": 0.28}
+                {"date": "2024-03-20", "views": 2950, "unique": 1820, "bounce": 0.28},
             ],
             "page_views_hourly": [
-                {"hour": "00:00", "views": 45}, {"hour": "01:00", "views": 32}, {"hour": "02:00", "views": 28},
-                {"hour": "03:00", "views": 35}, {"hour": "04:00", "views": 42}, {"hour": "05:00", "views": 58},
-                {"hour": "06:00", "views": 78}, {"hour": "07:00", "views": 125}, {"hour": "08:00", "views": 185},
-                {"hour": "09:00", "views": 245}, {"hour": "10:00", "views": 298}, {"hour": "11:00", "views": 342},
-                {"hour": "12:00", "views": 367}, {"hour": "13:00", "views": 385}, {"hour": "14:00", "views": 378},
-                {"hour": "15:00", "views": 356}, {"hour": "16:00", "views": 332}, {"hour": "17:00", "views": 298},
-                {"hour": "18:00", "views": 265}, {"hour": "19:00", "views": 234}, {"hour": "20:00", "views": 198},
-                {"hour": "21:00", "views": 156}, {"hour": "22:00", "views": 124}, {"hour": "23:00", "views": 89}
+                {"hour": "00:00", "views": 45},
+                {"hour": "01:00", "views": 32},
+                {"hour": "02:00", "views": 28},
+                {"hour": "03:00", "views": 35},
+                {"hour": "04:00", "views": 42},
+                {"hour": "05:00", "views": 58},
+                {"hour": "06:00", "views": 78},
+                {"hour": "07:00", "views": 125},
+                {"hour": "08:00", "views": 185},
+                {"hour": "09:00", "views": 245},
+                {"hour": "10:00", "views": 298},
+                {"hour": "11:00", "views": 342},
+                {"hour": "12:00", "views": 367},
+                {"hour": "13:00", "views": 385},
+                {"hour": "14:00", "views": 378},
+                {"hour": "15:00", "views": 356},
+                {"hour": "16:00", "views": 332},
+                {"hour": "17:00", "views": 298},
+                {"hour": "18:00", "views": 265},
+                {"hour": "19:00", "views": 234},
+                {"hour": "20:00", "views": 198},
+                {"hour": "21:00", "views": 156},
+                {"hour": "22:00", "views": 124},
+                {"hour": "23:00", "views": 89},
             ],
             "top_pages": [
                 {"path": "/dashboard", "views": 15420, "unique": 8245, "bounce": 0.19, "avg_time": "3m 45s"},
@@ -83,19 +112,19 @@ class AnalyticsAPIView(web.View):
                 {"path": "/about", "views": 7654, "unique": 4567, "bounce": 0.28, "avg_time": "2m 34s"},
                 {"path": "/contact", "views": 5432, "unique": 3456, "bounce": 0.35, "avg_time": "1m 23s"},
                 {"path": "/blog", "views": 4321, "unique": 2890, "bounce": 0.42, "avg_time": "4m 12s"},
-                {"path": "/support", "views": 3210, "unique": 2134, "bounce": 0.38, "avg_time": "3m 01s"}
+                {"path": "/support", "views": 3210, "unique": 2134, "bounce": 0.38, "avg_time": "3m 01s"},
             ],
             "devices": [
                 {"type": "Desktop", "visitors": 7245, "percentage": 58.7, "bounce": 0.23, "revenue": 32456.80},
-                {"type": "Mobile", "visitors": 3892, "percentage": 31.5, "bounce": 0.34, "revenue": 10234.50}, 
-                {"type": "Tablet", "visitors": 1204, "percentage": 9.8, "bounce": 0.29, "revenue": 2987.60}
+                {"type": "Mobile", "visitors": 3892, "percentage": 31.5, "bounce": 0.34, "revenue": 10234.50},
+                {"type": "Tablet", "visitors": 1204, "percentage": 9.8, "bounce": 0.29, "revenue": 2987.60},
             ],
             "browsers": [
                 {"name": "Chrome", "visitors": 6789, "percentage": 55.0},
                 {"name": "Safari", "visitors": 2456, "percentage": 19.9},
                 {"name": "Firefox", "visitors": 1789, "percentage": 14.5},
                 {"name": "Edge", "visitors": 892, "percentage": 7.2},
-                {"name": "Opera", "visitors": 415, "percentage": 3.4}
+                {"name": "Opera", "visitors": 415, "percentage": 3.4},
             ],
             "geographic": [
                 {"country": "United States", "visitors": 4256, "percentage": 34.5, "revenue": 18945.60},
@@ -104,7 +133,7 @@ class AnalyticsAPIView(web.View):
                 {"country": "Germany", "visitors": 1456, "percentage": 11.8, "revenue": 6789.80},
                 {"country": "Australia", "visitors": 987, "percentage": 8.0, "revenue": 4567.30},
                 {"country": "France", "visitors": 856, "percentage": 6.9, "revenue": 3456.70},
-                {"country": "Others", "visitors": 863, "percentage": 7.0, "revenue": 2789.90}
+                {"country": "Others", "visitors": 863, "percentage": 7.0, "revenue": 2789.90},
             ],
             "conversion_funnel": [
                 {"stage": "Visitors", "count": 12341, "conversion": 100.0},
@@ -112,7 +141,7 @@ class AnalyticsAPIView(web.View):
                 {"stage": "Add to Cart", "count": 2134, "conversion": 17.3},
                 {"stage": "Checkout Started", "count": 1067, "conversion": 8.6},
                 {"stage": "Payment", "count": 678, "conversion": 5.5},
-                {"stage": "Completed Purchase", "count": 420, "conversion": 3.4}
+                {"stage": "Completed Purchase", "count": 420, "conversion": 3.4},
             ],
             "real_time": {
                 "active_users": 127,
@@ -122,15 +151,25 @@ class AnalyticsAPIView(web.View):
                     {"page": "/products", "users": 28},
                     {"page": "/analytics", "users": 19},
                     {"page": "/pricing", "users": 15},
-                    {"page": "/contact", "users": 12}
+                    {"page": "/contact", "users": 12},
                 ],
                 "live_events": [
-                    {"time": "2 min ago", "event": "Purchase completed", "value": "$89.99", "location": "New York, USA"},
-                    {"time": "3 min ago", "event": "User registration", "value": "Premium Plan", "location": "London, UK"},
+                    {
+                        "time": "2 min ago",
+                        "event": "Purchase completed",
+                        "value": "$89.99",
+                        "location": "New York, USA",
+                    },
+                    {
+                        "time": "3 min ago",
+                        "event": "User registration",
+                        "value": "Premium Plan",
+                        "location": "London, UK",
+                    },
                     {"time": "5 min ago", "event": "Cart abandonment", "value": "$156.50", "location": "Toronto, CA"},
                     {"time": "7 min ago", "event": "Newsletter signup", "value": "Marketing", "location": "Berlin, DE"},
-                    {"time": "9 min ago", "event": "Support ticket", "value": "Technical", "location": "Sydney, AU"}
-                ]
+                    {"time": "9 min ago", "event": "Support ticket", "value": "Technical", "location": "Sydney, AU"},
+                ],
             },
             "performance": {
                 "page_load_time": 1.23,
@@ -138,8 +177,8 @@ class AnalyticsAPIView(web.View):
                 "total_blocking_time": 0.089,
                 "largest_contentful_paint": 1.456,
                 "cumulative_layout_shift": 0.023,
-                "performance_score": 94
-            }
+                "performance_score": 94,
+            },
         }
 
         return web.json_response(data)
@@ -488,7 +527,7 @@ class AnalyticsComponentView(web.View):
                                         <span>${stage.conversion.toFixed(1)}%</span>
                                     </div>
                                     <div style="background: #ecf0f1; height: 20px; border-radius: 10px; overflow: hidden;">
-                                        <div style="background: linear-gradient(45deg, #3498db, #2ecc71); height: 100%; 
+                                        <div style="background: linear-gradient(45deg, #3498db, #2ecc71); height: 100%;
                                                     width: ${stage.conversion}%; transition: width 0.5s ease;"></div>
                                     </div>
                                     <small style="color: #666;">${stage.count.toLocaleString()} users</small>
@@ -728,7 +767,7 @@ class AnalyticsComponent(Component[GetAnalyticsData]):
                 await ctx.process(RegisterView(route="/components/analytics", view=AnalyticsComponentView))
 
             self.registered = True
-            print("📈 Analytics component routes registered")
+            print("Analytics component routes registered")
 
     async def handle(
         self, message: GetAnalyticsData, *, handler: Callable[[Message], Awaitable[None]], **_: Any

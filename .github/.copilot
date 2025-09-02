@@ -1,0 +1,8 @@
+# Copilot Guidelines
+
+- Use PowerShell (Windows), not Bash or Unix commands
+- Do NOT use 'kill', 'curl', 'grep', or any Linux tools
+- Use native PowerShell commands like Invoke-RestMethod
+- Do not terminate processes; only log or handle them safely
+- Stick to Windows-compatible solutions only
+- Do NOT use emojis

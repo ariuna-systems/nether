@@ -1,9 +1,8 @@
 """
-Dashboard Component - System overview and metrics.
+Dashboard Component - Complete system overview and metrics
+Includes: API endpoints, Nether component, and secure ES6 module serving
 """
 
-import asyncio
-import json
 import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
@@ -19,14 +18,12 @@ from nether.server import RegisterView
 @dataclass(frozen=True, kw_only=True, slots=True)
 class GetDashboardData(Query):
     """Query to get dashboard data."""
-
     ...
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class DashboardDataRetrieved(Event):
     """Event when dashboard data is retrieved."""
-
     data: dict[str, Any]
 
 
@@ -55,7 +52,12 @@ class DashboardAPIView(web.View):
                 {"name": "Cache Hit Rate", "value": "94.2%", "trend": "up", "change": "+2%"},
             ],
             "recent_activity": [
-                {"time": "1 min ago", "action": "System health check completed", "user": "monitoring", "status": "success"},
+                {
+                    "time": "1 min ago",
+                    "action": "System health check completed",
+                    "user": "monitoring",
+                    "status": "success",
+                },
                 {"time": "3 min ago", "action": "User session created", "user": "alice.johnson", "status": "success"},
                 {"time": "5 min ago", "action": "Data backup initiated", "user": "system", "status": "in_progress"},
                 {"time": "7 min ago", "action": "API rate limit adjusted", "user": "admin", "status": "success"},
@@ -75,271 +77,356 @@ class DashboardAPIView(web.View):
                     {"time": "16:00", "requests": 2800, "errors": 2},
                     {"time": "20:00", "requests": 1900, "errors": 1},
                 ]
-            }
+            },
         }
         return web.json_response(data)
 
 
-class DashboardComponentView(web.View):
-    """Serve the dashboard web component HTML."""
+class DashboardModuleView(web.View):
+    """Serve the dashboard component as a secure ES6 module."""
 
     async def get(self) -> web.Response:
-        """Return dashboard component HTML."""
-        html = """
-<div class="component-header">
-    <h1 class="component-title">📊 Dashboard</h1>
-    <p class="component-description">System overview and real-time metrics</p>
-</div>
+        """Return dashboard component as ES6 module."""
+        module_code = '''
+// Dashboard Web Component - ES6 Module
+// Secure, self-contained dashboard component
 
-<style>
-    .dashboard-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 20px;
-        margin-bottom: 30px;
-    }
-    .metric-card {
-        background: white;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        border-left: 4px solid #3498db;
-    }
-    .metric-value {
-        font-size: 2em;
-        font-weight: bold;
-        color: #2c3e50;
-        margin: 10px 0;
-    }
-    .metric-label {
-        color: #7f8c8d;
-        font-size: 0.9em;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-    .metric-trend {
-        font-size: 0.8em;
-        padding: 2px 8px;
-        border-radius: 12px;
-        margin-left: 10px;
-    }
-    .trend-up { background: #d4edda; color: #155724; }
-    .trend-down { background: #f8d7da; color: #721c24; }
-    .trend-stable { background: #fff3cd; color: #856404; }
+class DashboardWebComponent extends HTMLElement {
+    constructor() {
+        super();
+        this.data = null;
+        this.refreshInterval = null;
 
-    .activity-list {
-        background: white;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        overflow: hidden;
-    }
-    .activity-header {
-        padding: 15px 20px;
-        background: #f8f9fa;
-        border-bottom: 1px solid #dee2e6;
-        font-weight: bold;
-    }
-    .activity-item {
-        padding: 15px 20px;
-        border-bottom: 1px solid #f1f1f1;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    .activity-item:last-child {
-        border-bottom: none;
-    }
-    .activity-time {
-        color: #7f8c8d;
-        font-size: 0.9em;
+        // Create shadow DOM for encapsulation
+        this.attachShadow({ mode: 'open' });
+
+        console.log('🛡️ Secure Dashboard web component constructed');
     }
 
-    .loading {
-        text-align: center;
-        padding: 40px;
-        color: #7f8c8d;
+    // Web Component lifecycle: called when element is added to DOM
+    connectedCallback() {
+        console.log('🛡️ Secure Dashboard web component connected to DOM');
+        this.render();
+        this.setupEventListeners();
+        this.loadData();
+
+        // Auto-refresh every 30 seconds
+        this.refreshInterval = setInterval(() => this.loadData(), 30000);
     }
-</style>
 
-<div id="dashboard-content">
-    <div class="loading">Loading dashboard data...</div>
-</div>
-
-<script>
-    // Dashboard component logic
-    class DashboardComponent {
-        constructor() {
-            this.data = null;
-            this.init();
+    // Web Component lifecycle: called when element is removed from DOM
+    disconnectedCallback() {
+        console.log('🛡️ Secure Dashboard web component disconnected from DOM');
+        if (this.refreshInterval) {
+            clearInterval(this.refreshInterval);
         }
+        this.cleanup();
+    }
 
-        async init() {
-            await this.loadData();
-            this.render();
+    // Web Component lifecycle: called when attributes change
+    attributeChangedCallback(name, oldValue, newValue) {
+        console.log(`Dashboard attribute ${name} changed from ${oldValue} to ${newValue}`);
+        if (name === 'api-endpoint' && oldValue !== newValue) {
+            this.loadData();
+        }
+    }
 
-            // Listen for component loaded event
-            window.addEventListener('component-dashboard-loaded', (event) => {
-                this.data = event.detail.data;
-                this.render();
+    // Define which attributes to observe
+    static get observedAttributes() {
+        return ['api-endpoint', 'refresh-interval'];
+    }
+
+    setupEventListeners() {
+        // Listen for external data events (for SPA integration)
+        window.addEventListener('dashboard-data-updated', (event) => {
+            console.log('Dashboard received external data update:', event.detail);
+            this.data = event.detail.data;
+            this.renderContent();
+        });
+    }
+
+    cleanup() {
+        // Remove event listeners to prevent memory leaks
+        window.removeEventListener('dashboard-data-updated', this.handleDataUpdate);
+    }
+
+    async loadData() {
+        try {
+            const apiEndpoint = this.getAttribute('api-endpoint') || '/api/dashboard/data';
+            console.log(`🔒 Loading dashboard data from ${apiEndpoint}`);
+
+            const response = await fetch(apiEndpoint, {
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
             });
-
-            // Auto-refresh every 30 seconds
-            setInterval(() => this.refresh(), 30000);
-        }
-
-        async loadData() {
-            try {
-                const response = await fetch('/api/dashboard/data');
-                this.data = await response.json();
-            } catch (error) {
-                console.error('Failed to load dashboard data:', error);
-                this.data = { error: 'Failed to load data' };
-            }
-        }
-
-        async refresh() {
-            await this.loadData();
-            this.render();
-        }
-
-        render() {
-            const container = document.getElementById('dashboard-content');
-            if (!this.data) return;
-
-            if (this.data.error) {
-                container.innerHTML = `<div class="error">Error: ${this.data.error}</div>`;
-                return;
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
 
-            // Calculate uptime display
-            const uptimeHours = Math.floor(this.data.uptime / 3600);
-            const uptimeDisplay = `${Math.floor(uptimeHours / 24)}d ${uptimeHours % 24}h`;
+            this.data = await response.json();
+            console.log('🛡️ Secure dashboard data loaded:', this.data);
+            this.renderContent();
 
-            container.innerHTML = `
-                <!-- System Status Overview -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px;">
-                    <div class="metric-card" style="border-left-color: #27ae60;">
-                        <div class="metric-label">System Status</div>
-                        <div class="metric-value" style="color: #27ae60; font-size: 1.5em;">
-                            ${this.data.system_status.toUpperCase()}
-                        </div>
-                    </div>
-                    <div class="metric-card" style="border-left-color: #3498db;">
-                        <div class="metric-label">Uptime</div>
-                        <div class="metric-value" style="font-size: 1.5em;">${uptimeDisplay}</div>
-                    </div>
-                    <div class="metric-card" style="border-left-color: #e67e22;">
-                        <div class="metric-label">Active Users</div>
-                        <div class="metric-value" style="font-size: 1.5em;">${this.data.active_users}</div>
-                    </div>
-                    <div class="metric-card" style="border-left-color: #9b59b6;">
-                        <div class="metric-label">Total Requests</div>
-                        <div class="metric-value" style="font-size: 1.5em;">${this.data.total_requests.toLocaleString()}</div>
-                    </div>
-                </div>
+            // Dispatch event for external listeners
+            this.dispatchEvent(new CustomEvent('dashboard-loaded', {
+                detail: { data: this.data },
+                bubbles: true
+            }));
 
-                <!-- Resource Usage -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 25px;">
-                    <div class="metric-card">
-                        <div class="metric-label">Memory Usage</div>
-                        <div class="metric-value">${this.data.memory_usage}%</div>
-                        <div style="background: #ecf0f1; height: 10px; border-radius: 5px; margin-top: 10px;">
-                            <div style="background: ${this.data.memory_usage > 80 ? '#e74c3c' : this.data.memory_usage > 60 ? '#f39c12' : '#27ae60'}; 
-                                        height: 100%; width: ${this.data.memory_usage}%; border-radius: 5px; transition: width 0.3s;"></div>
-                        </div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-label">CPU Usage</div>
-                        <div class="metric-value">${this.data.cpu_usage}%</div>
-                        <div style="background: #ecf0f1; height: 10px; border-radius: 5px; margin-top: 10px;">
-                            <div style="background: ${this.data.cpu_usage > 80 ? '#e74c3c' : this.data.cpu_usage > 60 ? '#f39c12' : '#27ae60'}; 
-                                        height: 100%; width: ${this.data.cpu_usage}%; border-radius: 5px; transition: width 0.3s;"></div>
-                        </div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-label">Disk Usage</div>
-                        <div class="metric-value">${this.data.disk_usage}%</div>
-                        <div style="background: #ecf0f1; height: 10px; border-radius: 5px; margin-top: 10px;">
-                            <div style="background: ${this.data.disk_usage > 80 ? '#e74c3c' : this.data.disk_usage > 60 ? '#f39c12' : '#27ae60'}; 
-                                        height: 100%; width: ${this.data.disk_usage}%; border-radius: 5px; transition: width 0.3s;"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Alerts Section -->
-                ${this.data.alerts && this.data.alerts.length > 0 ? `
-                <div style="margin-bottom: 25px;">
-                    <h3 style="margin-bottom: 15px;">🚨 Active Alerts</h3>
-                    ${this.data.alerts.map(alert => `
-                        <div style="padding: 12px 15px; border-radius: 5px; margin-bottom: 10px; 
-                                    background: ${alert.level === 'warning' ? '#fff3cd' : '#d1ecf1'}; 
-                                    border-left: 4px solid ${alert.level === 'warning' ? '#ffc107' : '#17a2b8'};">
-                            <strong>${alert.level.toUpperCase()}:</strong> ${alert.message}
-                            <div style="font-size: 0.9em; color: #6c757d; margin-top: 5px;">${alert.time}</div>
-                        </div>
-                    `).join('')}
-                </div>
-                ` : ''}
-
-                <!-- Performance Metrics -->
-                <div class="dashboard-grid">
-                    ${this.data.metrics.map(metric => `
-                        <div class="metric-card">
-                            <div class="metric-label">${metric.name}</div>
-                            <div class="metric-value">
-                                ${metric.value}
-                                <span class="metric-trend trend-${metric.trend}">
-                                    ${metric.trend === 'up' ? '↗' : metric.trend === 'down' ? '↘' : '→'}
-                                    ${metric.change}
-                                </span>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-
-                <!-- Network I/O -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;">
-                    <div class="metric-card" style="border-left-color: #17a2b8;">
-                        <div class="metric-label">Network In</div>
-                        <div class="metric-value" style="color: #17a2b8;">${this.data.network_io.incoming}</div>
-                    </div>
-                    <div class="metric-card" style="border-left-color: #28a745;">
-                        <div class="metric-label">Network Out</div>
-                        <div class="metric-value" style="color: #28a745;">${this.data.network_io.outgoing}</div>
-                    </div>
-                </div>
-
-                <!-- Recent Activity -->
-                <div class="activity-list">
-                    <div class="activity-header">📋 Recent System Activity</div>
-                    ${this.data.recent_activity.map(activity => `
-                        <div class="activity-item">
-                            <div>
-                                <strong>${activity.action}</strong>
-                                <br><small>by ${activity.user}</small>
-                                ${activity.status ? `<span style="float: right; padding: 2px 8px; border-radius: 10px; 
-                                    font-size: 0.7em; background: ${activity.status === 'success' ? '#d4edda' : 
-                                    activity.status === 'in_progress' ? '#fff3cd' : '#f8d7da'}; 
-                                    color: ${activity.status === 'success' ? '#155724' : 
-                                    activity.status === 'in_progress' ? '#856404' : '#721c24'};">
-                                    ${activity.status.replace('_', ' ').toUpperCase()}
-                                </span>` : ''}
-                            </div>
-                            <div class="activity-time">${activity.time}</div>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
+        } catch (error) {
+            console.error('❌ Failed to load dashboard data:', error);
+            this.data = { error: 'Failed to load data: ' + error.message };
+            this.renderContent();
         }
     }
 
-    // Initialize when this component is loaded
-    if (document.getElementById('dashboard-content')) {
-        new DashboardComponent();
+    render() {
+        // Create the basic structure with enhanced security styling
+        this.shadowRoot.innerHTML = `
+            <style>
+                :host {
+                    display: block;
+                    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+                    white-space: normal;
+                }
+
+                .security-badge {
+                    position: absolute;
+                    top: 10px;
+                    right: 10px;
+                    background: #27ae60;
+                    color: white;
+                    padding: 4px 8px;
+                    border-radius: 12px;
+                    font-size: 11px;
+                    font-weight: bold;
+                }
+
+                .component-header {
+                    border-bottom: 2px solid #3498db;
+                    margin-bottom: 20px;
+                    padding-bottom: 10px;
+                    position: relative;
+                }
+
+                .component-title {
+                    color: #2c3e50;
+                    font-size: 24px;
+                    margin: 0;
+                }
+
+                .component-description {
+                    color: #7f8c8d;
+                    margin: 5px 0 0 0;
+                }
+
+                .metric-card {
+                    background: white;
+                    padding: 20px;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                    border-left: 4px solid #3498db;
+                }
+
+                .metric-value {
+                    font-size: 2em;
+                    font-weight: bold;
+                    color: #2c3e50;
+                    margin: 10px 0;
+                }
+
+                .metric-label {
+                    color: #7f8c8d;
+                    font-size: 0.9em;
+                    text-transform: uppercase;
+                    letter-spacing: 1px;
+                }
+
+                .metric-trend {
+                    font-size: 0.8em;
+                    padding: 2px 8px;
+                    border-radius: 12px;
+                    margin-left: 10px;
+                }
+
+                .trend-up { background: #d4edda; color: #155724; }
+                .trend-down { background: #f8d7da; color: #721c24; }
+                .trend-stable { background: #fff3cd; color: #856404; }
+
+                .activity-list {
+                    background: white;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                    overflow: hidden;
+                }
+
+                .activity-header {
+                    padding: 15px 20px;
+                    background: #f8f9fa;
+                    border-bottom: 1px solid #dee2e6;
+                    font-weight: bold;
+                }
+
+                .activity-item {
+                    padding: 15px 20px;
+                    border-bottom: 1px solid #f1f1f1;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                }
+
+                .activity-item:last-child { border-bottom: none; }
+                .activity-time { color: #7f8c8d; font-size: 0.9em; }
+                .loading { text-align: center; padding: 40px; color: #7f8c8d; }
+                .error { color: #e74c3c; padding: 20px; background: #f8f9fa; border-radius: 5px; border: 1px solid #e74c3c; }
+            </style>
+
+            <div class="component-header">
+                <div class="security-badge">🛡️ SECURE</div>
+                <h1 class="component-title">Dashboard</h1>
+                <p class="component-description">Secure system overview and real-time metrics</p>
+            </div>
+
+            <div id="dashboard-content">
+                <div class="loading">🔒 Loading secure dashboard data...</div>
+            </div>
+        `;
     }
-</script>
-        """
-        return web.Response(text=html, content_type="text/html")
+
+    renderContent() {
+        const container = this.shadowRoot.getElementById('dashboard-content');
+
+        if (!this.data) {
+            container.innerHTML = '<div class="loading">🔒 Loading secure dashboard data...</div>';
+            return;
+        }
+
+        if (this.data.error) {
+            container.innerHTML = `<div class="error">🛡️ Security Error: ${this.escapeHtml(this.data.error)}</div>`;
+            return;
+        }
+
+        // Calculate uptime display
+        const uptimeHours = Math.floor(this.data.uptime / 3600);
+        const uptimeDisplay = `${Math.floor(uptimeHours / 24)}d ${uptimeHours % 24}h`;
+
+        // Secure HTML generation with proper escaping
+        container.innerHTML = `
+            <!-- System Status Overview -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px;">
+                <div class="metric-card" style="border-left-color: #27ae60;">
+                    <div class="metric-label">System Status</div>
+                    <div class="metric-value" style="color: #27ae60; font-size: 1.5em;">
+                        ${this.escapeHtml(this.data.system_status.toUpperCase())}
+                    </div>
+                </div>
+                <div class="metric-card" style="border-left-color: #3498db;">
+                    <div class="metric-label">Uptime</div>
+                    <div class="metric-value" style="font-size: 1.5em;">${this.escapeHtml(uptimeDisplay)}</div>
+                </div>
+                <div class="metric-card" style="border-left-color: #e67e22;">
+                    <div class="metric-label">Active Users</div>
+                    <div class="metric-value" style="font-size: 1.5em;">${this.escapeHtml(String(this.data.active_users))}</div>
+                </div>
+                <div class="metric-card" style="border-left-color: #9b59b6;">
+                    <div class="metric-label">Total Requests</div>
+                    <div class="metric-value" style="font-size: 1.5em;">${this.escapeHtml(this.data.total_requests.toLocaleString())}</div>
+                </div>
+            </div>
+
+            <!-- Resource Usage -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 25px;">
+                ${this.renderResourceUsage('Memory Usage', this.data.memory_usage)}
+                ${this.renderResourceUsage('CPU Usage', this.data.cpu_usage)}
+                ${this.renderResourceUsage('Disk Usage', this.data.disk_usage)}
+            </div>
+
+            <!-- Performance Metrics -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px;">
+                ${this.data.metrics.map(metric => this.renderMetricCard(metric)).join('')}
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="activity-list">
+                <div class="activity-header">🛡️ Recent Secure Activity</div>
+                ${this.data.recent_activity.map(activity => `
+                    <div class="activity-item">
+                        <div>
+                            <strong>${this.escapeHtml(activity.action)}</strong>
+                            <br><small>by ${this.escapeHtml(activity.user)}</small>
+                        </div>
+                        <div class="activity-time">${this.escapeHtml(activity.time)}</div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+
+    renderResourceUsage(label, value) {
+        const safeLabel = this.escapeHtml(label);
+        const safeValue = this.escapeHtml(String(value));
+        const color = value > 80 ? '#e74c3c' : value > 60 ? '#f39c12' : '#27ae60';
+        
+        return `
+            <div class="metric-card">
+                <div class="metric-label">${safeLabel}</div>
+                <div class="metric-value">${safeValue}%</div>
+                <div style="background: #ecf0f1; height: 10px; border-radius: 5px; margin-top: 10px;">
+                    <div style="background: ${color}; height: 100%; width: ${value}%; border-radius: 5px; transition: width 0.3s;"></div>
+                </div>
+            </div>
+        `;
+    }
+
+    renderMetricCard(metric) {
+        return `
+            <div class="metric-card">
+                <div class="metric-label">${this.escapeHtml(metric.name)}</div>
+                <div class="metric-value">
+                    ${this.escapeHtml(metric.value)}
+                    <span class="metric-trend trend-${this.escapeHtml(metric.trend)}">
+                        ${metric.trend === 'up' ? '↗' : metric.trend === 'down' ? '↘' : '→'}
+                        ${this.escapeHtml(metric.change)}
+                    </span>
+                </div>
+            </div>
+        `;
+    }
+
+    // Security: HTML escaping to prevent XSS
+    escapeHtml(unsafe) {
+        if (typeof unsafe !== 'string') {
+            return String(unsafe);
+        }
+        return unsafe
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+}
+
+// Export the component class
+export default DashboardWebComponent;
+
+// Also provide named export for flexibility
+export { DashboardWebComponent };
+
+console.log('🛡️ Secure Dashboard component module loaded');
+'''
+        
+        return web.Response(
+            text=module_code,
+            content_type='application/javascript',
+            headers={
+                'Content-Security-Policy': "default-src 'self'",
+                'X-Content-Type-Options': 'nosniff'
+            }
+        )
 
 
 class DashboardComponent(Component[GetDashboardData]):
@@ -352,13 +439,13 @@ class DashboardComponent(Component[GetDashboardData]):
     async def on_start(self) -> None:
         await super().on_start()
         if not self.registered:
-            # Register dashboard routes
+            # Register both API and module routes
             async with self.application.mediator.context() as ctx:
                 await ctx.process(RegisterView(route="/api/dashboard/data", view=DashboardAPIView))
-                await ctx.process(RegisterView(route="/components/dashboard", view=DashboardComponentView))
+                await ctx.process(RegisterView(route="/modules/dashboard.js", view=DashboardModuleView))
 
             self.registered = True
-            print("📊 Dashboard component routes registered")
+            print("✅ Dashboard component routes registered (API + secure ES6 module)")
 
     async def handle(
         self, message: GetDashboardData, *, handler: Callable[[Message], Awaitable[None]], **_: Any
