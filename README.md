@@ -1,10 +1,14 @@
 # Nether
 
+[![Sphinx Docs](https://github.com/arjuna-systems/nether/actions/workflows/docs.yml/badge.svg)](https://github.com/arjuna-systems/nether/actions/workflows/docs.yml)
+
 > Nether means beneath, below, or underneath — representing both our minimalistic goals and system-level thinking.
 
 ## What is Nether?
 
 Nether is an **Actor Model Framework** for building **message-driven systems** in Python. Originally created to serve internal needs at Arjuna, it may or may not suit your use case — our goal is not to build a universal framework, but one that works best for us.
+
+> **Note**: Nether is actively under development but is already being used in production environments. While the core architecture is stable, APIs may evolve as we continue to refine the framework based on real-world usage.
 
 Use Nether to build:
 
