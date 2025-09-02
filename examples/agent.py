@@ -32,10 +32,6 @@ from nether.component import Component
 from nether.message import Event, Message, Query
 from nether.server import RegisterView, RegisterViewFailure, Server, ViewRegistered
 
-# =============================================================================
-# GLOBAL RESPONSE STORE FOR WEB API
-# =============================================================================
-
 # Global store for capturing agent responses
 _pending_responses: dict[str, dict[str, Any]] = {}
 _response_events: dict[str, asyncio.Event] = {}
@@ -62,16 +58,11 @@ def _cleanup_response(query_id: str) -> dict[str, Any] | None:
     return response
 
 
-# =============================================================================
-# MESSAGE DEFINITIONS
-# =============================================================================
-
-
 @dataclass(frozen=True, slots=True, kw_only=True)
 class AgentQuery(Query):
     """Query to be processed by an AI agent."""
 
-    agent_type: str  # 'chat', 'code', 'analysis'
+    agent_type: str
     prompt: str
     conversation_id: str | None = None
     context: dict[str, Any] = field(default_factory=dict)
@@ -130,21 +121,16 @@ class OllamaService:
     ) -> str:
         """Generate a response using Ollama."""
         try:
-            # Prepare messages for Ollama
             messages = []
 
-            # Add system prompt if provided
             if system_prompt:
                 messages.append({"role": "system", "content": system_prompt})
 
-            # Add conversation history if provided
             if conversation_history:
                 messages.extend(conversation_history)
 
-            # Add current user prompt
             messages.append({"role": "user", "content": prompt})
 
-            # Prepare request data
             request_data = {
                 "model": model,
                 "messages": messages,
@@ -156,13 +142,12 @@ class OllamaService:
                 },
             }
 
-            # Make request to Ollama
             async with (
                 aiohttp.ClientSession() as session,
                 session.post(
                     f"{self.base_url}/api/chat",
                     json=request_data,
-                    timeout=aiohttp.ClientTimeout(total=30),
+                    timeout=aiohttp.ClientTimeout(total=120),
                 ) as response,
             ):
                 if response.status != 200:
@@ -220,7 +205,6 @@ class BaseAgent(Component[AgentQuery]):
             {"role": role, "content": content, "timestamp": datetime.now().isoformat()}
         )
 
-        # Keep only last 20 messages to prevent memory growth
         if len(self.conversation_memory[conversation_id]) > 20:
             self.conversation_memory[conversation_id] = self.conversation_memory[conversation_id][-20:]
 
@@ -257,25 +241,21 @@ class BaseAgent(Component[AgentQuery]):
     ) -> None:
         """Handle agent query messages."""
         if message.agent_type != self.agent_type:
-            return  # Not for this agent type
+            return
 
         start_time = time.time()
 
         try:
-            # Add user query to memory
             if message.conversation_id:
                 self._add_to_memory(message.conversation_id, "user", message.prompt)
 
-            # Process the query
             response = await self.process_query(message)
 
-            # Add agent response to memory
             if message.conversation_id:
                 self._add_to_memory(message.conversation_id, "assistant", response)
 
             processing_time = time.time() - start_time
 
-            # Create response
             agent_response = AgentResponse(
                 query_id=str(message.created_at),
                 agent_type=self.agent_type,
@@ -285,7 +265,6 @@ class BaseAgent(Component[AgentQuery]):
                 metadata={"context_length": len(self._get_conversation_context(message.conversation_id or ""))},
             )
 
-            # Store response in global store for web API
             _store_response(
                 str(message.created_at),
                 {
@@ -297,11 +276,9 @@ class BaseAgent(Component[AgentQuery]):
                 },
             )
 
-            # Send response through mediator
             await handler(agent_response)
 
         except Exception as error:
-            # Create error response
             agent_error = AgentError(
                 query_id=str(message.created_at),
                 agent_type=self.agent_type,
@@ -309,12 +286,10 @@ class BaseAgent(Component[AgentQuery]):
                 conversation_id=message.conversation_id,
             )
 
-            # Store error in global store for web API
             _store_response(
                 str(message.created_at), {"status": "error", "error": str(error), "agent_type": self.agent_type}
             )
 
-            # Send error through mediator
             await handler(agent_error)
 
 
@@ -329,7 +304,7 @@ to be helpful while being honest about your limitations."""
         super().__init__(
             application,
             agent_type="chat",
-            model_name="llama3.2",  # Default model, can be overridden
+            model_name="llama3.2",
             system_prompt=system_prompt,
         )
 
@@ -338,7 +313,6 @@ to be helpful while being honest about your limitations."""
         try:
             return await self.process_query_with_ollama(query)
         except Exception as e:
-            # Fallback to simple responses if Ollama is not available
             prompt_lower = query.prompt.lower()
             if "hello" in prompt_lower or "hi" in prompt_lower:
                 return "Hello! I'm a chat agent. (Note: Ollama not available, using fallback response)"
@@ -357,7 +331,7 @@ programming languages including Python, JavaScript, TypeScript, Java, C++, and m
         super().__init__(
             application,
             agent_type="code",
-            model_name="codellama",  # Specialized code model
+            model_name="codellama",
             system_prompt=system_prompt,
         )
 
@@ -366,7 +340,6 @@ programming languages including Python, JavaScript, TypeScript, Java, C++, and m
         try:
             return await self.process_query_with_ollama(query)
         except Exception as e:
-            # Fallback responses for code queries
             prompt_lower = query.prompt.lower()
             if "python" in prompt_lower:
                 return """Here's a simple Python example:
@@ -396,7 +369,7 @@ You can work with various data types and analytical frameworks."""
         super().__init__(
             application,
             agent_type="analysis",
-            model_name="llama3.2",  # General model for analysis
+            model_name="llama3.2",
             system_prompt=system_prompt,
         )
 
@@ -405,10 +378,9 @@ You can work with various data types and analytical frameworks."""
         try:
             return await self.process_query_with_ollama(query)
         except Exception as e:
-            # Fallback responses for analysis queries
             prompt_lower = query.prompt.lower()
             if "trend" in prompt_lower:
-                return """📈 **Trend Analysis**
+                return """**Trend Analysis**
 
 Based on demo data:
 - Upward trend: 65%
@@ -424,7 +396,7 @@ class ConversationManager(Component[GetConversationHistory]):
 
     def __init__(self, application):
         super().__init__(application)
-        self.agents = {}  # Will be populated by system
+        self.agents = {}
 
     def register_agent(self, agent: BaseAgent):
         """Register an agent with the conversation manager."""
@@ -440,12 +412,10 @@ class ConversationManager(Component[GetConversationHistory]):
         """Handle conversation history requests."""
         all_messages = []
 
-        # Collect messages from all agents
         for agent in self.agents.values():
             if message.conversation_id in agent.conversation_memory:
                 all_messages.extend(agent.conversation_memory[message.conversation_id])
 
-        # Sort by timestamp
         all_messages.sort(key=lambda x: x["timestamp"])
 
         await handler(ConversationHistory(conversation_id=message.conversation_id, messages=all_messages))
@@ -599,22 +569,18 @@ class AgentQueryAPI(web.View):
             data = await self.request.json()
             system = self.request.app["system"]
 
-            # Create agent query
             query = AgentQuery(
                 agent_type=data["agent_type"], prompt=data["prompt"], conversation_id=data.get("conversation_id")
             )
 
             query_id = str(query.created_at)
 
-            # Set up response waiting
             event, _ = _wait_for_response(query_id)
 
             try:
-                # Send query through mediator
                 async with system.mediator.context() as ctx:
                     await ctx.process(query)
 
-                # Wait for response (with timeout)
                 try:
                     await asyncio.wait_for(event.wait(), timeout=15.0)
                     response_data = _cleanup_response(query_id)
@@ -643,7 +609,6 @@ class ConversationHistoryAPI(web.View):
             conversation_id = self.request.match_info["conversation_id"]
             system = self.request.app["system"]
 
-            # Get conversation manager
             conversation_manager = None
             for component in system.mediator.components:
                 if isinstance(component, ConversationManager):
@@ -653,13 +618,11 @@ class ConversationHistoryAPI(web.View):
             if not conversation_manager:
                 return web.json_response({"status": "error", "error": "Conversation manager not found"}, status=500)
 
-            # Get history from all agents
             all_messages = []
             for agent in conversation_manager.agents.values():
                 if conversation_id in agent.conversation_memory:
                     all_messages.extend(agent.conversation_memory[conversation_id])
 
-            # Sort by timestamp
             all_messages.sort(key=lambda x: x["timestamp"])
 
             return web.json_response(
@@ -670,11 +633,6 @@ class ConversationHistoryAPI(web.View):
             return web.json_response({"status": "error", "error": str(error)}, status=500)
 
 
-# =============================================================================
-# VIEW REGISTRATION HANDLER
-# =============================================================================
-
-
 class ViewRegistrationHandler(Component[ViewRegistered | RegisterViewFailure]):
     """Component to handle view registration events."""
 
@@ -682,14 +640,21 @@ class ViewRegistrationHandler(Component[ViewRegistered | RegisterViewFailure]):
         """Handle view registration success/failure events."""
         match message:
             case ViewRegistered():
-                print(f"✓ View successfully registered")
+                print("✓ View successfully registered")
             case RegisterViewFailure():
                 print(f"✗ View registration failed: {message.error}")
 
 
-# =============================================================================
-# MAIN SYSTEM CLASS
-# =============================================================================
+class AgentResponseHandler(Component[AgentResponse | AgentError]):
+    """Component to handle agent response and error events."""
+
+    async def handle(self, message: Message, *, handler: Callable[[Message], Awaitable[None]], **_: Any) -> None:
+        """Handle agent response and error events."""
+        match message:
+            case AgentResponse():
+                print(f"Agent {message.agent_type} responded (took {message.processing_time:.2f}s)")
+            case AgentError():
+                print(f"Agent {message.agent_type} error: {message.error_message}")
 
 
 class AIAgentSystem(nether.Nether):
@@ -713,40 +678,34 @@ async def main():
     config = ServerConfig()
     system = AIAgentSystem(configuration=config)
 
-    # Create agents
     chat_agent = ChatAgent(system)
     code_agent = CodeAgent(system)
     analysis_agent = AnalysisAgent(system)
 
-    # Create conversation manager
     conversation_manager = ConversationManager(system)
     conversation_manager.register_agent(chat_agent)
     conversation_manager.register_agent(code_agent)
     conversation_manager.register_agent(analysis_agent)
 
-    # Create view registration handler
     view_handler = ViewRegistrationHandler(system)
+    response_handler = AgentResponseHandler(system)
 
-    # Attach components
     system.attach(chat_agent)
     system.attach(code_agent)
     system.attach(analysis_agent)
     system.attach(conversation_manager)
     system.attach(view_handler)
+    system.attach(response_handler)
 
-    # Set up web server
     server = Server(system, configuration=config)
     system.attach(server)
 
-    # Store system reference for web handlers
     server._http_server["system"] = system
 
-    # Register web routes - do this BEFORE starting the system
     register_view_1 = RegisterView(route="/", view=AgentWebInterface)
     register_view_2 = RegisterView(route="/agent/query", view=AgentQueryAPI)
     register_view_3 = RegisterView(route="/agent/history/{conversation_id}", view=ConversationHistoryAPI)
 
-    # Process route registrations
     async with system.mediator.context() as ctx:
         await ctx.process(register_view_1)
         await ctx.process(register_view_2)
