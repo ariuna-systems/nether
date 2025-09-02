@@ -12,6 +12,10 @@ on:
 jobs:
   build-docs:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -36,12 +40,17 @@ jobs:
         with:
           app_id: ${{ secrets.ARJUNA_BOT_ID }}
           private_key: ${{ secrets.ARJUNA_BOT_PRIVATE_KEY }}
+          repositories: >-
+            ["nether"]
 
-      - name: Deploy to GitHub Pages
+      - name: Deploy to GitHub Pages (arjuna-systems)
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ steps.app-token.outputs.token }}
+          external_repository: arjuna-systems/nether
           publish_dir: docs/build/html
           publish_branch: gh-pages
           destination_dir: ${{ github.ref_name == 'main' && '' || github.ref_name }}
           force_orphan: false
+          user_name: 'arjuna-bot[bot]'
+          user_email: 'arjuna-bot[bot]@users.noreply.github.com'
