@@ -26,16 +26,6 @@ Architecture:
 - All external content is validated and sandboxed
 """
 
-# Apply server fix before importing nether components
-import sys
-import os
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__ + "/../")))
-
-try:
-    import server_fix  # Apply the monkey patch first
-except ImportError:
-    print("Warning: server_fix not available, nether server may have bugs")
-
 import argparse
 import asyncio
 import json
