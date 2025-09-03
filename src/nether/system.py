@@ -216,6 +216,7 @@ class Nether:
         self._stop_event = asyncio.Event()
         self.logger = logger
         self._services: set[Component] = set()
+        self.app = {}
 
         # Configure global logging if log-level or log-file arguments are present
         self._configure_logging()
