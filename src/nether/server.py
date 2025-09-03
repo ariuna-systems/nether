@@ -332,7 +332,7 @@ class Server(Component[StartServer | StopServer | RegisterView]):
         if not isinstance(message, self.supports):
             return
 
-        result_event: Event
+        result_event: Event | None = None
         try:
             match message:
                 case RegisterView():
@@ -341,14 +341,34 @@ class Server(Component[StartServer | StopServer | RegisterView]):
                 case AddStatic():
                     await self._add_static(prefix=message.prefix, path=message.path, **message.kwargs)
                     result_event = StaticAdded()
+                case StartServer():
+                    try:
+                        await self.on_start()
+                        result_event = ServerStarted()
+                    except Exception as error:
+                        result_event = StartServerFailure(error=error)
+                case StopServer():
+                    try:
+                        await self.on_stop()
+                        result_event = ServerStopped()
+                    except Exception as error:
+                        result_event = StopServerFailure(error=error)
         except Exception as error:
             match message:
                 case RegisterView():
                     result_event = RegisterViewFailure(error=error)
                 case AddStatic():
                     result_event = AddStaticFailure(error=error)
+                case StartServer():
+                    result_event = StartServerFailure(error=error)
+                case StopServer():
+                    result_event = StopServerFailure(error=error)
         finally:
-            await handler(result_event)
+            if result_event is not None:
+                await handler(result_event)
+            else:
+                # fallback: unknown message type or error
+                self.logger.error(f"Unhandled message type: {type(message).__name__}")
 
     async def _add_view(self, *, route: str, view: type[web.View]) -> None:
         """If app frozen, adds the view to the dynamic route manager; otherwise, adds it to the router."""

@@ -2,14 +2,12 @@
 Settings Component - Application configuration and settings.
 """
 
-import json
 import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any
 
 from aiohttp import web
-
 from nether.component import Component
 from nether.message import Command, Event, Message
 from nether.server import RegisterView
@@ -83,7 +81,10 @@ class SettingsAPIView(web.View):
             "integrations": {
                 "third_party_apis": {
                     "google_analytics": {"enabled": False, "tracking_id": ""},
-                    "sentry": {"enabled": True, "dsn": "https://example@sentry.io/123456"},
+                    "sentry": {
+                        "enabled": True,
+                        "dsn": "https://example@sentry.io/123456",
+                    },
                 }
             },
         }
@@ -114,7 +115,7 @@ class SettingsComponentView(web.View):
         """Return settings component HTML."""
         html = """
 <div class="component-header">
-    <h1 class="component-title">⚙️ Settings</h1>
+    <h1 class="component-title">Settings</h1>
     <p class="component-description">Configure application preferences and system settings</p>
 </div>
 
@@ -565,14 +566,24 @@ class SettingsComponent(Component[GetSettings | UpdateSettings]):
         if not self.registered:
             # Register settings routes
             async with self.application.mediator.context() as ctx:
-                await ctx.process(RegisterView(route="/api/settings/data", view=SettingsAPIView))
-                await ctx.process(RegisterView(route="/components/settings", view=SettingsComponentView))
+                await ctx.process(
+                    RegisterView(route="/api/settings/data", view=SettingsAPIView)
+                )
+                await ctx.process(
+                    RegisterView(
+                        route="/components/settings", view=SettingsComponentView
+                    )
+                )
 
             self.registered = True
-            print("⚙️ Settings component routes registered")
+            print("Settings component routes registered")
 
     async def handle(
-        self, message: GetSettings | UpdateSettings, *, handler: Callable[[Message], Awaitable[None]], **_: Any
+        self,
+        message: GetSettings | UpdateSettings,
+        *,
+        handler: Callable[[Message], Awaitable[None]],
+        **_: Any,
     ) -> None:
         """Handle settings requests."""
         if isinstance(message, GetSettings):

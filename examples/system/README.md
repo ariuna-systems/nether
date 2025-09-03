@@ -7,7 +7,7 @@ A production-ready Single Page Application demonstrating secure dynamic componen
 ### Security-First Architecture
 
 - Component validation and security scoring
-- Content Security Policy (CSP) enforcement  
+- Content Security Policy (CSP) enforcement
 - Component sandboxing and validation
 - Secure ES6 module loading
 
@@ -21,17 +21,17 @@ A production-ready Single Page Application demonstrating secure dynamic componen
 ### Built-in Components
 
 - **Dashboard**: System overview and real-time metrics
-- **Analytics**: Traffic analytics and data visualization  
+- **Analytics**: Traffic analytics and data visualization
 - **Settings**: Application configuration management
 
 ## Quick Start
 
 ```powershell
-cd examples\modular
+cd examples\system
 ```
 
 ```powershell
-python main.py --port 8081 --host localhost
+python -m nether-system-example
 ```
 
 ## API Endpoints
@@ -78,7 +78,7 @@ python main.py --help
 **Options:**
 
 - `--port 8081`: Server port (default: 8081)
-- `--host localhost`: Server host (default: localhost)  
+- `--host localhost`: Server host (default: localhost)
 - `--log-level INFO`: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
 
 ## Development

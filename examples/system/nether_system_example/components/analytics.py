@@ -9,7 +9,6 @@ from dataclasses import dataclass
 from typing import Any
 
 from aiohttp import web
-
 from nether.component import Component
 from nether.message import Event, Message, Query
 from nether.server import RegisterView
@@ -43,10 +42,21 @@ class AnalyticsAPIView(web.View):
                 "avg_session_duration": "4m 23s",
                 "conversion_rate": 0.034,
                 "revenue": 45678.90,
-                "growth": {"pageviews": "+12.5%", "visitors": "+8.3%", "bounce_rate": "-5.2%", "revenue": "+18.7%"},
+                "growth": {
+                    "pageviews": "+12.5%",
+                    "visitors": "+8.3%",
+                    "bounce_rate": "-5.2%",
+                    "revenue": "+18.7%",
+                },
             },
             "traffic_sources": [
-                {"source": "Direct", "visitors": 5420, "percentage": 43.9, "growth": "+15.2%", "revenue": 18234.50},
+                {
+                    "source": "Direct",
+                    "visitors": 5420,
+                    "percentage": 43.9,
+                    "growth": "+15.2%",
+                    "revenue": 18234.50,
+                },
                 {
                     "source": "Google Search",
                     "visitors": 3982,
@@ -68,7 +78,13 @@ class AnalyticsAPIView(web.View):
                     "growth": "+5.4%",
                     "revenue": 3456.80,
                 },
-                {"source": "Referrals", "visitors": 573, "percentage": 4.6, "growth": "-2.1%", "revenue": 1520.00},
+                {
+                    "source": "Referrals",
+                    "visitors": 573,
+                    "percentage": 4.6,
+                    "growth": "-2.1%",
+                    "revenue": 1520.00,
+                },
             ],
             "page_views_daily": [
                 {"date": "2024-03-14", "views": 2250, "unique": 1420, "bounce": 0.31},
@@ -106,18 +122,78 @@ class AnalyticsAPIView(web.View):
                 {"hour": "23:00", "views": 89},
             ],
             "top_pages": [
-                {"path": "/dashboard", "views": 15420, "unique": 8245, "bounce": 0.19, "avg_time": "3m 45s"},
-                {"path": "/products", "views": 12890, "unique": 7234, "bounce": 0.24, "avg_time": "2m 12s"},
-                {"path": "/pricing", "views": 9876, "unique": 6123, "bounce": 0.31, "avg_time": "1m 56s"},
-                {"path": "/about", "views": 7654, "unique": 4567, "bounce": 0.28, "avg_time": "2m 34s"},
-                {"path": "/contact", "views": 5432, "unique": 3456, "bounce": 0.35, "avg_time": "1m 23s"},
-                {"path": "/blog", "views": 4321, "unique": 2890, "bounce": 0.42, "avg_time": "4m 12s"},
-                {"path": "/support", "views": 3210, "unique": 2134, "bounce": 0.38, "avg_time": "3m 01s"},
+                {
+                    "path": "/dashboard",
+                    "views": 15420,
+                    "unique": 8245,
+                    "bounce": 0.19,
+                    "avg_time": "3m 45s",
+                },
+                {
+                    "path": "/products",
+                    "views": 12890,
+                    "unique": 7234,
+                    "bounce": 0.24,
+                    "avg_time": "2m 12s",
+                },
+                {
+                    "path": "/pricing",
+                    "views": 9876,
+                    "unique": 6123,
+                    "bounce": 0.31,
+                    "avg_time": "1m 56s",
+                },
+                {
+                    "path": "/about",
+                    "views": 7654,
+                    "unique": 4567,
+                    "bounce": 0.28,
+                    "avg_time": "2m 34s",
+                },
+                {
+                    "path": "/contact",
+                    "views": 5432,
+                    "unique": 3456,
+                    "bounce": 0.35,
+                    "avg_time": "1m 23s",
+                },
+                {
+                    "path": "/blog",
+                    "views": 4321,
+                    "unique": 2890,
+                    "bounce": 0.42,
+                    "avg_time": "4m 12s",
+                },
+                {
+                    "path": "/support",
+                    "views": 3210,
+                    "unique": 2134,
+                    "bounce": 0.38,
+                    "avg_time": "3m 01s",
+                },
             ],
             "devices": [
-                {"type": "Desktop", "visitors": 7245, "percentage": 58.7, "bounce": 0.23, "revenue": 32456.80},
-                {"type": "Mobile", "visitors": 3892, "percentage": 31.5, "bounce": 0.34, "revenue": 10234.50},
-                {"type": "Tablet", "visitors": 1204, "percentage": 9.8, "bounce": 0.29, "revenue": 2987.60},
+                {
+                    "type": "Desktop",
+                    "visitors": 7245,
+                    "percentage": 58.7,
+                    "bounce": 0.23,
+                    "revenue": 32456.80,
+                },
+                {
+                    "type": "Mobile",
+                    "visitors": 3892,
+                    "percentage": 31.5,
+                    "bounce": 0.34,
+                    "revenue": 10234.50,
+                },
+                {
+                    "type": "Tablet",
+                    "visitors": 1204,
+                    "percentage": 9.8,
+                    "bounce": 0.29,
+                    "revenue": 2987.60,
+                },
             ],
             "browsers": [
                 {"name": "Chrome", "visitors": 6789, "percentage": 55.0},
@@ -127,13 +203,48 @@ class AnalyticsAPIView(web.View):
                 {"name": "Opera", "visitors": 415, "percentage": 3.4},
             ],
             "geographic": [
-                {"country": "United States", "visitors": 4256, "percentage": 34.5, "revenue": 18945.60},
-                {"country": "United Kingdom", "visitors": 2134, "percentage": 17.3, "revenue": 9876.40},
-                {"country": "Canada", "visitors": 1789, "percentage": 14.5, "revenue": 7234.20},
-                {"country": "Germany", "visitors": 1456, "percentage": 11.8, "revenue": 6789.80},
-                {"country": "Australia", "visitors": 987, "percentage": 8.0, "revenue": 4567.30},
-                {"country": "France", "visitors": 856, "percentage": 6.9, "revenue": 3456.70},
-                {"country": "Others", "visitors": 863, "percentage": 7.0, "revenue": 2789.90},
+                {
+                    "country": "United States",
+                    "visitors": 4256,
+                    "percentage": 34.5,
+                    "revenue": 18945.60,
+                },
+                {
+                    "country": "United Kingdom",
+                    "visitors": 2134,
+                    "percentage": 17.3,
+                    "revenue": 9876.40,
+                },
+                {
+                    "country": "Canada",
+                    "visitors": 1789,
+                    "percentage": 14.5,
+                    "revenue": 7234.20,
+                },
+                {
+                    "country": "Germany",
+                    "visitors": 1456,
+                    "percentage": 11.8,
+                    "revenue": 6789.80,
+                },
+                {
+                    "country": "Australia",
+                    "visitors": 987,
+                    "percentage": 8.0,
+                    "revenue": 4567.30,
+                },
+                {
+                    "country": "France",
+                    "visitors": 856,
+                    "percentage": 6.9,
+                    "revenue": 3456.70,
+                },
+                {
+                    "country": "Others",
+                    "visitors": 863,
+                    "percentage": 7.0,
+                    "revenue": 2789.90,
+                },
             ],
             "conversion_funnel": [
                 {"stage": "Visitors", "count": 12341, "conversion": 100.0},
@@ -166,9 +277,24 @@ class AnalyticsAPIView(web.View):
                         "value": "Premium Plan",
                         "location": "London, UK",
                     },
-                    {"time": "5 min ago", "event": "Cart abandonment", "value": "$156.50", "location": "Toronto, CA"},
-                    {"time": "7 min ago", "event": "Newsletter signup", "value": "Marketing", "location": "Berlin, DE"},
-                    {"time": "9 min ago", "event": "Support ticket", "value": "Technical", "location": "Sydney, AU"},
+                    {
+                        "time": "5 min ago",
+                        "event": "Cart abandonment",
+                        "value": "$156.50",
+                        "location": "Toronto, CA",
+                    },
+                    {
+                        "time": "7 min ago",
+                        "event": "Newsletter signup",
+                        "value": "Marketing",
+                        "location": "Berlin, DE",
+                    },
+                    {
+                        "time": "9 min ago",
+                        "event": "Support ticket",
+                        "value": "Technical",
+                        "location": "Sydney, AU",
+                    },
                 ],
             },
             "performance": {
@@ -191,7 +317,7 @@ class AnalyticsComponentView(web.View):
         """Return analytics component HTML."""
         html = """
 <div class="component-header">
-    <h1 class="component-title">📈 Analytics</h1>
+    <h1 class="component-title">Analytics</h1>
     <p class="component-description">Data insights and traffic analytics</p>
 </div>
 
@@ -422,7 +548,7 @@ class AnalyticsComponentView(web.View):
                 <!-- Real-time Stats -->
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px;">
                     <div class="metric-card" style="border-left-color: #e74c3c;">
-                        <div class="metric-label">🔴 Live Users</div>
+                        <div class="metric-label">Live Users</div>
                         <div class="metric-value" style="color: #e74c3c; font-size: 1.8em;">${this.data.real_time.active_users}</div>
                     </div>
                     <div class="metric-card" style="border-left-color: #27ae60;">
@@ -470,7 +596,7 @@ class AnalyticsComponentView(web.View):
                 <div class="analytics-grid">
                     <!-- Daily Page Views Chart -->
                     <div class="analytics-card" style="grid-column: span 2;">
-                        <div class="card-title">📈 Daily Page Views (Last 7 Days)</div>
+                        <div class="card-title">Daily Page Views (Last 7 Days)</div>
                         <div class="chart-container">
                             ${this.data.page_views_daily.map(pv => `
                                 <div style="display: flex; flex-direction: column; align-items: center; flex: 1;">
@@ -484,7 +610,7 @@ class AnalyticsComponentView(web.View):
 
                     <!-- Hourly Traffic Pattern -->
                     <div class="analytics-card" style="grid-column: span 2;">
-                        <div class="card-title">🕒 Hourly Traffic Pattern (Today)</div>
+                        <div class="card-title">Hourly Traffic Pattern (Today)</div>
                         <div class="chart-container" style="height: 120px;">
                             ${this.data.page_views_hourly.map(pv => `
                                 <div style="display: flex; flex-direction: column; align-items: center; flex: 1;">
@@ -497,7 +623,7 @@ class AnalyticsComponentView(web.View):
 
                     <!-- Traffic Sources -->
                     <div class="analytics-card">
-                        <div class="card-title">🚀 Traffic Sources</div>
+                        <div class="card-title">Traffic Sources</div>
                         <ul class="source-list">
                             ${this.data.traffic_sources.map(source => `
                                 <li class="source-item">
@@ -518,7 +644,7 @@ class AnalyticsComponentView(web.View):
 
                     <!-- Conversion Funnel -->
                     <div class="analytics-card">
-                        <div class="card-title">🎯 Conversion Funnel</div>
+                        <div class="card-title">Conversion Funnel</div>
                         <div style="padding: 10px 0;">
                             ${this.data.conversion_funnel.map((stage, index) => `
                                 <div style="margin-bottom: 15px;">
@@ -538,7 +664,7 @@ class AnalyticsComponentView(web.View):
 
                     <!-- Top Pages -->
                     <div class="analytics-card">
-                        <div class="card-title">📄 Top Pages</div>
+                        <div class="card-title">Top Pages</div>
                         <ul class="page-list">
                             ${this.data.top_pages.map(page => `
                                 <li class="page-item">
@@ -557,7 +683,7 @@ class AnalyticsComponentView(web.View):
 
                     <!-- Device Analytics -->
                     <div class="analytics-card">
-                        <div class="card-title">💻 Device Breakdown</div>
+                        <div class="card-title">Device Breakdown</div>
                         <div style="padding: 10px 0;">
                             ${this.data.devices.map(device => `
                                 <div style="margin-bottom: 15px;">
@@ -579,7 +705,7 @@ class AnalyticsComponentView(web.View):
 
                     <!-- Geographic Distribution -->
                     <div class="analytics-card">
-                        <div class="card-title">🌍 Geographic Distribution</div>
+                        <div class="card-title">Geographic Distribution</div>
                         <ul class="source-list">
                             ${this.data.geographic.slice(0, 6).map(country => `
                                 <li class="source-item">
@@ -598,7 +724,7 @@ class AnalyticsComponentView(web.View):
 
                     <!-- Live Activity Feed -->
                     <div class="analytics-card" style="grid-column: span 2;">
-                        <div class="card-title">⚡ Live Activity Feed</div>
+                        <div class="card-title">Live Activity Feed</div>
                         <div style="max-height: 200px; overflow-y: auto;">
                             ${this.data.real_time.live_events.map(event => `
                                 <div style="padding: 8px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between;">
@@ -614,7 +740,7 @@ class AnalyticsComponentView(web.View):
 
                     <!-- Performance Metrics -->
                     <div class="analytics-card">
-                        <div class="card-title">⚡ Performance Metrics</div>
+                        <div class="card-title">Performance Metrics</div>
                         <div style="padding: 10px 0;">
                             <div style="margin-bottom: 10px;">
                                 <div style="display: flex; justify-content: space-between;">
@@ -645,7 +771,7 @@ class AnalyticsComponentView(web.View):
 
                     <!-- Browser Stats -->
                     <div class="analytics-card">
-                        <div class="card-title">🌐 Browser Distribution</div>
+                        <div class="card-title">Browser Distribution</div>
                         <ul class="source-list">
                             ${this.data.browsers.map(browser => `
                                 <li class="source-item">
@@ -671,7 +797,7 @@ class AnalyticsComponentView(web.View):
 
                     <!-- Page Views Chart -->
                     <div class="analytics-card">
-                        <div class="card-title">📈 Page Views (7 days)</div>
+                        <div class="card-title">Page Views (7 days)</div>
                         <div class="chart-container">
                             ${this.data.page_views.map(pv => `
                                 <div>
@@ -684,7 +810,7 @@ class AnalyticsComponentView(web.View):
 
                     <!-- Traffic Sources -->
                     <div class="analytics-card">
-                        <div class="card-title">🌐 Traffic Sources</div>
+                        <div class="card-title">Traffic Sources</div>
                         <ul class="source-list">
                             ${this.data.traffic_sources.map(source => `
                                 <li class="source-item">
@@ -703,7 +829,7 @@ class AnalyticsComponentView(web.View):
 
                     <!-- Top Pages -->
                     <div class="analytics-card">
-                        <div class="card-title">📄 Top Pages</div>
+                        <div class="card-title">Top Pages</div>
                         <ul class="page-list">
                             ${this.data.top_pages.map(page => `
                                 <li class="page-item">
@@ -722,7 +848,7 @@ class AnalyticsComponentView(web.View):
 
                     <!-- Device Breakdown -->
                     <div class="analytics-card">
-                        <div class="card-title">📱 Device Breakdown</div>
+                        <div class="card-title">Device Breakdown</div>
                         <div class="device-chart">
                             ${this.data.devices.map(device => `
                                 <div class="device-bar">
@@ -763,14 +889,24 @@ class AnalyticsComponent(Component[GetAnalyticsData]):
         if not self.registered:
             # Register analytics routes
             async with self.application.mediator.context() as ctx:
-                await ctx.process(RegisterView(route="/api/analytics/data", view=AnalyticsAPIView))
-                await ctx.process(RegisterView(route="/components/analytics", view=AnalyticsComponentView))
+                await ctx.process(
+                    RegisterView(route="/api/analytics/data", view=AnalyticsAPIView)
+                )
+                await ctx.process(
+                    RegisterView(
+                        route="/components/analytics", view=AnalyticsComponentView
+                    )
+                )
 
             self.registered = True
             print("Analytics component routes registered")
 
     async def handle(
-        self, message: GetAnalyticsData, *, handler: Callable[[Message], Awaitable[None]], **_: Any
+        self,
+        message: GetAnalyticsData,
+        *,
+        handler: Callable[[Message], Awaitable[None]],
+        **_: Any,
     ) -> None:
         """Handle analytics data requests."""
         # In a real application, this would query actual analytics data

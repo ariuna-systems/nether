@@ -9,21 +9,24 @@ from dataclasses import dataclass
 from typing import Any
 
 from aiohttp import web
-
 from nether.component import Component
 from nether.message import Event, Message, Query
 from nether.server import RegisterView
+
+__all__ = ["DashboardComponent"]
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class GetDashboardData(Query):
     """Query to get dashboard data."""
+
     ...
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class DashboardDataRetrieved(Event):
     """Event when dashboard data is retrieved."""
+
     data: dict[str, Any]
 
 
@@ -44,12 +47,42 @@ class DashboardAPIView(web.View):
             "disk_usage": 45.8,
             "network_io": {"incoming": "12.4 MB/s", "outgoing": "8.7 MB/s"},
             "metrics": [
-                {"name": "Response Time", "value": "142ms", "trend": "down", "change": "-8%"},
-                {"name": "Throughput", "value": "2.1k/min", "trend": "up", "change": "+12%"},
-                {"name": "Error Rate", "value": "0.015%", "trend": "stable", "change": "0%"},
-                {"name": "Active Sessions", "value": "342", "trend": "up", "change": "+5%"},
-                {"name": "Database Connections", "value": "28/100", "trend": "stable", "change": "0%"},
-                {"name": "Cache Hit Rate", "value": "94.2%", "trend": "up", "change": "+2%"},
+                {
+                    "name": "Response Time",
+                    "value": "142ms",
+                    "trend": "down",
+                    "change": "-8%",
+                },
+                {
+                    "name": "Throughput",
+                    "value": "2.1k/min",
+                    "trend": "up",
+                    "change": "+12%",
+                },
+                {
+                    "name": "Error Rate",
+                    "value": "0.015%",
+                    "trend": "stable",
+                    "change": "0%",
+                },
+                {
+                    "name": "Active Sessions",
+                    "value": "342",
+                    "trend": "up",
+                    "change": "+5%",
+                },
+                {
+                    "name": "Database Connections",
+                    "value": "28/100",
+                    "trend": "stable",
+                    "change": "0%",
+                },
+                {
+                    "name": "Cache Hit Rate",
+                    "value": "94.2%",
+                    "trend": "up",
+                    "change": "+2%",
+                },
             ],
             "recent_activity": [
                 {
@@ -58,15 +91,48 @@ class DashboardAPIView(web.View):
                     "user": "monitoring",
                     "status": "success",
                 },
-                {"time": "3 min ago", "action": "User session created", "user": "alice.johnson", "status": "success"},
-                {"time": "5 min ago", "action": "Data backup initiated", "user": "system", "status": "in_progress"},
-                {"time": "7 min ago", "action": "API rate limit adjusted", "user": "admin", "status": "success"},
-                {"time": "10 min ago", "action": "Database optimization", "user": "db_admin", "status": "success"},
-                {"time": "12 min ago", "action": "Security scan completed", "user": "security", "status": "success"},
+                {
+                    "time": "3 min ago",
+                    "action": "User session created",
+                    "user": "alice.johnson",
+                    "status": "success",
+                },
+                {
+                    "time": "5 min ago",
+                    "action": "Data backup initiated",
+                    "user": "system",
+                    "status": "in_progress",
+                },
+                {
+                    "time": "7 min ago",
+                    "action": "API rate limit adjusted",
+                    "user": "admin",
+                    "status": "success",
+                },
+                {
+                    "time": "10 min ago",
+                    "action": "Database optimization",
+                    "user": "db_admin",
+                    "status": "success",
+                },
+                {
+                    "time": "12 min ago",
+                    "action": "Security scan completed",
+                    "user": "security",
+                    "status": "success",
+                },
             ],
             "alerts": [
-                {"level": "warning", "message": "Memory usage approaching 70% threshold", "time": "5 min ago"},
-                {"level": "info", "message": "Scheduled maintenance in 2 hours", "time": "15 min ago"},
+                {
+                    "level": "warning",
+                    "message": "Memory usage approaching 70% threshold",
+                    "time": "5 min ago",
+                },
+                {
+                    "level": "info",
+                    "message": "Scheduled maintenance in 2 hours",
+                    "time": "15 min ago",
+                },
             ],
             "performance_data": {
                 "last_24h": [
@@ -82,12 +148,125 @@ class DashboardAPIView(web.View):
         return web.json_response(data)
 
 
+class DashboardComponentView(web.View):
+    """Serve the dashboard component HTML (non-module) so SPA fallback works."""
+
+    async def get(self) -> web.Response:
+        html = """
+<div class="component-header">
+    <h1 class="component-title">Dashboard</h1>
+    <p class="component-description">System overview and real-time metrics</p>
+</div>
+
+<dashboard-component api-endpoint="/api/dashboard/data"></dashboard-component>
+
+<style>
+    dashboard-component {
+        display: block;
+        min-height: 200px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 10px;
+        background: #f9f9f9;
+    }
+    dashboard-component:empty::after {
+        content: "Loading dashboard component...";
+        color: #666;
+        font-style: italic;
+        display: block;
+        padding: 20px;
+        text-align: center;
+    }
+</style>
+<script type="module">
+// Enhanced dashboard loader with better debugging
+const DASHBOARD_TAG = 'dashboard-component';
+
+console.log('[dashboard-loader] Starting dashboard component loading...');
+
+async function loadDashboardModule(retries = 8) {
+    console.log(`[dashboard-loader] Attempting to load module, retries left: ${retries}`);
+
+    if (customElements.get(DASHBOARD_TAG)) {
+        console.log('[dashboard-loader] Custom element already defined');
+        return true;
+    }
+
+    try {
+        console.log('[dashboard-loader] Importing module from /modules/dashboard.js');
+        await import('/modules/dashboard.js');
+        console.log('[dashboard-loader] Module imported successfully');
+
+        // Wait for custom element to register
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        if (customElements.get(DASHBOARD_TAG)) {
+            console.log('[dashboard-loader] Custom element is now defined');
+            return true;
+        } else {
+            console.warn('[dashboard-loader] Custom element still not defined after import');
+            return false;
+        }
+
+    } catch (err) {
+        console.warn('[dashboard-loader] Module import failed', err);
+        if (retries > 0) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+            return loadDashboardModule(retries - 1);
+        } else {
+            const el = document.querySelector(DASHBOARD_TAG);
+            if (el) {
+                el.innerHTML = '<div style="padding:12px;color:#e74c3c;font-family:system-ui;">Failed to load dashboard module after multiple attempts.</div>';
+            }
+            return false;
+        }
+    }
+}
+
+// Check dashboard element status
+function checkDashboardElement() {
+    const el = document.querySelector(DASHBOARD_TAG);
+    if (el) {
+        console.log('[dashboard-loader] Dashboard element found:', el);
+        console.log('[dashboard-loader] Element connected:', el.isConnected);
+        console.log('[dashboard-loader] Has shadow root:', !!el.shadowRoot);
+        console.log('[dashboard-loader] Element content:', el.innerHTML);
+
+        // Add data loaded listener
+        el.addEventListener('dashboard-loaded', (event) => {
+            console.log('[dashboard-loader] Dashboard data loaded event:', event.detail);
+        });
+    } else {
+        console.warn('[dashboard-loader] Dashboard element not found');
+    }
+}
+
+// Start the loading process
+loadDashboardModule().then(success => {
+    console.log('[dashboard-loader] Module loading result:', success);
+    setTimeout(checkDashboardElement, 500);
+});
+
+// Also check periodically
+let checkCount = 0;
+const checker = setInterval(() => {
+    checkCount++;
+    checkDashboardElement();
+    if (checkCount >= 5) {
+        clearInterval(checker);
+    }
+}, 1000);
+</script>
+        """
+        return web.Response(text=html, content_type="text/html")
+
+
 class DashboardModuleView(web.View):
     """Serve the dashboard component as a secure ES6 module."""
 
     async def get(self) -> web.Response:
         """Return dashboard component as ES6 module."""
-        module_code = '''
+        module_code = """
 // Dashboard Web Component - ES6 Module
 // Secure, self-contained dashboard component
 
@@ -100,12 +279,12 @@ class DashboardWebComponent extends HTMLElement {
         // Create shadow DOM for encapsulation
         this.attachShadow({ mode: 'open' });
 
-        console.log('🛡️ Secure Dashboard web component constructed');
+        console.log('Secure Dashboard web component constructed');
     }
 
     // Web Component lifecycle: called when element is added to DOM
     connectedCallback() {
-        console.log('🛡️ Secure Dashboard web component connected to DOM');
+        console.log('Secure Dashboard web component connected to DOM');
         this.render();
         this.setupEventListeners();
         this.loadData();
@@ -116,7 +295,7 @@ class DashboardWebComponent extends HTMLElement {
 
     // Web Component lifecycle: called when element is removed from DOM
     disconnectedCallback() {
-        console.log('🛡️ Secure Dashboard web component disconnected from DOM');
+        console.log('Secure Dashboard web component disconnected from DOM');
         if (this.refreshInterval) {
             clearInterval(this.refreshInterval);
         }
@@ -153,7 +332,7 @@ class DashboardWebComponent extends HTMLElement {
     async loadData() {
         try {
             const apiEndpoint = this.getAttribute('api-endpoint') || '/api/dashboard/data';
-            console.log(`🔒 Loading dashboard data from ${apiEndpoint}`);
+            console.log(`Loading dashboard data from ${apiEndpoint}`);
 
             const response = await fetch(apiEndpoint, {
                 headers: {
@@ -167,7 +346,7 @@ class DashboardWebComponent extends HTMLElement {
             }
 
             this.data = await response.json();
-            console.log('🛡️ Secure dashboard data loaded:', this.data);
+            console.log('Secure dashboard data loaded:', this.data);
             this.renderContent();
 
             // Dispatch event for external listeners
@@ -177,7 +356,7 @@ class DashboardWebComponent extends HTMLElement {
             }));
 
         } catch (error) {
-            console.error('❌ Failed to load dashboard data:', error);
+            console.error('Failed to load dashboard data:', error);
             this.data = { error: 'Failed to load data: ' + error.message };
             this.renderContent();
         }
@@ -285,13 +464,13 @@ class DashboardWebComponent extends HTMLElement {
             </style>
 
             <div class="component-header">
-                <div class="security-badge">🛡️ SECURE</div>
+                <div class="security-badge">SECURE</div>
                 <h1 class="component-title">Dashboard</h1>
                 <p class="component-description">Secure system overview and real-time metrics</p>
             </div>
 
             <div id="dashboard-content">
-                <div class="loading">🔒 Loading secure dashboard data...</div>
+                <div class="loading">Loading secure dashboard data...</div>
             </div>
         `;
     }
@@ -300,12 +479,12 @@ class DashboardWebComponent extends HTMLElement {
         const container = this.shadowRoot.getElementById('dashboard-content');
 
         if (!this.data) {
-            container.innerHTML = '<div class="loading">🔒 Loading secure dashboard data...</div>';
+            container.innerHTML = '<div class="loading">Loading secure dashboard data...</div>';
             return;
         }
 
         if (this.data.error) {
-            container.innerHTML = `<div class="error">🛡️ Security Error: ${this.escapeHtml(this.data.error)}</div>`;
+            container.innerHTML = `<div class="error">Security Error: ${this.escapeHtml(this.data.error)}</div>`;
             return;
         }
 
@@ -351,7 +530,7 @@ class DashboardWebComponent extends HTMLElement {
 
             <!-- Recent Activity -->
             <div class="activity-list">
-                <div class="activity-header">🛡️ Recent Secure Activity</div>
+                <div class="activity-header">Recent Secure Activity</div>
                 ${this.data.recent_activity.map(activity => `
                     <div class="activity-item">
                         <div>
@@ -416,16 +595,21 @@ export default DashboardWebComponent;
 // Also provide named export for flexibility
 export { DashboardWebComponent };
 
-console.log('🛡️ Secure Dashboard component module loaded');
-'''
+// Register the custom element if not already defined
+if (!customElements.get('dashboard-component')) {
+    customElements.define('dashboard-component', DashboardWebComponent);
+}
+
+console.log('Secure Dashboard component module loaded');
+"""
 
         return web.Response(
             text=module_code,
-            content_type='application/javascript',
+            content_type="application/javascript",
             headers={
-                'Content-Security-Policy': "default-src 'self'",
-                'X-Content-Type-Options': 'nosniff'
-            }
+                "Content-Security-Policy": "default-src 'self'",
+                "X-Content-Type-Options": "nosniff",
+            },
         )
 
 
@@ -441,21 +625,41 @@ class DashboardComponent(Component[GetDashboardData]):
         if not self.registered:
             # Register both API and module routes
             async with self.application.mediator.context() as ctx:
-                await ctx.process(RegisterView(route="/api/dashboard/data", view=DashboardAPIView))
-                await ctx.process(RegisterView(route="/modules/dashboard.js", view=DashboardModuleView))
+                await ctx.process(
+                    RegisterView(route="/api/dashboard/data", view=DashboardAPIView)
+                )
+                await ctx.process(
+                    RegisterView(
+                        route="/modules/dashboard.js", view=DashboardModuleView
+                    )
+                )
+                # Provide an HTML endpoint similar to other components so the SPA can fetch /components/dashboard
+                await ctx.process(
+                    RegisterView(
+                        route="/components/dashboard", view=DashboardComponentView
+                    )
+                )
 
             self.registered = True
-            print("✅ Dashboard component routes registered (API + secure ES6 module)")
+            print("Dashboard component routes registered (API + secure ES6 module)")
 
     async def handle(
-        self, message: GetDashboardData, *, handler: Callable[[Message], Awaitable[None]], **_: Any
+        self,
+        message: GetDashboardData,
+        *,
+        handler: Callable[[Message], Awaitable[None]],
+        **_: Any,
     ) -> None:
         """Handle dashboard data requests."""
         # In a real application, this would fetch actual metrics
         data = {
             "status": "success",
             "timestamp": time.time(),
-            "metrics": {"active_users": 42, "total_requests": 15623, "error_rate": 0.02},
+            "metrics": {
+                "active_users": 42,
+                "total_requests": 15623,
+                "error_rate": 0.02,
+            },
         }
 
         await handler(DashboardDataRetrieved(data=data))
