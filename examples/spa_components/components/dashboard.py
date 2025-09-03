@@ -161,7 +161,7 @@ class DashboardWebComponent extends HTMLElement {
                     'Content-Type': 'application/json'
                 }
             });
-            
+
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
@@ -369,7 +369,7 @@ class DashboardWebComponent extends HTMLElement {
         const safeLabel = this.escapeHtml(label);
         const safeValue = this.escapeHtml(String(value));
         const color = value > 80 ? '#e74c3c' : value > 60 ? '#f39c12' : '#27ae60';
-        
+
         return `
             <div class="metric-card">
                 <div class="metric-label">${safeLabel}</div>
@@ -418,7 +418,7 @@ export { DashboardWebComponent };
 
 console.log('🛡️ Secure Dashboard component module loaded');
 '''
-        
+
         return web.Response(
             text=module_code,
             content_type='application/javascript',

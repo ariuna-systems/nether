@@ -183,7 +183,7 @@ class MainApplication(nether.Nether):
 
             # Secure component loader
             await ctx.process(RegisterView(route="/js/secure-component-loader.js", view=SecureComponentLoaderView))
-            
+
             print("🛡️ Secure component infrastructure initialized")
 
     async def main(self) -> None:
