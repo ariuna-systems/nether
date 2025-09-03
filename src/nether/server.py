@@ -214,29 +214,109 @@ class _DynamicRouter:
         route_manager: _DynamicRouter = request.app["dynamic_router"]
         resource_index = route_manager._resource_map
 
+        # Debug logging for incoming requests
+        if self.logger.isEnabledFor(logging.DEBUG):
+            self.logger.debug(
+                f"Processing request: {request.method} {request.path_qs} from {request.remote or 'unknown'}"
+            )
+            self.logger.debug(f"Available route prefixes: {list(resource_index.keys())}")
+
         match_info, allowed_methods = await _DynamicRouter._resolve_dynamic_route(request, resource_index)
         if match_info is None:
             if allowed_methods:
+                if self.logger.isEnabledFor(logging.DEBUG):
+                    self.logger.debug(
+                        f"Method {request.method} not allowed for {request.path}. "
+                        f"Allowed methods: {sorted(allowed_methods)}"
+                    )
                 return web.Response(status=405, text="Method Not Allowed")
+
+            # Try the default handler (for static files, etc.)
             try:
-                return await handler(request)
+                response = await handler(request)
+                if self.logger.isEnabledFor(logging.DEBUG):
+                    self.logger.debug(f"Default handler served: {request.path} -> {response.status}")
+                return response
+            except web.HTTPNotFound:
+                # This is a 404 - log detailed information in DEBUG mode
+                if self.logger.isEnabledFor(logging.DEBUG):
+                    self._log_404_debug_info(request, resource_index)
+                raise  # Re-raise to let aiohttp handle the 404 response
             except Exception:
                 traceback_details = traceback.format_exc()
-                self.logger.error(f"{traceback_details}")
+                self.logger.error(f"Internal server error for {request.method} {request.path}: {traceback_details}")
                 return web.Response(status=500, text="Internal Server Error")
 
         try:
+            if self.logger.isEnabledFor(logging.DEBUG):
+                self.logger.debug(f"Route matched: {request.path} -> {match_info.handler}")
+
             match_info.add_app(request.app)
             request.__dict__["_match_info"] = match_info
             del request.__dict__["_cache"]["match_info"]  # Force re-evaluate cached match_info
             new_handler = cast(type[web.View], match_info.handler)
             if getattr(new_handler, request.method.lower(), None) is None:
+                if self.logger.isEnabledFor(logging.DEBUG):
+                    available_methods = [
+                        m
+                        for m in ["get", "post", "put", "delete", "patch", "head", "options"]
+                        if hasattr(new_handler, m)
+                    ]
+                    self.logger.debug(
+                        f"Method {request.method} not implemented by {new_handler.__name__}. "
+                        f"Available methods: {available_methods}"
+                    )
                 return web.Response(status=405, text="Method Not Allowed")
-            return await new_handler(request)
+
+            response = await new_handler(request)
+            if self.logger.isEnabledFor(logging.DEBUG):
+                self.logger.debug(f"View {new_handler.__name__} served: {request.path} -> {response.status}")
+            return response
         except Exception:
             traceback_details = traceback.format_exc()
-            self.logger.error(f"{traceback_details}")
+            self.logger.error(f"Error in view handler for {request.method} {request.path}: {traceback_details}")
             return web.Response(status=500, text="Internal Server Error")
+
+    def _log_404_debug_info(
+        self, request: web.Request, resource_index: dict[str, list[web_urldispatcher.AbstractResource]]
+    ) -> None:
+        """Log detailed information about 404 errors when in DEBUG mode."""
+        self.logger.debug(f"404 NOT FOUND: {request.method} {request.path}")
+        self.logger.debug(f"Query string: {request.query_string}")
+        self.logger.debug(f"Headers: {dict(request.headers)}")
+
+        # Log all registered routes for debugging
+        if resource_index:
+            self.logger.debug("Registered dynamic routes:")
+            for prefix, resources in resource_index.items():
+                for resource in resources:
+                    if hasattr(resource, "_path"):
+                        self.logger.debug(f"  {prefix} -> {resource._path}")
+                    else:
+                        self.logger.debug(f"  {prefix} -> {resource.canonical}")
+
+        # Log static routes from the main router
+        app_router = request.app.router
+        if hasattr(app_router, "_resources"):
+            static_routes = [r for r in app_router._resources if isinstance(r, web_urldispatcher.StaticResource)]
+            if static_routes:
+                self.logger.debug("Registered static routes:")
+                for route in static_routes:
+                    self.logger.debug(f"  {route._prefix} -> {route._directory}")
+
+        # Suggest similar paths
+        all_paths = set()
+        for resources in resource_index.values():
+            for resource in resources:
+                if hasattr(resource, "_path"):
+                    all_paths.add(resource._path)
+                else:
+                    all_paths.add(resource.canonical)
+
+        if all_paths:
+            similar_paths = [p for p in all_paths if p and any(part in request.path for part in p.split("/") if part)]
+            if similar_paths:
+                self.logger.debug(f"Similar registered paths: {similar_paths}")
 
 
 class Server(Component[StartServer | StopServer | RegisterView]):
@@ -252,6 +332,15 @@ class Server(Component[StartServer | StopServer | RegisterView]):
         super().__init__(application=application)
         self._http_server = web.Application()
         self._http_server["configuration"] = configuration
+
+        # Configure logging based on configuration if log_level is available
+        if hasattr(configuration, "log_level"):
+            from .logging import configure_global_logging
+
+            configure_global_logging(log_level=configuration.log_level)
+            # Update logger level to match configuration
+            if logger == local_logger:
+                logger.setLevel(getattr(logging, configuration.log_level.upper(), logging.INFO))
 
         dynamic_router = _DynamicRouter(self._http_server, logger=logger)
 
@@ -270,6 +359,8 @@ class Server(Component[StartServer | StopServer | RegisterView]):
         self.tasks: set[asyncio.Task[Any]] = set()
         self._is_running = False
 
+        # Configure aiohttp loggers based on our debug level
+        aiohttp_log_level = logging.DEBUG if logger.isEnabledFor(logging.DEBUG) else logging.WARNING
         for logger_name in [
             "aiohttp.access",
             "aiohttp.client",
@@ -281,6 +372,7 @@ class Server(Component[StartServer | StopServer | RegisterView]):
             aiohttp_logger = logging.getLogger(logger_name)
             aiohttp_logger.handlers.clear()
             aiohttp_logger.propagate = False
+            aiohttp_logger.setLevel(aiohttp_log_level)
             configure_logger(aiohttp_logger, verbose=aiohttp_loggers_verbosity)
 
     @web.middleware
@@ -290,11 +382,33 @@ class Server(Component[StartServer | StopServer | RegisterView]):
         task = asyncio.current_task()
         if task is not None:
             self.tasks.add(task)
+
+        # Log request details in DEBUG mode
+        if self.logger.isEnabledFor(logging.DEBUG):
+            self.logger.debug(f"Incoming request: {request.method} {request.path_qs}")
+            if request.headers:
+                self.logger.debug(f"Request headers: {dict(request.headers)}")
+
         try:
-            return await handler(request)
+            response = await handler(request)
+
+            # Log response details in DEBUG mode
+            if self.logger.isEnabledFor(logging.DEBUG):
+                self.logger.debug(f"Response: {response.status} for {request.method} {request.path}")
+
+            return response
+        except web.HTTPException as e:
+            # Log HTTP exceptions (like 404, 405, etc.) in DEBUG mode
+            if self.logger.isEnabledFor(logging.DEBUG):
+                self.logger.debug(f"HTTP Exception: {e.status} {e.reason} for {request.method} {request.path}")
+            raise
+        except Exception as e:
+            # Log other exceptions as errors
+            self.logger.error(f"Unhandled exception in request {request.method} {request.path}: {e}")
+            raise
         finally:
             if task is not None:
-                self.tasks.remove(task)
+                self.tasks.discard(task)
 
     async def on_start(self) -> None:
         if self.runner is not None:
@@ -304,8 +418,54 @@ class Server(Component[StartServer | StopServer | RegisterView]):
         await self.runner.setup()
         tcp_site = web.TCPSite(self.runner, self.host, self.port)
         await tcp_site.start()
+
         self.logger.info(f"Server started on {self.host}:{self.port}.")
+
+        # Log all registered routes in DEBUG mode
+        if self.logger.isEnabledFor(logging.DEBUG):
+            self._log_all_routes()
+
         self._is_running = True
+
+    def _log_all_routes(self) -> None:
+        """Log all registered routes for debugging purposes."""
+        self.logger.debug("=== Registered Routes ===")
+
+        # Log static routes from main router
+        main_router = self._http_server.router
+        if hasattr(main_router, "_resources"):
+            static_resources = [r for r in main_router._resources if isinstance(r, web_urldispatcher.StaticResource)]
+            if static_resources:
+                self.logger.debug("Static routes:")
+                for resource in static_resources:
+                    self.logger.debug(f"  {resource._prefix} -> {resource._directory}")
+
+            # Log regular routes from main router
+            regular_resources = [
+                r for r in main_router._resources if not isinstance(r, web_urldispatcher.StaticResource)
+            ]
+            if regular_resources:
+                self.logger.debug("Main router routes:")
+                for resource in regular_resources:
+                    path = getattr(resource, "_path", getattr(resource, "canonical", str(resource)))
+                    self.logger.debug(f"  {path}")
+
+        # Log dynamic routes
+        dynamic_router = self._http_server.get("dynamic_router")
+        if dynamic_router and hasattr(dynamic_router, "_resource_map"):
+            resource_map = dynamic_router._resource_map
+            if resource_map:
+                self.logger.debug("Dynamic routes:")
+                for prefix, resources in resource_map.items():
+                    for resource in resources:
+                        if isinstance(resource, web_urldispatcher.StaticResource):
+                            self.logger.debug(f"  {prefix} -> {resource._directory} (static)")
+                        else:
+                            path = getattr(resource, "_path", getattr(resource, "canonical", str(resource)))
+                            self.logger.debug(f"  {prefix} -> {path}")
+
+        self.logger.debug("=== End Routes ===")
+        self.logger.debug("If you're getting 404 errors, check if your requested path matches any of the above routes.")
 
     async def on_stop(self) -> None:
         if self.runner is None:
@@ -374,12 +534,23 @@ class Server(Component[StartServer | StopServer | RegisterView]):
         """If app frozen, adds the view to the dynamic route manager; otherwise, adds it to the router."""
         if self._http_server.frozen:
             self._http_server["dynamic_router"].add_view(route, view)
+            if self.logger.isEnabledFor(logging.DEBUG):
+                self.logger.debug(f"Added dynamic view `{view.__name__}` to frozen app at route: {route}")
         else:
             self._http_server.router.add_view(route, view)
+            if self.logger.isEnabledFor(logging.DEBUG):
+                self.logger.debug(f"Added view `{view.__name__}` to router at route: {route}")
         self.logger.info(f"View `{view.__name__}` assigned to route {route}")
 
     async def _add_static(self, prefix: str, path: Path, **kwargs) -> None:
         if self._http_server.frozen:
             self._http_server["dynamic_router"].add_static(prefix, path, **kwargs)
+            if self.logger.isEnabledFor(logging.DEBUG):
+                self.logger.debug(f"Added dynamic static route: {prefix} -> {path} (frozen app)")
         else:
             self._http_server.router.add_static(prefix, path, **kwargs)
+            if self.logger.isEnabledFor(logging.DEBUG):
+                self.logger.debug(f"Added static route: {prefix} -> {path}")
+
+        if self.logger.isEnabledFor(logging.INFO):
+            self.logger.info(f"Static route added: {prefix} -> {path}")

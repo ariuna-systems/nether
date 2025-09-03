@@ -26,6 +26,20 @@ Architecture:
 - All external content is validated and sandboxed
 """
 
+# Import debug patch to see what's causing 404 errors
+import sys
+import os
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__ + "/../")))
+
+try:
+    from debug_404 import debug_middleware  # Import debug middleware
+
+    print("Debug middleware imported successfully")
+except ImportError:
+    debug_middleware = None
+    print("Debug middleware not available")
+
 import argparse
 import asyncio
 import json
@@ -231,7 +245,7 @@ class SystemView(web.View):
 
                 menuItem.innerHTML = `
                     <a href="#" class="nav-link" data-route="${manifest.id}">
-                        ${iconMap[icon] || iconMap.component} ${manifest.menu?.title || manifest.name}
+                        ${manifest.menu?.title || manifest.name}
                     </a>
                 `;
                 navMenu.appendChild(menuItem);
@@ -1349,12 +1363,25 @@ async def run():
     await spa_registration.on_start()
     print("SPA routes registration complete")
 
-    from nether.server import StartServer
-
-    async with app.mediator.context() as ctx:
-        await ctx.process(StartServer(host=args.host, port=args.port))
-
+    # Start the application - this will automatically start the server component
     await app.start()
+
+    # Add debug middleware to the HTTP server after it's started
+    if debug_middleware:
+        print("Adding debug middleware to HTTP server...")
+        try:
+            # Find the server component and add debug middleware
+            for component in app._components:
+                if hasattr(component, "_http_server") and component._http_server:
+                    print("Found HTTP server, adding debug middleware")
+                    # Insert our debug middleware at the beginning of the middleware stack
+                    component._http_server.middlewares.insert(0, debug_middleware)
+                    print("Debug middleware added successfully")
+                    break
+        except Exception as e:
+            print(f"Failed to add debug middleware: {e}")
+
+    await app.main()
 
 
 def main():
