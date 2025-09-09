@@ -4,47 +4,47 @@
 
 The Nether framework is a sophisticated event-driven architecture built around the **Mediator Pattern** with support for asynchronous message processing, modular design, and workflow orchestration.
 
-## ⚠️ Critical Architectural Guidance: DDD and Separation of Concerns
+## ️ Critical Architectural Guidance: DDD and Separation of Concerns
 
 ### **The Problem: Mixing Framework Modules with Business Logic**
 
-❌ **COMMON MISTAKE**: Putting business workflows and domain logic directly in framework modules
+ **COMMON MISTAKE**: Putting business workflows and domain logic directly in framework modules
 
 ```python
-# ❌ WRONG - Business logic in framework component
+#  WRONG - Business logic in framework component
 class OrderProcessingSaga(Component[ProcessOrder]):
     async def handle(self, message: ProcessOrder, *, dispatch, join_stream):
-        # ❌ Business rules and workflows directly in framework component
+        #  Business rules and workflows directly in framework component
         if message.total_amount > 1000:
             # Apply enterprise discount
             discount = message.total_amount * 0.1
         
-        # ❌ Domain logic mixed with message handling
+        #  Domain logic mixed with message handling
         if not self._validate_inventory(message.items):
             raise InvalidInventoryError()
         
-        # ❌ Complex business workflow in infrastructure layer
+        #  Complex business workflow in infrastructure layer
         await self._process_payment_with_retry_logic(message)
 ```
 
 ### **The Solution: Proper DDD Layering**
 
-✅ **CORRECT**: Framework components delegate to application services
+ **CORRECT**: Framework components delegate to application services
 
 ```python
-# ✅ RIGHT - Framework component is thin, delegates to application service
+#  RIGHT - Framework component is thin, delegates to application service
 class OrderCommandHandler(Component[ProcessOrder]):
     def __init__(self, app: Application, order_service: OrderProcessingService):
         super().__init__(app)
         self._order_service = order_service  # Application layer
     
     async def handle(self, message: ProcessOrder, *, dispatch, join_stream):
-        # ✅ Delegate to application service
+        #  Delegate to application service
         success, result = await self._order_service.process_order(
             message.order_id, message.customer_id, message.items
         )
         
-        # ✅ Framework only handles coordination and events
+        #  Framework only handles coordination and events
         if success:
             await dispatch(OrderCreated(order_id=message.order_id))
         else:
@@ -78,7 +78,7 @@ class OrderCommandHandler(Component[ProcessOrder]):
 
 ### **What Framework Modules Should Do**
 
-✅ **Framework modules should be THIN and only handle:**
+ **Framework modules should be THIN and only handle:**
 
 1. **Message Routing**: Dispatch messages to appropriate application services
 2. **Event Emission**: Convert service results into domain events
@@ -87,7 +87,7 @@ class OrderCommandHandler(Component[ProcessOrder]):
 
 ### **What Framework Modules Should NOT Do**
 
-❌ **Framework modules should NEVER contain:**
+ **Framework modules should NEVER contain:**
 
 1. **Business Rules**: Domain logic belongs in domain/application layers
 2. **Workflow Logic**: Complex business processes belong in application services
@@ -98,10 +98,10 @@ class OrderCommandHandler(Component[ProcessOrder]):
 
 See [`examples/proper_ddd_example.py`](../examples/proper_ddd_example.py) for a complete demonstration of:
 
-- ✅ Domain entities with business logic
-- ✅ Application services with use cases
-- ✅ Framework modules that only handle messages
-- ✅ Clear dependency flow: Infrastructure → Application → Domain
+-  Domain entities with business logic
+-  Application services with use cases
+-  Framework modules that only handle messages
+-  Clear dependency flow: Infrastructure → Application → Domain
 
 ## Core Components
 

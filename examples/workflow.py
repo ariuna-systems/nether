@@ -410,10 +410,10 @@ class WorkflowEventListener(Component[WorkflowCompleted | WorkflowFailed | StepC
     ) -> None:
         match message:
             case WorkflowCompleted():
-                self._logger.info(f"✅ Workflow {message.workflow_id} completed successfully!")
+                self._logger.info(f" Workflow {message.workflow_id} completed successfully!")
 
             case WorkflowFailed():
-                self._logger.error(f"❌ Workflow {message.workflow_id} failed at {message.step_name}: {message.error}")
+                self._logger.error(f" Workflow {message.workflow_id} failed at {message.step_name}: {message.error}")
 
             case StepCompleted():
                 self._logger.info(f"Step {message.step_name} completed in workflow {message.workflow_id}")

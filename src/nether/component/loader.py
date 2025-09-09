@@ -21,7 +21,7 @@ class SecureComponentLoader {
             'X-Frame-Options': 'DENY'
         };
 
-        console.log('🛡️ Secure Component Loader initialized');
+        console.log('️ Secure Component Loader initialized');
     }
 
     /**
@@ -34,11 +34,11 @@ class SecureComponentLoader {
         try {
             // Prevent duplicate loading
             if (this.loadedComponents.has(componentId)) {
-                console.log(`⚠️ Component ${componentId} already loaded`);
+                console.log(`️ Component ${componentId} already loaded`);
                 return true;
             }
 
-            console.log(`🔒 Loading secure component: ${componentId}`);
+            console.log(` Loading secure component: ${componentId}`);
 
             // 1. Validate manifest
             if (!this.validateManifest(manifest)) {
@@ -65,7 +65,7 @@ class SecureComponentLoader {
                 // Register the custom element
                 if (!customElements.get(manifest.tag_name)) {
                     customElements.define(manifest.tag_name, module.default || module[manifest.class_name]);
-                    console.log(`✅ Component ${componentId} registered as <${manifest.tag_name}>`);
+                    console.log(` Component ${componentId} registered as <${manifest.tag_name}>`);
                 }
 
                 this.loadedComponents.add(componentId);
@@ -81,7 +81,7 @@ class SecureComponentLoader {
             }
 
         } catch (error) {
-            console.error(`❌ Failed to load component ${componentId}:`, error);
+            console.error(` Failed to load component ${componentId}:`, error);
             return false;
         }
     }
@@ -95,20 +95,20 @@ class SecureComponentLoader {
         const required = ['id', 'name', 'version', 'tag_name', 'author'];
         for (const field of required) {
             if (!manifest[field]) {
-                console.error(`❌ Missing required field: ${field}`);
+                console.error(` Missing required field: ${field}`);
                 return false;
             }
         }
 
         // Tag name validation (kebab-case)
         if (!/^[a-z][a-z0-9]*(-[a-z0-9]+)*$/.test(manifest.tag_name)) {
-            console.error(`❌ Invalid tag name: ${manifest.tag_name}`);
+            console.error(` Invalid tag name: ${manifest.tag_name}`);
             return false;
         }
 
         // Version validation (semantic versioning)
         if (!/^\\d+\\.\\d+\\.\\d+$/.test(manifest.version)) {
-            console.error(`❌ Invalid version format: ${manifest.version}`);
+            console.error(` Invalid version format: ${manifest.version}`);
             return false;
         }
 
@@ -183,13 +183,13 @@ class SecureComponentLoader {
             const ComponentClass = module.default || module[manifest.class_name];
 
             if (!ComponentClass) {
-                console.error('❌ Component class not found in module');
+                console.error(' Component class not found in module');
                 return false;
             }
 
             // Check inheritance
             if (!(ComponentClass.prototype instanceof HTMLElement)) {
-                console.error('❌ Component must extend HTMLElement');
+                console.error(' Component must extend HTMLElement');
                 return false;
             }
 
@@ -197,7 +197,7 @@ class SecureComponentLoader {
             const requiredMethods = ['connectedCallback'];
             for (const method of requiredMethods) {
                 if (typeof ComponentClass.prototype[method] !== 'function') {
-                    console.error(`❌ Missing required method: ${method}`);
+                    console.error(` Missing required method: ${method}`);
                     return false;
                 }
             }
@@ -205,7 +205,7 @@ class SecureComponentLoader {
             return true;
 
         } catch (error) {
-            console.error('❌ Component class validation error:', error);
+            console.error(' Component class validation error:', error);
             return false;
         }
     }
@@ -220,7 +220,7 @@ class SecureComponentLoader {
         try {
             const cached = this.componentCache.get(componentId);
             if (!cached) {
-                console.error(`❌ Component ${componentId} not loaded`);
+                console.error(` Component ${componentId} not loaded`);
                 return null;
             }
 
@@ -236,7 +236,7 @@ class SecureComponentLoader {
             return element;
 
         } catch (error) {
-            console.error(`❌ Failed to create component ${componentId}:`, error);
+            console.error(` Failed to create component ${componentId}:`, error);
             return null;
         }
     }
@@ -267,14 +267,14 @@ class SecureComponentLoader {
                 this.loadedComponents.delete(componentId);
                 this.componentCache.delete(componentId);
 
-                console.log(`✅ Component ${componentId} unloaded from registry`);
+                console.log(` Component ${componentId} unloaded from registry`);
                 return true;
             }
 
             return false;
 
         } catch (error) {
-            console.error(`❌ Failed to unload component ${componentId}:`, error);
+            console.error(` Failed to unload component ${componentId}:`, error);
             return false;
         }
     }
@@ -302,7 +302,7 @@ class SecureComponentLoader {
 // Create global instance
 if (!window.secureComponentLoader) {
     window.secureComponentLoader = new SecureComponentLoader();
-    console.log('🛡️ Secure Component Loader ready');
+    console.log('️ Secure Component Loader ready');
 
     // Add helper function to global scope
     window.loadSecureComponent = async (componentId, manifest) => {
