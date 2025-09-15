@@ -9,14 +9,14 @@ import traceback
 from abc import abstractmethod
 from enum import StrEnum, unique
 from pathlib import Path
-from typing import Any
+from typing import Any, Self
 from urllib.parse import quote_plus
 
 import dotenv
 
-from .component import Component
 from .logging import configure_global_logging, configure_logger
 from .mediator import Mediator
+from .modules import Module
 
 __all__ = ["Nether"]
 
@@ -196,6 +196,24 @@ def execute(coroutine):
     asyncio.run(coroutine)
 
 
+class Environment:  # TODO
+    def __init__(self, *_, **__) -> None: ...
+
+
+class Configuration:  # TODO
+    """
+    Configuration for application or service.
+    """
+
+    def __init__(self, *_, **__) -> None: ...
+
+    def __str__(self) -> str: ...
+
+    @staticmethod
+    def load(self, source: str) -> Self:
+        return type(self)()
+
+
 class Nether:
     """Represent an application singleton instance."""
 
@@ -215,7 +233,7 @@ class Nether:
         self._mediator = mediator
         self._stop_event = asyncio.Event()
         self.logger = logger
-        self._services: set[Component] = set()
+        self._services: set[Module] = set()
         self.app = {}
 
         # Configure global logging if log-level or log-file arguments are present
@@ -246,18 +264,18 @@ class Nether:
         return self._mediator
 
     @property
-    def components(self) -> set[Component[Any]]:
+    def components(self) -> set[Module[Any]]:
         """Get the registered components."""
-        return self._mediator.components
+        return self._mediator.modules
 
-    def attach(self, *components: Component[Any]) -> None:
+    def attach(self, *components: Module[Any]) -> None:
         for component in components:
-            if component not in self._mediator.components:
+            if component not in self._mediator.modules:
                 self._mediator.attach(component)
 
-    def detach(self, *components: Component[Any]) -> None:
+    def detach(self, *components: Module[Any]) -> None:
         for component in components:
-            if component in self._mediator.components:
+            if component in self._mediator.modules:
                 self._mediator.detach(component)
 
     def _setup_signal_handlers(self) -> None:
@@ -280,7 +298,7 @@ class Nether:
                     self.logger.error(f"component `{type(component).__name__}` failed: {error}")
                     sys.exit(1)
             await self.main()
-            while not self._stop_event.is_set() and any(component.state for component in self._mediator.components):
+            while not self._stop_event.is_set() and any(component.state for component in self._mediator.modules):
                 await asyncio.sleep(0.25)
         except asyncio.CancelledError:
             self.logger.info("Application cancelled")

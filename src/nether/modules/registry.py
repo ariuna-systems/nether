@@ -1,5 +1,5 @@
 """
-Secure Component Registry for managing validated web components.
+Secure Module Registry for managing validated web components.
 """
 
 import hashlib
@@ -29,9 +29,7 @@ class SecureComponentRegistry:
     async def register_component(self, manifest: ComponentManifest, source_code: str) -> ValidationResult:
         """Register a new component after validation."""
         # Generate component hash for caching
-        component_hash = hashlib.sha256(
-            f"{manifest.id}:{manifest.version}:{source_code}".encode()
-        ).hexdigest()
+        component_hash = hashlib.sha256(f"{manifest.id}:{manifest.version}:{source_code}".encode()).hexdigest()
 
         # Check cache first
         if component_hash in self.validation_cache:
@@ -50,9 +48,9 @@ class SecureComponentRegistry:
         if result.valid:
             self.registered_components[manifest.id] = manifest
             await self._save_component_manifest(manifest)
-            print(f"✅ Component {manifest.id} registered successfully")
+            print(f"✅ Module {manifest.id} registered successfully")
         else:
-            print(f"❌ Component {manifest.id} failed validation:")
+            print(f"❌ Module {manifest.id} failed validation:")
             for error in result.errors:
                 print(f"   - {error}")
 
@@ -76,7 +74,7 @@ class SecureComponentRegistry:
             if manifest_file.exists():
                 manifest_file.unlink()
 
-            print(f"✅ Component {component_id} unregistered")
+            print(f"✅ Module {component_id} unregistered")
             return True
 
         return False
@@ -107,14 +105,14 @@ class SecureComponentRegistry:
             "hash": manifest.hash,
         }
 
-        async with aiofiles.open(manifest_file, 'w') as f:
+        async with aiofiles.open(manifest_file, "w") as f:
             await f.write(json.dumps(manifest_data, indent=2))
 
     async def load_components_from_disk(self) -> None:
         """Load previously registered components from disk."""
         for manifest_file in self.components_dir.glob("*.json"):
             try:
-                async with aiofiles.open(manifest_file, 'r') as f:
+                async with aiofiles.open(manifest_file, "r") as f:
                     manifest_data = json.loads(await f.read())
 
                 manifest = ComponentManifest(**manifest_data)
@@ -130,24 +128,26 @@ class ComponentRegistryView(web.View):
 
     def __init__(self, request):
         super().__init__(request)
-        self.registry: SecureComponentRegistry = request.app['component_registry']
+        self.registry: SecureComponentRegistry = request.app["component_registry"]
 
     async def get(self) -> web.Response:
         """List all registered components."""
         components = await self.registry.list_components()
-        return web.json_response([
-            {
-                "id": comp.id,
-                "name": comp.name,
-                "version": comp.version,
-                "author": comp.author,
-                "description": comp.description,
-                "tag_name": comp.tag_name,
-                "permissions": comp.permissions,
-                "validated_module_url": await self.registry.get_validated_module_url(comp.id)
-            }
-            for comp in components
-        ])
+        return web.json_response(
+            [
+                {
+                    "id": comp.id,
+                    "name": comp.name,
+                    "version": comp.version,
+                    "author": comp.author,
+                    "description": comp.description,
+                    "tag_name": comp.tag_name,
+                    "permissions": comp.permissions,
+                    "validated_module_url": await self.registry.get_validated_module_url(comp.id),
+                }
+                for comp in components
+            ]
+        )
 
     async def post(self) -> web.Response:
         """Register a new component."""
@@ -155,65 +155,63 @@ class ComponentRegistryView(web.View):
             data = await self.request.json()
 
             # Parse manifest
-            manifest = ComponentManifest(**data['manifest'])
-            source_code = data['source_code']
+            manifest = ComponentManifest(**data["manifest"])
+            source_code = data["source_code"]
 
             # Register component
             result = await self.registry.register_component(manifest, source_code)
 
             if result.valid:
-                return web.json_response({
-                    'success': True,
-                    'message': f'Component {manifest.id} registered successfully',
-                    'component_id': manifest.id,
-                    'validated_module_url': await self.registry.get_validated_module_url(manifest.id),
-                    'security_score': result.security_score,
-                    'warnings': result.warnings
-                })
+                return web.json_response(
+                    {
+                        "success": True,
+                        "message": f"Module {manifest.id} registered successfully",
+                        "component_id": manifest.id,
+                        "validated_module_url": await self.registry.get_validated_module_url(manifest.id),
+                        "security_score": result.security_score,
+                        "warnings": result.warnings,
+                    }
+                )
             else:
-                return web.json_response({
-                    'success': False,
-                    'message': 'Component validation failed',
-                    'errors': result.errors,
-                    'warnings': result.warnings,
-                    'security_score': result.security_score
-                }, status=400)
+                return web.json_response(
+                    {
+                        "success": False,
+                        "message": "Module validation failed",
+                        "errors": result.errors,
+                        "warnings": result.warnings,
+                        "security_score": result.security_score,
+                    },
+                    status=400,
+                )
 
         except Exception as e:
-            return web.json_response({
-                'success': False,
-                'message': f'Registration failed: {e!s}',
-                'errors': [f'Request processing error: {e!s}']
-            }, status=500)
+            return web.json_response(
+                {
+                    "success": False,
+                    "message": f"Registration failed: {e!s}",
+                    "errors": [f"Request processing error: {e!s}"],
+                },
+                status=500,
+            )
 
     async def delete(self) -> web.Response:
         """Unregister a component."""
         try:
-            component_id = self.request.match_info.get('component_id')
+            component_id = self.request.match_info.get("component_id")
             if not component_id:
-                return web.json_response({
-                    'success': False,
-                    'message': 'Component ID required'
-                }, status=400)
+                return web.json_response({"success": False, "message": "Module ID required"}, status=400)
 
             success = await self.registry.unregister_component(component_id)
 
             if success:
-                return web.json_response({
-                    'success': True,
-                    'message': f'Component {component_id} unregistered successfully'
-                })
+                return web.json_response(
+                    {"success": True, "message": f"Module {component_id} unregistered successfully"}
+                )
             else:
-                return web.json_response({
-                    'success': False,
-                    'message': f'Component {component_id} not found'
-                }, status=404)
+                return web.json_response({"success": False, "message": f"Module {component_id} not found"}, status=404)
 
         except Exception as e:
-            return web.json_response({
-                'success': False,
-                'message': f'Unregistration failed: {e!s}'
-            }, status=500)
+            return web.json_response({"success": False, "message": f"Unregistration failed: {e!s}"}, status=500)
 
 
 class ValidatedModuleView(web.View):
@@ -222,7 +220,7 @@ class ValidatedModuleView(web.View):
     async def get(self) -> web.Response:
         """Serve a validated component module."""
         try:
-            module_name = self.request.match_info.get('module_name')
+            module_name = self.request.match_info.get("module_name")
             if not module_name:
                 return web.Response(status=404)
 
@@ -235,16 +233,13 @@ class ValidatedModuleView(web.View):
                 return web.Response(status=404)
 
             # Serve the validated module
-            async with aiofiles.open(module_file, 'r') as f:
+            async with aiofiles.open(module_file, "r") as f:
                 content = await f.read()
 
             return web.Response(
                 text=content,
-                content_type='application/javascript',
-                headers={
-                    'Content-Security-Policy': "default-src 'self'",
-                    'X-Content-Type-Options': 'nosniff'
-                }
+                content_type="application/javascript",
+                headers={"Content-Security-Policy": "default-src 'self'", "X-Content-Type-Options": "nosniff"},
             )
 
         except Exception:

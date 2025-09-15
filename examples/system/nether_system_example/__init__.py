@@ -1,5 +1,5 @@
 """
-Component-based SPA Application with Nether Framework - SECURE VERSION
+Module-based SPA Application with Nether Framework - SECURE VERSION
 
 This example demonstrates how to build a Single Page Application (SPA)
 with dynamic component discovery and registration using the Nether framework.
@@ -7,15 +7,15 @@ NOW WITH ENHANCED SECURITY for external component loading.
 
 Features:
 - Secure dynamic component discovery and registration
-- Component validation and security scoring
+- Module validation and security scoring
 - ES6 module-based component architecture
 - Each component exposes its own API routes
 - Components serve their own web interfaces
 - Main SPA frontend that discovers and loads components securely
-- Component manifest system (JSON metadata) with validation
+- Module manifest system (JSON metadata) with validation
 - Menu system that dynamically adds component sections
 - Content Security Policy (CSP) enforcement
-- Component sandboxing and validation
+- Module sandboxing and validation
 
 Architecture:
 - Components are self-contained ES6 modules with API + UI
@@ -26,20 +26,6 @@ Architecture:
 - All external content is validated and sandboxed
 """
 
-# Import debug patch to see what's causing 404 errors
-import sys
-import os
-
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__ + "/../")))
-
-try:
-    from debug_404 import debug_middleware  # Import debug middleware
-
-    print("Debug middleware imported successfully")
-except ImportError:
-    debug_middleware = None
-    print("Debug middleware not available")
-
 import argparse
 import asyncio
 import json
@@ -48,19 +34,19 @@ from typing import Any
 
 import nether
 from aiohttp import web
-from nether.component import Component
+from nether.modules import Module
 from nether.server import RegisterView, Server, ViewRegistered
 
-from .components.analytics import AnalyticsComponent
-from .components.dashboard import DashboardComponent
-from .components.settings import SettingsComponent
+from .module.analytics import AnalyticsModule
+from .module.dashboard import DashboardModule
+from .module.settings import SettingsModule
 
 
 class ComponentRegistry:
     """Registry manages dynamic component discovery and lifecycle."""
 
     def __init__(self):
-        self.components: dict[str, Component] = {}
+        self.components: dict[str, Module] = {}
         self.manifests: dict[str, dict[str, Any]] = {}
         self.sse_clients: set = set()  # Store SSE clients for live updates
         self.background_tasks: set = set()  # Store background tasks
@@ -93,7 +79,7 @@ class ComponentRegistry:
             self.sse_clients.discard(client)
 
     def register_component(
-        self, component_id: str, component: Component, manifest: dict[str, Any]
+        self, component_id: str, component: Module, manifest: dict[str, Any]
     ):
         """Register a component with its manifest."""
         self.components[component_id] = component
@@ -114,7 +100,7 @@ class ComponentRegistry:
         """Get all component manifests."""
         return self.manifests.copy()
 
-    def get_component(self, component_id: str) -> Component | None:
+    def get_component(self, component_id: str) -> Module | None:
         """Get component instance by ID."""
         return self.components.get(component_id)
 
@@ -133,7 +119,7 @@ class SystemView(web.View):
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Component-Based SPA with Secure Loading</title>
+        <title>Module-Based SPA with Secure Loading</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
@@ -170,7 +156,7 @@ class SystemView(web.View):
 <body>
     <div class="app-container">
         <nav class="sidebar">
-            <div class="logo">Component SPA</div>
+            <div class="logo">Module SPA</div>
             <ul class="nav-menu" id="nav-menu">
                 <li class="nav-item">
                     <a href="#" class="nav-link active" data-route="home">Home</a>
@@ -181,7 +167,7 @@ class SystemView(web.View):
         <main class="main-content">
             <div id="home-container" class="component-container active">
                 <div class="component-header">
-                    <h1 class="component-title">Welcome to Component-based SPA</h1>
+                    <h1 class="component-title">Welcome to Module-based SPA</h1>
                     <p class="component-description">Dynamic component discovery and loading</p>
                 </div>
                 <div id="components-overview"></div>
@@ -240,7 +226,7 @@ class SystemView(web.View):
                     'dashboard': 'Dashboard',
                     'analytics': 'Analytics',
                     'settings': 'Settings',
-                    'component': 'Component'
+                    'component': 'Module'
                 };
 
                 menuItem.innerHTML = `
@@ -285,7 +271,7 @@ class SystemView(web.View):
                         if (htmlResponse.ok) {
                             componentContent = await htmlResponse.text();
                         } else {
-                            throw new Error('Component HTML not found');
+                            throw new Error('Module HTML not found');
                         }
                     } catch (error) {
                         // Fallback: Create a basic component interface
@@ -331,11 +317,11 @@ class SystemView(web.View):
                     }
 
                     // Initialize component if it has initialization code
-                    if (window[`init${manifest.id.charAt(0).toUpperCase() + manifest.id.slice(1)}Component`]) {
-                        window[`init${manifest.id.charAt(0).toUpperCase() + manifest.id.slice(1)}Component`](container);
+                    if (window[`init${manifest.id.charAt(0).toUpperCase() + manifest.id.slice(1)}Module`]) {
+                        window[`init${manifest.id.charAt(0).toUpperCase() + manifest.id.slice(1)}Module`](container);
                     }
 
-                    console.log(`Component ${manifest.id} loaded successfully`);
+                    console.log(`Module ${manifest.id} loaded successfully`);
 
                 } catch (error) {
                     console.error(`Failed to load component ${manifest.id}:`, error);
@@ -357,7 +343,7 @@ class SystemView(web.View):
                     </div>
                     <div class="component-content">
                         <div class="component-info">
-                            <h3>Component Information</h3>
+                            <h3>Module Information</h3>
                             <ul>
                                 <li><strong>Version:</strong> ${manifest.version}</li>
                                 <li><strong>Author:</strong> ${manifest.author || 'System'}</li>
@@ -380,7 +366,7 @@ class SystemView(web.View):
                         ` : ''}
 
                         <div class="component-data" id="${manifest.id}-data">
-                            <h3>Component Data</h3>
+                            <h3>Module Data</h3>
                             <div class="loading">Loading component data...</div>
                         </div>
                     </div>
@@ -421,7 +407,7 @@ class SystemView(web.View):
                 return `
                     <div class="component-header">
                         <h1 class="component-title">${manifest.name}</h1>
-                        <p class="component-description">Component failed to load</p>
+                        <p class="component-description">Module failed to load</p>
                     </div>
                     <div class="error">
                         <h3>Loading Error</h3>
@@ -838,9 +824,9 @@ ${JSON.stringify(data, null, 2)}
                 console.log(`Components Map size:`, this.components.size);
 
                 const component = this.components.get(componentId);
-                console.log(`Component found:`, component);
-                console.log(`Component keys:`, Object.keys(component || {}));
-                console.log(`Component api_endpoints specifically:`, component?.api_endpoints);
+                console.log(`Module found:`, component);
+                console.log(`Module keys:`, Object.keys(component || {}));
+                console.log(`Module api_endpoints specifically:`, component?.api_endpoints);
 
                 if (!component) {
                     console.log(`No component found for ${componentId}`);
@@ -849,7 +835,7 @@ ${JSON.stringify(data, null, 2)}
 
                 // Check for api_endpoints in the component manifest
                 if (!component.api_endpoints || component.api_endpoints.length === 0) {
-                    console.log(`No api_endpoints found for ${componentId}. Component:`, component);
+                    console.log(`No api_endpoints found for ${componentId}. Module:`, component);
                     console.log(`Will try fallback for dashboard...`);
                     if (componentId === 'dashboard') {
                         // Use direct API endpoint for dashboard
@@ -885,7 +871,7 @@ ${JSON.stringify(data, null, 2)}
                         console.log(`Data loaded successfully:`, data);
 
                         dataContainer.innerHTML = `
-                            <h3>Component Data</h3>
+                            <h3>Module Data</h3>
                             <pre style="background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto;">
 ${JSON.stringify(data, null, 2)}
                             </pre>
@@ -897,7 +883,7 @@ ${JSON.stringify(data, null, 2)}
                     console.error(`Error loading data for ${componentId}:`, error);
 
                     dataContainer.innerHTML = `
-                        <h3>Component Data</h3>
+                        <h3>Module Data</h3>
                         <div class="error">
                             <p>Failed to load data: ${error.message}</p>
                             <button onclick="app.loadComponentData('${componentId}')" class="retry-btn">Retry</button>
@@ -1014,7 +1000,7 @@ class APIDiscoveryView(web.View):
 
             # Find the server component to access HTTP routes
             server_component = None
-            for component in app.mediator.components:
+            for component in app.mediator.modules:
                 if hasattr(component, "_http_server"):
                     server_component = component
                     break
@@ -1060,7 +1046,7 @@ class APIDiscoveryView(web.View):
 
             discovery_info = {
                 "service_info": {
-                    "name": "Component-based SPA System",
+                    "name": "Module-based SPA System",
                     "version": "1.0.0",
                     "base_url": base_url,
                     "timestamp": app.start_time,
@@ -1081,7 +1067,7 @@ class APIDiscoveryView(web.View):
                     {
                         "path": "/api/components/manifests",
                         "method": "GET",
-                        "description": "Component manifests",
+                        "description": "Module manifests",
                         "type": "api",
                     },
                     {
@@ -1093,7 +1079,7 @@ class APIDiscoveryView(web.View):
                     {
                         "path": "/api/components/validate",
                         "method": "GET",
-                        "description": "Component validation",
+                        "description": "Module validation",
                         "type": "api",
                     },
                 ],
@@ -1150,8 +1136,8 @@ class ComponentSSEView(web.View):
         return response
 
 
-class ComponentManager(Component[RegisterView | ViewRegistered]):
-    """Component to register SPA views and routes."""
+class ComponentManager(Module[RegisterView | ViewRegistered]):
+    """Module to register SPA views and routes."""
 
     def __init__(self, application):
         super().__init__(application)
@@ -1162,7 +1148,7 @@ class ComponentManager(Component[RegisterView | ViewRegistered]):
         if not self.registered:
             # Get server component to access the HTTP app
             server = None
-            for component in self.application.mediator.components:
+            for component in self.application.mediator.modules:
                 if hasattr(component, "_http_server"):
                     server = component
                     break
@@ -1213,8 +1199,7 @@ class System(nether.Nether):
     async def register_components(self):
         """Register all available components with the system."""
 
-        # Dashboard Component
-        dashboard = DashboardComponent(self)
+        dashboard = DashboardModule(self)
         self.attach(dashboard)
         self.component_registry.register_component(
             "dashboard",
@@ -1242,8 +1227,7 @@ class System(nether.Nether):
             },
         )
 
-        # Analytics Component
-        analytics = AnalyticsComponent(self)
+        analytics = AnalyticsModule(self)
         self.attach(analytics)
         self.component_registry.register_component(
             "analytics",
@@ -1272,8 +1256,7 @@ class System(nether.Nether):
             },
         )
 
-        # Settings Component
-        settings = SettingsComponent(self)
+        settings = SettingsModule(self)
         self.attach(settings)
         self.component_registry.register_component(
             "settings",
@@ -1320,7 +1303,7 @@ class System(nether.Nether):
         host = getattr(self.configuration, "host", "localhost")
         port = getattr(self.configuration, "port", 8080)
 
-        print("Simplified Component SPA Application started (no security validation)")
+        print("Simplified Module SPA Application started (no security validation)")
         print(f"Dashboard: http://{host}:{port}/")
         print(f"API Discovery: http://{host}:{port}/api/discovery")
         print("Note: Secure component loader disabled for simplicity")
@@ -1329,7 +1312,7 @@ class System(nether.Nether):
 async def run():
     """Main entry point."""
     parser = argparse.ArgumentParser(
-        description="Component-based SPA with Nether Framework"
+        description="Module-based SPA with Nether Framework"
     )
     parser.add_argument(
         "--port", type=int, default=8081, help="Server port (default: 8081)"
@@ -1354,32 +1337,16 @@ async def run():
     spa_registration = ComponentManager(app)
     app.attach(spa_registration)
 
-    print("Starting Component-based SPA Application")
+    print("Starting Module-based SPA Application")
     print("Registering components...")
     await app.register_components()
-    print("Component registration complete")
+    print("Module registration complete")
 
     print("Registering SPA routes...")
     await spa_registration.on_start()
     print("SPA routes registration complete")
 
-    # Start the application - this will automatically start the server component
     await app.start()
-
-    # Add debug middleware to the HTTP server after it's started
-    if debug_middleware:
-        print("Adding debug middleware to HTTP server...")
-        try:
-            # Find the server component and add debug middleware
-            for component in app._components:
-                if hasattr(component, "_http_server") and component._http_server:
-                    print("Found HTTP server, adding debug middleware")
-                    # Insert our debug middleware at the beginning of the middleware stack
-                    component._http_server.middlewares.insert(0, debug_middleware)
-                    print("Debug middleware added successfully")
-                    break
-        except Exception as e:
-            print(f"Failed to add debug middleware: {e}")
 
     await app.main()
 

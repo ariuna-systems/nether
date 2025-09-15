@@ -2,7 +2,7 @@
 
 ## Overview
 
-The **nether framework** implements a sophisticated Actor Model pattern through its `Component` class, enhanced with modern async capabilities and innovative streaming features. While the framework uses "Component" terminology, the underlying architecture follows classic Actor Model principles with significant enhancements.
+The **nether framework** implements a sophisticated Actor Model pattern through its `Module` class, enhanced with modern async capabilities and innovative streaming features. While the framework uses "Module" terminology, the underlying architecture follows classic Actor Model principles with significant enhancements.
 
 ## Actor Model Fundamentals
 
@@ -14,24 +14,24 @@ The Actor Model is a concurrent computation model where:
 - **Asynchronous Processing** handles messages independently
 - **Supervision** manages actor lifecycle and failures
 
-## Component as Actor Implementation
+## Module as Actor Implementation
 
 ### Core Actor Properties
 
-| **Actor Model Concept** | **Component Implementation** | **Code Evidence** |
+| **Actor Model Concept** | **Module Implementation** | **Code Evidence** |
 |-------------------------|----------------------------|-------------------|
 | **Encapsulated State** | Private instance variables | `self._is_running`, `self._logger`, `self.processed_count` |
 | **Message Passing** | `handle(message, *, handler, ...)` | Only communicates via messages |
 | **No Shared Memory** | Isolated component instances | Each component manages own state |
 | **Asynchronous Processing** | `async def handle(...)` | Built on asyncio |
-| **Actor Address/Reference** | Message type subscription `Component[T]` | Mediator routes by message type |
+| **Actor Address/Reference** | Message type subscription `Module[T]` | Mediator routes by message type |
 | **Supervisor Hierarchy** | `Application` manages components | Lifecycle management |
 | **Message Queues** | Mediator queuing system | Messages routed through mediator |
 
 ### Actor Definition Pattern
 
 ```python
-class TemperatureProcessor(Component[StartDataCollection]):  # 🎭 Actor
+class TemperatureProcessor(Module[StartDataCollection]):  # 🎭 Actor
     def __init__(self, application):
         super().__init__(application)
         self.processed_count = 0  # 🔒 Private state
@@ -54,7 +54,7 @@ Traditional actor systems use string-based addressing. Nether uses Python's type
 ```python
 # Traditional Actor: actor.send("temperature_processor", message)
 # Nether Actor: Automatic routing by message type
-class TemperatureProcessor(Component[TemperatureReading]):
+class TemperatureProcessor(Module[TemperatureReading]):
     async def handle(self, message: TemperatureReading, *, handler, channel):
         # Only receives TemperatureReading messages
 ```
@@ -96,7 +96,7 @@ class ProcessOrder(Command):
     order_id: str
     amount: float
 
-class OrderProcessor(Component[ProcessOrder]):
+class OrderProcessor(Module[ProcessOrder]):
     def __init__(self, application):
         super().__init__(application)
         self.orders_processed = 0  # Actor state
@@ -116,7 +116,7 @@ class OrderProcessor(Component[ProcessOrder]):
 ### Streaming Data Actor
 
 ```python
-class SensorDataProcessor(Component[StartMonitoring]):
+class SensorDataProcessor(Module[StartMonitoring]):
     def __init__(self, application):
         super().__init__(application)
         self.readings_count = 0
@@ -146,7 +146,7 @@ class SensorDataProcessor(Component[StartMonitoring]):
 ### Multi-Message Type Actor
 
 ```python
-class SystemMonitor(Component[tuple[SystemStart, SystemStop, HealthCheck]]):
+class SystemMonitor(Module[tuple[SystemStart, SystemStop, HealthCheck]]):
     def __init__(self, application):
         super().__init__(application)
         self.status = "stopped"
@@ -219,7 +219,7 @@ Actors have lifecycle hooks:
 | **Concurrency** | Thread/process-based | asyncio-based |
 | **Message Definition** | Classes/case classes | Python dataclasses |
 | **Shared State** | Not allowed | Controlled via streams |
-| **Error Handling** | Supervisor strategies | Component lifecycle hooks |
+| **Error Handling** | Supervisor strategies | Module lifecycle hooks |
 | **Performance** | High for CPU-bound | Optimized for I/O-bound |
 
 ## Actor Communication Patterns
@@ -237,7 +237,7 @@ await handler(LogEvent(message="Order processed"))
 await handler(ProcessPayment(amount=100))
 
 # Handle response in another actor
-class PaymentResultHandler(Component[PaymentCompleted]):
+class PaymentResultHandler(Module[PaymentCompleted]):
     async def handle(self, message, *, handler, channel):
         print(f"Payment completed: {message.transaction_id}")
 ```
@@ -297,7 +297,7 @@ async with self.mediator.context() as ctx:
 
 ## Conclusion
 
-The nether framework successfully implements a modern, async-first Actor Model through its Component architecture. Key innovations include:
+The nether framework successfully implements a modern, async-first Actor Model through its Module architecture. Key innovations include:
 
 - **Type-safe message routing** via generic type parameters
 - **Shared streaming capabilities** within isolated contexts  

@@ -1,5 +1,5 @@
 """
-Secure Component Loader - Frontend JavaScript for safe component loading.
+Secure Module Loader - Frontend JavaScript for safe component loading.
 """
 
 from aiohttp import web
@@ -10,7 +10,7 @@ class SecureComponentLoaderView(web.View):
 
     async def get(self) -> web.Response:
         """Return the secure component loader script."""
-        javascript_code = '''
+        javascript_code = """
 class SecureComponentLoader {
     constructor() {
         this.loadedComponents = new Set();
@@ -21,20 +21,20 @@ class SecureComponentLoader {
             'X-Frame-Options': 'DENY'
         };
 
-        console.log('🛡️ Secure Component Loader initialized');
+        console.log('🛡️ Secure Module Loader initialized');
     }
 
     /**
      * Load a validated component module securely
      * @param {string} componentId - The component ID
-     * @param {Object} manifest - Component manifest
+     * @param {Object} manifest - Module manifest
      * @returns {Promise<boolean>} - Success status
      */
     async loadComponent(componentId, manifest) {
         try {
             // Prevent duplicate loading
             if (this.loadedComponents.has(componentId)) {
-                console.log(`⚠️ Component ${componentId} already loaded`);
+                console.log(`⚠️ Module ${componentId} already loaded`);
                 return true;
             }
 
@@ -48,7 +48,7 @@ class SecureComponentLoader {
             // 2. Check if component is registered on server
             const registrationCheck = await this.verifyComponentRegistration(componentId);
             if (!registrationCheck.valid) {
-                throw new Error(`Component ${componentId} not registered or validation failed`);
+                throw new Error(`Module ${componentId} not registered or validation failed`);
             }
 
             // 3. Load the validated module
@@ -65,7 +65,7 @@ class SecureComponentLoader {
                 // Register the custom element
                 if (!customElements.get(manifest.tag_name)) {
                     customElements.define(manifest.tag_name, module.default || module[manifest.class_name]);
-                    console.log(`✅ Component ${componentId} registered as <${manifest.tag_name}>`);
+                    console.log(`✅ Module ${componentId} registered as <${manifest.tag_name}>`);
                 }
 
                 this.loadedComponents.add(componentId);
@@ -77,7 +77,7 @@ class SecureComponentLoader {
 
                 return true;
             } else {
-                throw new Error(`Component class validation failed for ${componentId}`);
+                throw new Error(`Module class validation failed for ${componentId}`);
             }
 
         } catch (error) {
@@ -88,7 +88,7 @@ class SecureComponentLoader {
 
     /**
      * Validate component manifest
-     * @param {Object} manifest - Component manifest
+     * @param {Object} manifest - Module manifest
      * @returns {boolean} - Validation result
      */
     validateManifest(manifest) {
@@ -117,7 +117,7 @@ class SecureComponentLoader {
 
     /**
      * Verify component registration with server
-     * @param {string} componentId - Component ID
+     * @param {string} componentId - Module ID
      * @returns {Promise<Object>} - Registration status
      */
     async verifyComponentRegistration(componentId) {
@@ -174,7 +174,7 @@ class SecureComponentLoader {
     /**
      * Validate the imported component class
      * @param {Object} module - Imported module
-     * @param {Object} manifest - Component manifest
+     * @param {Object} manifest - Module manifest
      * @returns {boolean} - Validation result
      */
     validateComponentClass(module, manifest) {
@@ -183,13 +183,13 @@ class SecureComponentLoader {
             const ComponentClass = module.default || module[manifest.class_name];
 
             if (!ComponentClass) {
-                console.error('❌ Component class not found in module');
+                console.error('❌ Module class not found in module');
                 return false;
             }
 
             // Check inheritance
             if (!(ComponentClass.prototype instanceof HTMLElement)) {
-                console.error('❌ Component must extend HTMLElement');
+                console.error('❌ Module must extend HTMLElement');
                 return false;
             }
 
@@ -205,22 +205,22 @@ class SecureComponentLoader {
             return true;
 
         } catch (error) {
-            console.error('❌ Component class validation error:', error);
+            console.error('❌ Module class validation error:', error);
             return false;
         }
     }
 
     /**
      * Create a component instance safely
-     * @param {string} componentId - Component ID
+     * @param {string} componentId - Module ID
      * @param {Object} attributes - Element attributes
-     * @returns {HTMLElement|null} - Component instance
+     * @returns {HTMLElement|null} - Module instance
      */
     createComponent(componentId, attributes = {}) {
         try {
             const cached = this.componentCache.get(componentId);
             if (!cached) {
-                console.error(`❌ Component ${componentId} not loaded`);
+                console.error(`❌ Module ${componentId} not loaded`);
                 return null;
             }
 
@@ -251,7 +251,7 @@ class SecureComponentLoader {
 
     /**
      * Unload a component (remove from registry)
-     * @param {string} componentId - Component ID
+     * @param {string} componentId - Module ID
      * @returns {boolean} - Success status
      */
     unloadComponent(componentId) {
@@ -267,7 +267,7 @@ class SecureComponentLoader {
                 this.loadedComponents.delete(componentId);
                 this.componentCache.delete(componentId);
 
-                console.log(`✅ Component ${componentId} unloaded from registry`);
+                console.log(`✅ Module ${componentId} unloaded from registry`);
                 return true;
             }
 
@@ -281,8 +281,8 @@ class SecureComponentLoader {
 
     /**
      * Get component info
-     * @param {string} componentId - Component ID
-     * @returns {Object|null} - Component information
+     * @param {string} componentId - Module ID
+     * @returns {Object|null} - Module information
      */
     getComponentInfo(componentId) {
         const cached = this.componentCache.get(componentId);
@@ -302,7 +302,7 @@ class SecureComponentLoader {
 // Create global instance
 if (!window.secureComponentLoader) {
     window.secureComponentLoader = new SecureComponentLoader();
-    console.log('🛡️ Secure Component Loader ready');
+    console.log('🛡️ Secure Module Loader ready');
 
     // Add helper function to global scope
     window.loadSecureComponent = async (componentId, manifest) => {
@@ -316,13 +316,10 @@ if (!window.secureComponentLoader) {
 
 // Export for module usage
 export default window.secureComponentLoader;
-'''
+"""
 
         return web.Response(
             text=javascript_code,
-            content_type='application/javascript',
-            headers={
-                'Content-Security-Policy': "default-src 'self'",
-                'X-Content-Type-Options': 'nosniff'
-            }
+            content_type="application/javascript",
+            headers={"Content-Security-Policy": "default-src 'self'", "X-Content-Type-Options": "nosniff"},
         )

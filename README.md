@@ -55,7 +55,7 @@ Nether implements the **Actor Model** where:
 from dataclasses import dataclass
 from nether import Nether
 from nether.message import Command, Event
-from nether.component import Component
+from nether.component import Module
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ProcessOrder(Command):
@@ -66,7 +66,7 @@ class ProcessOrder(Command):
 class OrderProcessed(Event):
     order_id: str
 
-class OrderProcessor(Component[ProcessOrder]):
+class OrderProcessor(Module[ProcessOrder]):
     async def handle(self, message, *, handler, channel):
         # Process the order
         print(f"Processing order {message.order_id} for ${message.amount}")

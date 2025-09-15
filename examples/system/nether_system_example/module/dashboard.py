@@ -1,5 +1,5 @@
 """
-Dashboard Component - Complete system overview and metrics
+Dashboard Module - Complete system overview and metrics
 Includes: API endpoints, Nether component, and secure ES6 module serving
 """
 
@@ -9,11 +9,11 @@ from dataclasses import dataclass
 from typing import Any
 
 from aiohttp import web
-from nether.component import Component
+from nether.modules import Module
 from nether.message import Event, Message, Query
 from nether.server import RegisterView
 
-__all__ = ["DashboardComponent"]
+__all__ = ["DashboardModule"]
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -267,7 +267,7 @@ class DashboardModuleView(web.View):
     async def get(self) -> web.Response:
         """Return dashboard component as ES6 module."""
         module_code = """
-// Dashboard Web Component - ES6 Module
+// Dashboard Web Module - ES6 Module
 // Secure, self-contained dashboard component
 
 class DashboardWebComponent extends HTMLElement {
@@ -282,7 +282,7 @@ class DashboardWebComponent extends HTMLElement {
         console.log('Secure Dashboard web component constructed');
     }
 
-    // Web Component lifecycle: called when element is added to DOM
+    // Web Module lifecycle: called when element is added to DOM
     connectedCallback() {
         console.log('Secure Dashboard web component connected to DOM');
         this.render();
@@ -293,7 +293,7 @@ class DashboardWebComponent extends HTMLElement {
         this.refreshInterval = setInterval(() => this.loadData(), 30000);
     }
 
-    // Web Component lifecycle: called when element is removed from DOM
+    // Web Module lifecycle: called when element is removed from DOM
     disconnectedCallback() {
         console.log('Secure Dashboard web component disconnected from DOM');
         if (this.refreshInterval) {
@@ -302,7 +302,7 @@ class DashboardWebComponent extends HTMLElement {
         this.cleanup();
     }
 
-    // Web Component lifecycle: called when attributes change
+    // Web Module lifecycle: called when attributes change
     attributeChangedCallback(name, oldValue, newValue) {
         console.log(`Dashboard attribute ${name} changed from ${oldValue} to ${newValue}`);
         if (name === 'api-endpoint' && oldValue !== newValue) {
@@ -613,12 +613,14 @@ console.log('Secure Dashboard component module loaded');
         )
 
 
-class DashboardComponent(Component[GetDashboardData]):
-    """Dashboard component for system overview and metrics."""
+class DashboardModule(Module[GetDashboardData]):
+    """Dashboard module for system overview and metrics."""
 
     def __init__(self, application):
         super().__init__(application)
         self.registered = False
+
+        self.views = {}
 
     async def on_start(self) -> None:
         await super().on_start()

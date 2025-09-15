@@ -1,6 +1,3 @@
-# This file was renamed from extension.py to component.py
-# All classes and references have been updated to use Component terminology.
-
 import asyncio
 import logging
 from abc import abstractmethod
@@ -16,7 +13,7 @@ class _NeverMatch: ...
 
 
 @unique
-class ComponentState(StrEnum):
+class ModuleState(StrEnum):
     STARTED = "started"
     PENDING = "pending"
     RUNNING = "running"
@@ -24,15 +21,15 @@ class ComponentState(StrEnum):
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class ComponentPauseExecution(Command): ...
+class ModulePauseExecution(Command): ...
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class ComponentResumeExecution(Command): ...
+class ModuleResumeExecution(Command): ...
 
 
-class Component[T: type[Message] | tuple[type[Message], ...]]:
-    """Component extends a framework with specific functionality
+class Module[T: type[Message] | tuple[type[Message], ...]]:
+    """Module extends a framework with specific functionality
     e.g background processing, system monitoring etc.
 
     T: consumed messages
@@ -40,9 +37,9 @@ class Component[T: type[Message] | tuple[type[Message], ...]]:
             U: type[Message] | tuple[type[Message]]
     You can think of the component as an actor (actor model).
 
-    * Component can handle specified type of signals with :meth:`handle` method.
+    * Module can handle specified type of signals with :meth:`handle` method.
     * Componnet has a lifecycle and state, can be started, paused, resumed or stopped.
-    * Component has initilization and finilization phase.
+    * Module has initilization and finilization phase.
 
     .. note: It can be called service or module but it is confusing because it clashes
     with Python and Domain-Driven Design terminology.
@@ -65,16 +62,16 @@ class Component[T: type[Message] | tuple[type[Message], ...]]:
         return supports_type
 
     @property
-    def state(self) -> ComponentState:
+    def state(self) -> ModuleState:
         return self._is_running  # TODO: return current state
 
     async def on_start(self) -> None:
         """Called when a component is in initializing phase."""
-        self._state = ComponentState.STARTED
+        self._state = ModuleState.STARTED
 
     async def on_stop(self) -> None:
         """Called when a component is in finalizing phase."""
-        self._state = ComponentState.STOPPED
+        self._state = ModuleState.STOPPED
 
     async def on_error(self) -> None: ...
 

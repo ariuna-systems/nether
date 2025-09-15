@@ -30,7 +30,7 @@ from datetime import datetime
 from typing import Any
 
 import nether
-from nether.component import Component
+from nether.modules import Module
 from nether.message import Command, Event, Message, Query
 
 
@@ -57,8 +57,8 @@ class LogTestEvent(Event):
     timestamp: str
 
 
-class LoggingDemoComponent(Component[LogTestCommand | LogTestQuery]):
-    """Component that demonstrates various logging scenarios."""
+class LoggingDemoComponent(Module[LogTestCommand | LogTestQuery]):
+    """Module that demonstrates various logging scenarios."""
 
     async def handle(
         self,
@@ -95,8 +95,8 @@ class LoggingDemoComponent(Component[LogTestCommand | LogTestQuery]):
                 await handler(event)
 
 
-class EventHandler(Component[LogTestEvent]):
-    """Component that handles events and logs them."""
+class EventHandler(Module[LogTestEvent]):
+    """Module that handles events and logs them."""
 
     async def handle(
         self,

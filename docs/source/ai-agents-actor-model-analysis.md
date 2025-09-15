@@ -23,7 +23,7 @@ The Actor Model is built on five fundamental principles:
 **Implementation in Nether Framework:**
 
 ```python
-class BaseAgent(Component[AgentQuery]):
+class BaseAgent(Module[AgentQuery]):
     def __init__(self, application, agent_type: str, model_name: str, system_prompt: str | None = None):
         super().__init__(application)
         # Private state - isolated from other agents

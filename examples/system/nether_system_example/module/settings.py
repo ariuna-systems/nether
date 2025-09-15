@@ -1,5 +1,5 @@
 """
-Settings Component - Application configuration and settings.
+Settings Module - Application configuration and settings.
 """
 
 import time
@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from aiohttp import web
-from nether.component import Component
+from nether.modules import Module
 from nether.message import Command, Event, Message
 from nether.server import RegisterView
 
@@ -42,7 +42,7 @@ class SettingsAPIView(web.View):
         # Mock settings data
         settings = {
             "general": {
-                "app_name": "Component SPA",
+                "app_name": "Module SPA",
                 "app_description": "Dynamic component-based application",
                 "timezone": "UTC",
                 "language": "en-US",
@@ -554,7 +554,114 @@ class SettingsComponentView(web.View):
         return web.Response(text=html, content_type="text/html")
 
 
-class SettingsComponent(Component[GetSettings | UpdateSettings]):
+class SettingsModuleView(web.View):
+    """Serve the settings component as a secure ES6 module."""
+
+    async def get(self) -> web.Response:
+        """Return settings component as ES6 module."""
+        module_code = """
+// Settings Web Module - ES6 Module
+class SettingsWebComponent extends HTMLElement {
+    constructor() {
+        super();
+        this.settings = {};
+        this.attachShadow({ mode: 'open' });
+    }
+
+    connectedCallback() {
+        this.render();
+        this.loadSettings();
+    }
+
+    async loadSettings() {
+        try {
+            const apiEndpoint = this.getAttribute('api-endpoint') || '/api/settings';
+            const response = await fetch(apiEndpoint);
+            this.settings = await response.json();
+            this.render();
+        } catch (error) {
+            console.error('Failed to load settings:', error);
+        }
+    }
+
+    async saveSettings() {
+        try {
+            const apiEndpoint = this.getAttribute('api-endpoint') || '/api/settings';
+            const response = await fetch(apiEndpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ settings: this.settings })
+            });
+            if (response.ok) {
+                console.log('Settings saved successfully');
+            }
+        } catch (error) {
+            console.error('Failed to save settings:', error);
+        }
+    }
+
+    render() {
+        if (!this.settings.general) {
+            this.shadowRoot.innerHTML = '<div>Loading settings...</div>';
+            return;
+        }
+
+        this.shadowRoot.innerHTML = `
+            <style>
+                :host { display: block; font-family: Arial, sans-serif; }
+                .settings-group { margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 4px; }
+                .setting-item { margin-bottom: 10px; }
+                .setting-label { display: block; margin-bottom: 5px; font-weight: bold; }
+                .setting-input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+                .save-btn { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
+            </style>
+            <div>
+                <h3>Application Settings</h3>
+                <div class="settings-group">
+                    <h4>General Settings</h4>
+                    <div class="setting-item">
+                        <label class="setting-label">App Name</label>
+                        <input class="setting-input" value="${this.settings.general.app_name}"
+                               onchange="this.getRootNode().host.updateSetting('general.app_name', this.value)">
+                    </div>
+                    <div class="setting-item">
+                        <label class="setting-label">Theme</label>
+                        <select class="setting-input" onchange="this.getRootNode().host.updateSetting('general.theme', this.value)">
+                            <option value="light" ${this.settings.general.theme === 'light' ? 'selected' : ''}>Light</option>
+                            <option value="dark" ${this.settings.general.theme === 'dark' ? 'selected' : ''}>Dark</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="save-btn" onclick="this.getRootNode().host.saveSettings()">Save Settings</button>
+            </div>
+        `;
+    }
+
+    updateSetting(path, value) {
+        const keys = path.split('.');
+        let current = this.settings;
+        for (let i = 0; i < keys.length - 1; i++) {
+            current = current[keys[i]];
+        }
+        current[keys[keys.length - 1]] = value;
+    }
+}
+
+// Export and register the component
+export default SettingsWebComponent;
+if (!customElements.get('settings-component')) {
+    customElements.define('settings-component', SettingsWebComponent);
+}
+"""
+
+        return web.Response(
+            text=module_code,
+            content_type="application/javascript",
+            headers={"Content-Security-Policy": "default-src 'self'"},
+        )
+
+
+class SettingsModule(Module[GetSettings | UpdateSettings]):
     """Settings component for application configuration."""
 
     def __init__(self, application):
@@ -567,12 +674,15 @@ class SettingsComponent(Component[GetSettings | UpdateSettings]):
             # Register settings routes
             async with self.application.mediator.context() as ctx:
                 await ctx.process(
-                    RegisterView(route="/api/settings/data", view=SettingsAPIView)
+                    RegisterView(route="/api/settings", view=SettingsAPIView)
                 )
                 await ctx.process(
                     RegisterView(
                         route="/components/settings", view=SettingsComponentView
                     )
+                )
+                await ctx.process(
+                    RegisterView(route="/modules/settings.js", view=SettingsModuleView)
                 )
 
             self.registered = True

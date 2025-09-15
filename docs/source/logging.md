@@ -9,7 +9,7 @@ The Nether framework now includes comprehensive logging capabilities that allow 
 - **Configurable Log Levels**: Support for DEBUG, INFO, WARNING, ERROR, and CRITICAL levels
 - **Command Line Configuration**: Easy setup via CLI arguments
 - **Structured Logging**: Consistent timestamp format with timezone information
-- **Component Tracking**: Logs component attachment/detachment and message routing
+- **Module Tracking**: Logs component attachment/detachment and message routing
 - **Context Management**: Tracks message processing contexts and their lifecycle
 
 ## CLI Arguments
@@ -52,14 +52,14 @@ python your_app.py --log-level DEBUG --log-file logs/debug.log -v -v
 
 - **Message Reception**: When a message enters the mediator
 - **Message Type**: Command, Query, or Event classification
-- **Component Matching**: Which components can handle the message
+- **Module Matching**: Which components can handle the message
 - **Message Dispatch**: Routing information to handlers
 - **Processing Results**: Success or failure of message handling
 
-### Component Lifecycle
+### Module Lifecycle
 
-- **Component Attachment**: When components are registered
-- **Component Detachment**: When components are unregistered
+- **Module Attachment**: When components are registered
+- **Module Detachment**: When components are unregistered
 - **Supported Message Types**: What messages each component handles
 
 ### Context Management
@@ -80,7 +80,7 @@ Each log entry includes:
 Example:
 
 ```
-2025-09-02 17:29:08.284 +02:00 - nether.mediator - INFO - Component LoggingDemoComponent attached (supports: LogTestCommand | LogTestQuery)
+2025-09-02 17:29:08.284 +02:00 - nether.mediator - INFO - Module LoggingDemoComponent attached (supports: LogTestCommand | LogTestQuery)
 ```
 
 ## Implementation in Your Application

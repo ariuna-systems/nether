@@ -1,5 +1,5 @@
 """
-Analytics Component - Data analytics and reporting.
+Analytics Module - Data analytics and reporting.
 """
 
 import random
@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from aiohttp import web
-from nether.component import Component
+from nether.modules import Module
 from nether.message import Event, Message, Query
 from nether.server import RegisterView
 
@@ -877,7 +877,82 @@ class AnalyticsComponentView(web.View):
         return web.Response(text=html, content_type="text/html")
 
 
-class AnalyticsComponent(Component[GetAnalyticsData]):
+class AnalyticsModuleView(web.View):
+    """Serve the analytics component as a secure ES6 module."""
+
+    async def get(self) -> web.Response:
+        """Return analytics component as ES6 module."""
+        module_code = """
+// Analytics Web Module - ES6 Module
+class AnalyticsWebComponent extends HTMLElement {
+    constructor() {
+        super();
+        this.data = null;
+        this.attachShadow({ mode: 'open' });
+    }
+
+    connectedCallback() {
+        this.render();
+        this.loadData();
+    }
+
+    async loadData() {
+        try {
+            const apiEndpoint = this.getAttribute('api-endpoint') || '/api/analytics';
+            const response = await fetch(apiEndpoint);
+            this.data = await response.json();
+            this.render();
+        } catch (error) {
+            console.error('Failed to load analytics data:', error);
+        }
+    }
+
+    render() {
+        if (!this.data) {
+            this.shadowRoot.innerHTML = '<div>Loading analytics...</div>';
+            return;
+        }
+
+        this.shadowRoot.innerHTML = `
+            <style>
+                :host { display: block; font-family: Arial, sans-serif; }
+                .metric { padding: 10px; margin: 5px; background: #f8f9fa; border-radius: 4px; }
+                .metric-value { font-size: 1.5em; font-weight: bold; color: #007bff; }
+            </style>
+            <div>
+                <h3>Analytics Dashboard</h3>
+                <div class="metric">
+                    <div class="metric-value">${this.data.overview.total_pageviews.toLocaleString()}</div>
+                    <div>Total Pageviews</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value">${this.data.overview.unique_visitors.toLocaleString()}</div>
+                    <div>Unique Visitors</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value">${(this.data.overview.bounce_rate * 100).toFixed(1)}%</div>
+                    <div>Bounce Rate</div>
+                </div>
+            </div>
+        `;
+    }
+}
+
+// Export and register the component
+export default AnalyticsWebComponent;
+if (!customElements.get('analytics-component')) {
+    customElements.define('analytics-component', AnalyticsWebComponent);
+}
+"""
+
+        return web.Response(
+            text=module_code,
+            content_type="application/javascript",
+            headers={"Content-Security-Policy": "default-src 'self'"},
+        )
+
+
+class AnalyticsModule(Module[GetAnalyticsData]):
     """Analytics component for data insights and reporting."""
 
     def __init__(self, application):
@@ -890,11 +965,16 @@ class AnalyticsComponent(Component[GetAnalyticsData]):
             # Register analytics routes
             async with self.application.mediator.context() as ctx:
                 await ctx.process(
-                    RegisterView(route="/api/analytics/data", view=AnalyticsAPIView)
+                    RegisterView(route="/api/analytics", view=AnalyticsAPIView)
                 )
                 await ctx.process(
                     RegisterView(
                         route="/components/analytics", view=AnalyticsComponentView
+                    )
+                )
+                await ctx.process(
+                    RegisterView(
+                        route="/modules/analytics.js", view=AnalyticsModuleView
                     )
                 )
 

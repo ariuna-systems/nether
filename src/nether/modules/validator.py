@@ -1,5 +1,5 @@
 """
-Secure Component Validator for external web components.
+Secure Module Validator for external web components.
 Validates JavaScript modules before allowing registration.
 """
 
@@ -49,26 +49,51 @@ class ComponentValidator:
     def __init__(self):
         # Allowed Web APIs
         self.allowed_apis = {
-            'HTMLElement', 'customElements', 'fetch', 'console',
-            'document.createElement', 'document.getElementById',
-            'addEventListener', 'removeEventListener', 'CustomEvent',
-            'DOMParser', 'JSON', 'Array', 'Object', 'String', 'Number',
-            'setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'
+            "HTMLElement",
+            "customElements",
+            "fetch",
+            "console",
+            "document.createElement",
+            "document.getElementById",
+            "addEventListener",
+            "removeEventListener",
+            "CustomEvent",
+            "DOMParser",
+            "JSON",
+            "Array",
+            "Object",
+            "String",
+            "Number",
+            "setTimeout",
+            "setInterval",
+            "clearTimeout",
+            "clearInterval",
         }
 
         # Blocked dangerous APIs
         self.blocked_apis = {
-            'eval', 'Function', 'document.write', 'document.writeln',
-            'innerHTML', 'outerHTML', 'insertAdjacentHTML',
-            'execScript', 'setTimeout', 'setInterval', 'XMLHttpRequest',
-            'ActiveXObject', 'importScripts', 'Worker', 'SharedWorker'
+            "eval",
+            "Function",
+            "document.write",
+            "document.writeln",
+            "innerHTML",
+            "outerHTML",
+            "insertAdjacentHTML",
+            "execScript",
+            "setTimeout",
+            "setInterval",
+            "XMLHttpRequest",
+            "ActiveXObject",
+            "importScripts",
+            "Worker",
+            "SharedWorker",
         }
 
         # Required patterns for valid components
         self.required_patterns = [
-            r'class\s+\w+\s+extends\s+HTMLElement',  # Must extend HTMLElement
-            r'customElements\.define\s*\(',          # Must register element
-            r'connectedCallback\s*\(',               # Must have lifecycle
+            r"class\s+\w+\s+extends\s+HTMLElement",  # Must extend HTMLElement
+            r"customElements\.define\s*\(",  # Must register element
+            r"connectedCallback\s*\(",  # Must have lifecycle
         ]
 
         # Trusted component authors (would be configurable)
@@ -115,16 +140,11 @@ class ComponentValidator:
                 errors=errors,
                 warnings=warnings,
                 validated_module_path=validated_module_path,
-                security_score=security_score
+                security_score=security_score,
             )
 
         except Exception as e:
-            return ValidationResult(
-                valid=False,
-                errors=[f"Validation failed: {e!s}"],
-                warnings=[],
-                security_score=0
-            )
+            return ValidationResult(valid=False, errors=[f"Validation failed: {e!s}"], warnings=[], security_score=0)
 
     def _validate_manifest(self, manifest: ComponentManifest) -> list[str]:
         """Validate component manifest."""
@@ -132,20 +152,20 @@ class ComponentValidator:
 
         # Required fields
         if not manifest.id or not manifest.id.isalnum():
-            errors.append("Component ID must be alphanumeric")
+            errors.append("Module ID must be alphanumeric")
 
-        if not manifest.tag_name or not re.match(r'^[a-z][a-z0-9]*(-[a-z0-9]+)*$', manifest.tag_name):
+        if not manifest.tag_name or not re.match(r"^[a-z][a-z0-9]*(-[a-z0-9]+)*$", manifest.tag_name):
             errors.append("Invalid tag name - must be kebab-case")
 
         if not manifest.author:
-            errors.append("Component author is required")
+            errors.append("Module author is required")
 
         # Version validation
-        if not re.match(r'^\d+\.\d+\.\d+$', manifest.version):
+        if not re.match(r"^\d+\.\d+\.\d+$", manifest.version):
             errors.append("Version must follow semantic versioning (x.y.z)")
 
         # Permissions validation
-        allowed_permissions = {'api:read', 'api:write', 'storage:read', 'storage:write'}
+        allowed_permissions = {"api:read", "api:write", "storage:read", "storage:write"}
         for perm in manifest.permissions:
             if perm not in allowed_permissions:
                 errors.append(f"Unknown permission: {perm}")
@@ -165,12 +185,12 @@ class ComponentValidator:
 
         # Check for suspicious patterns
         suspicious_patterns = [
-            (r'document\.cookie', "Accessing cookies"),
-            (r'localStorage', "Accessing localStorage"),
-            (r'sessionStorage', "Accessing sessionStorage"),
-            (r'window\.\w+\s*=', "Modifying global window object"),
-            (r'prototype\.\w+\s*=', "Modifying prototypes"),
-            (r'__proto__', "Accessing __proto__"),
+            (r"document\.cookie", "Accessing cookies"),
+            (r"localStorage", "Accessing localStorage"),
+            (r"sessionStorage", "Accessing sessionStorage"),
+            (r"window\.\w+\s*=", "Modifying global window object"),
+            (r"prototype\.\w+\s*=", "Modifying prototypes"),
+            (r"__proto__", "Accessing __proto__"),
         ]
 
         for pattern, description in suspicious_patterns:
@@ -179,9 +199,9 @@ class ComponentValidator:
                 security_score -= 10
 
         # Check code complexity
-        lines = source_code.split('\n')
+        lines = source_code.split("\n")
         if len(lines) > 1000:
-            warnings.append("Component is very large (>1000 lines)")
+            warnings.append("Module is very large (>1000 lines)")
             security_score -= 5
 
         return errors, warnings, security_score
@@ -193,15 +213,15 @@ class ComponentValidator:
 
         # Check for blocked APIs
         for blocked_api in self.blocked_apis:
-            if re.search(rf'\b{re.escape(blocked_api)}\b', source_code):
+            if re.search(rf"\b{re.escape(blocked_api)}\b", source_code):
                 errors.append(f"Blocked API usage: {blocked_api}")
                 security_score -= 20
 
         # Check for suspicious network calls
         network_patterns = [
             r'fetch\s*\(\s*[\'"`][^\'"`]*(?:javascript:|data:|file:)',
-            r'new\s+Image\s*\(\s*\)\s*\.\s*src\s*=',
-            r'new\s+XMLHttpRequest',
+            r"new\s+Image\s*\(\s*\)\s*\.\s*src\s*=",
+            r"new\s+XMLHttpRequest",
         ]
 
         for pattern in network_patterns:
@@ -218,12 +238,12 @@ class ComponentValidator:
 
         # Check for code injection attempts
         injection_patterns = [
-            r'eval\s*\(',
-            r'Function\s*\(',
+            r"eval\s*\(",
+            r"Function\s*\(",
             r'setTimeout\s*\(\s*[\'"`]',
             r'setInterval\s*\(\s*[\'"`]',
-            r'document\.write\s*\(',
-            r'\.innerHTML\s*=.*\+',  # Dynamic HTML construction
+            r"document\.write\s*\(",
+            r"\.innerHTML\s*=.*\+",  # Dynamic HTML construction
         ]
 
         for pattern in injection_patterns:
@@ -239,17 +259,12 @@ class ComponentValidator:
 
         try:
             # Create temporary file
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.js', delete=False) as f:
+            with tempfile.NamedTemporaryFile(mode="w", suffix=".js", delete=False) as f:
                 f.write(source_code)
                 temp_file = f.name
 
             # Check syntax with Node.js
-            result = subprocess.run(
-                ['node', '--check', temp_file],
-                capture_output=True,
-                text=True,
-                timeout=5
-            )
+            result = subprocess.run(["node", "--check", temp_file], capture_output=True, text=True, timeout=5)
 
             if result.returncode != 0:
                 errors.append(f"Syntax error: {result.stderr.strip()}")
@@ -273,12 +288,12 @@ class ComponentValidator:
     async def _create_validated_module(self, manifest: ComponentManifest, source_code: str) -> str:
         """Create a validated ES6 module file."""
         # Create secure module wrapper
-        wrapped_code = f'''
+        wrapped_code = f"""
 // Validated component module for {manifest.id}
-// Generated on: {__import__('datetime').datetime.now().isoformat()}
-// Security score: Component passed validation
+// Generated on: {__import__("datetime").datetime.now().isoformat()}
+// Security score: Module passed validation
 
-// Component isolation wrapper
+// Module isolation wrapper
 (function() {{
     'use strict';
 
@@ -286,15 +301,15 @@ class ComponentValidator:
     const eval = undefined;
     const Function = undefined;
 
-    // Component code
+    // Module code
     {source_code}
 
     // Export validation
-    if (typeof {manifest.tag_name.replace('-', '').title()}Component === 'undefined') {{
-        throw new Error('Component class not found');
+    if (typeof {manifest.tag_name.replace("-", "").title()}Module === 'undefined') {{
+        throw new Error('Module class not found');
     }}
 }})();
-'''
+"""
 
         # Create validated modules directory
         modules_dir = Path("validated_modules")
@@ -305,7 +320,7 @@ class ComponentValidator:
         module_file = modules_dir / f"{manifest.id}_{module_hash}.js"
 
         # Write validated module
-        async with aiofiles.open(module_file, 'w') as f:
+        async with aiofiles.open(module_file, "w") as f:
             await f.write(wrapped_code)
 
         return str(module_file)
@@ -324,24 +339,26 @@ class ComponentValidationView(web.View):
             data = await self.request.json()
 
             # Parse manifest
-            manifest = ComponentManifest(**data['manifest'])
-            source_code = data['source_code']
+            manifest = ComponentManifest(**data["manifest"])
+            source_code = data["source_code"]
 
             # Validate component
             result = await self.validator.validate_component(manifest, source_code)
 
-            return web.json_response({
-                'valid': result.valid,
-                'errors': result.errors,
-                'warnings': result.warnings,
-                'security_score': result.security_score,
-                'validated_module_url': f"/validated_modules/{Path(result.validated_module_path).name}" if result.validated_module_path else None
-            })
+            return web.json_response(
+                {
+                    "valid": result.valid,
+                    "errors": result.errors,
+                    "warnings": result.warnings,
+                    "security_score": result.security_score,
+                    "validated_module_url": f"/validated_modules/{Path(result.validated_module_path).name}"
+                    if result.validated_module_path
+                    else None,
+                }
+            )
 
         except Exception as e:
-            return web.json_response({
-                'valid': False,
-                'errors': [f"Validation request failed: {e!s}"],
-                'warnings': [],
-                'security_score': 0
-            }, status=400)
+            return web.json_response(
+                {"valid": False, "errors": [f"Validation request failed: {e!s}"], "warnings": [], "security_score": 0},
+                status=400,
+            )

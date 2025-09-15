@@ -9,8 +9,8 @@ The Mediator is the core component of the Nether framework that routes messages 
 ### 1. Basic Mediator Functionality
 
 - **Singleton Pattern**: Verify mediator returns same instance
-- **Component Management**: Test attach/detach of components
-- **Component Discovery**: Verify components are found in mediator.components
+- **Module Management**: Test attach/detach of components
+- **Module Discovery**: Verify components are found in mediator.modules
 
 ### 2. Message Routing
 
@@ -40,7 +40,7 @@ The Mediator is the core component of the Nether framework that routes messages 
 
 ### 6. Lifecycle Management
 
-- **Component Lifecycle**: Test on_start/on_stop called correctly
+- **Module Lifecycle**: Test on_start/on_stop called correctly
 - **Mediator Shutdown**: Test mediator.stop() cleans up properly
 - **Singleton Reset**: Test singleton can be reset for testing
 
@@ -62,7 +62,7 @@ pytest tests/mediator_test.py -v -s --asyncio-mode=auto
 ### Creating Test Components
 
 ```python
-class TestHandler(Component[YourMessageType]):
+class TestHandler(Module[YourMessageType]):
     def __init__(self, application=None):
         super().__init__(application)
         self.handled_messages = []
@@ -113,7 +113,7 @@ async def test_context_processing():
 ### Testing Event Production
 
 ```python
-class EventProducer(Component[Command]):
+class EventProducer(Module[Command]):
     async def handle(self, message, *, dispatch, join_stream):
         # Process command and produce event
         await dispatch(ResultEvent(value=message.value * 2))
@@ -143,7 +143,7 @@ async def test_event_cascading():
 
 3. **Error Logging**: Use `caplog` fixture to test error logging behavior
 
-4. **Component Types**: Test components with different message type specifications (single type, tuple of types)
+4. **Module Types**: Test components with different message type specifications (single type, tuple of types)
 
 5. **Context Isolation**: Verify each context maintains its own task queue and results
 

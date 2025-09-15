@@ -8,7 +8,7 @@ from typing import Any
 
 import nether
 from aiohttp import web
-from nether.component import Component
+from nether.modules import Module
 from nether.message import Command, Event, Message
 from nether.server import RegisterView, Server
 
@@ -38,7 +38,7 @@ class SystemStatusView(web.View):
 
         # Get component information
         components = []
-        for component in mediator.components:
+        for component in mediator.modules:
             component_info = {
                 "name": component.__class__.__name__,
                 "type": str(type(component).__module__ + "." + type(component).__name__),
@@ -63,7 +63,7 @@ class SystemStatusView(web.View):
                 "processor": platform.processor(),
             },
             "mediator": {
-                "component_count": len(mediator.components),
+                "component_count": len(mediator.modules),
                 "context_count": len(mediator._contexts),
             },
             "components": components,
@@ -73,8 +73,8 @@ class SystemStatusView(web.View):
         return web.json_response(status_data, dumps=lambda obj: json.dumps(obj, indent=2))
 
 
-class StatusRegistrationComponent(Component[RegisterView]):
-    """Component to handle status view registration after server startup."""
+class StatusRegistrationComponent(Module[RegisterView]):
+    """Module to handle status view registration after server startup."""
 
     def __init__(self, application, server):
         super().__init__(application)
@@ -113,7 +113,7 @@ class Result(Event):
     value: int
 
 
-class Producer(Component[StopProducer]):
+class Producer(Module[StopProducer]):
     """
     Producer sends a message to mediator until it receives stop event.
     """
@@ -163,7 +163,7 @@ class Producer(Component[StopProducer]):
         self._finish = True
 
 
-class Consumer(Component[Result]):
+class Consumer(Module[Result]):
     def __init__(self, system: System, name: str | None = None):
         super().__init__(system)
         self.name = str(type(self)) if name is None else name
