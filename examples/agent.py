@@ -28,7 +28,7 @@ import aiohttp
 from aiohttp import web
 
 import nether
-from nether.component import Component
+from nether.modules import Module
 from nether.message import Event, Message, Query
 from nether.server import RegisterView, RegisterViewFailure, Server, ViewRegistered
 
@@ -185,7 +185,7 @@ class OllamaService:
             return False
 
 
-class BaseAgent(Component[AgentQuery]):
+class BaseAgent(Module[AgentQuery]):
     """Base class for AI agents with Ollama integration."""
 
     def __init__(self, application, agent_type: str, model_name: str, system_prompt: str | None = None):
@@ -391,7 +391,7 @@ Based on demo data:
             return f"Analysis query received: '{query.prompt}'. (Note: Ollama not available - {e!s})"
 
 
-class ConversationManager(Component[GetConversationHistory]):
+class ConversationManager(Module[GetConversationHistory]):
     """Manages conversation history across agents."""
 
     def __init__(self, application):
@@ -610,7 +610,7 @@ class ConversationHistoryAPI(web.View):
             system = self.request.app["system"]
 
             conversation_manager = None
-            for component in system.mediator.components:
+            for component in system.mediator.modules:
                 if isinstance(component, ConversationManager):
                     conversation_manager = component
                     break
@@ -633,8 +633,8 @@ class ConversationHistoryAPI(web.View):
             return web.json_response({"status": "error", "error": str(error)}, status=500)
 
 
-class ViewRegistrationHandler(Component[ViewRegistered | RegisterViewFailure]):
-    """Component to handle view registration events."""
+class ViewRegistrationHandler(Module[ViewRegistered | RegisterViewFailure]):
+    """Module to handle view registration events."""
 
     async def handle(self, message: Message, *, handler: Callable[[Message], Awaitable[None]], **_: Any) -> None:
         """Handle view registration success/failure events."""
@@ -645,8 +645,8 @@ class ViewRegistrationHandler(Component[ViewRegistered | RegisterViewFailure]):
                 print(f" View registration failed: {message.error}")
 
 
-class AgentResponseHandler(Component[AgentResponse | AgentError]):
-    """Component to handle agent response and error events."""
+class AgentResponseHandler(Module[AgentResponse | AgentError]):
+    """Module to handle agent response and error events."""
 
     async def handle(self, message: Message, *, handler: Callable[[Message], Awaitable[None]], **_: Any) -> None:
         """Handle agent response and error events."""

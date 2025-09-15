@@ -11,7 +11,7 @@ from aiohttp import hdrs as headers
 from aiohttp import web, web_urldispatcher
 from aiohttp_middlewares import cors
 
-from .component import Component
+from .modules import Module
 from .exception import ServiceError
 from .logging import configure_logger
 from .message import Command, Event, FailureEvent, Message, SuccessEvent
@@ -319,7 +319,7 @@ class _DynamicRouter:
                 self.logger.debug(f"Similar registered paths: {similar_paths}")
 
 
-class Server(Component[StartServer | StopServer | RegisterView]):
+class Server(Module[StartServer | StopServer | RegisterView]):
     def __init__(
         self,
         application,

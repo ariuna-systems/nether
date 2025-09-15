@@ -1,4 +1,4 @@
-# Secure Component-based SPA with Nether Framework
+# Secure Module-based SPA with Nether Framework
 
 A production-ready Single Page Application demonstrating secure dynamic component discovery and registration using the Nether framework.
 
@@ -6,12 +6,12 @@ A production-ready Single Page Application demonstrating secure dynamic componen
 
 ### Security-First Architecture
 
-- Component validation and security scoring
+- Module validation and security scoring
 - Content Security Policy (CSP) enforcement
-- Component sandboxing and validation
+- Module sandboxing and validation
 - Secure ES6 module loading
 
-### Dynamic Component System
+### Dynamic Module System
 
 - Automatic component discovery and registration
 - Self-contained components with API + UI
@@ -41,12 +41,12 @@ python -m nether-system-example
 | `GET /` | Main SPA application |
 | `GET /api/discovery` | Complete API endpoint discovery |
 | `GET /api/components` | Secure component registry |
-| `GET /api/components/manifests` | Component manifests |
-| `GET /api/components/validate` | Component validation |
+| `GET /api/components/manifests` | Module manifests |
+| `GET /api/components/validate` | Module validation |
 
 ## Architecture
 
-### Component Structure
+### Module Structure
 
 Each component is self-contained providing:
 
@@ -66,7 +66,7 @@ Each component is self-contained providing:
 
 - **Service Discovery**: `/api/discovery` provides complete endpoint mapping
 - **Dynamic Routes**: Automatic route registration and discovery
-- **Component Registry**: Centralized component management
+- **Module Registry**: Centralized component management
 - **Manifest System**: Standardized component metadata
 
 ## Configuration
@@ -85,16 +85,16 @@ python main.py --help
 
 ### Adding Components
 
-1. Create component class extending `nether.Component`
+1. Create component class extending `nether.Module`
 2. Register in `System.register_components()`
 3. Provide manifest with security metadata
-4. Component automatically discovered and loaded
+4. Module automatically discovered and loaded
 
 ### Security Considerations
 
 - All external components validated before registration
 - CSP headers prevent unauthorized script execution
-- Component permissions enforced at runtime
+- Module permissions enforced at runtime
 - Secure module loading prevents code injection
 
 ## Production Deployment
@@ -104,6 +104,6 @@ This example demonstrates production-ready patterns:
 - Comprehensive error handling
 - Security validation pipeline
 - Service discovery mechanisms
-- Component isolation and sandboxing
+- Module isolation and sandboxing
 
 Built with [Nether Framework](https://github.com/wavelet-space/nether) - A modern Python framework for building distributed systems.

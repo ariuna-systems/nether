@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from nether.system import Nether
-from nether.component import Component
+from nether.modules import Module
 from nether.message import Command, Event
 
 
@@ -33,7 +33,7 @@ class DataProcessed(Event):
     processed_count: int
 
 
-class SensorDataProducer(Component[StartDataCollection | StopDataCollection]):
+class SensorDataProducer(Module[StartDataCollection | StopDataCollection]):
     """Produces streaming sensor data to the shared stream"""
 
     def __init__(self, application):
@@ -85,7 +85,7 @@ class SensorDataProducer(Component[StartDataCollection | StopDataCollection]):
             await asyncio.sleep(0.5)  # Produce data every 500ms
 
 
-class TemperatureProcessor(Component[StartDataCollection]):
+class TemperatureProcessor(Module[StartDataCollection]):
     """Processes temperature data from the stream"""
 
     def __init__(self, application):
@@ -124,7 +124,7 @@ class TemperatureProcessor(Component[StartDataCollection]):
         print(f"️  Temperature Processor: Stopped. Processed {self.processed_count} readings")
 
 
-class HumidityProcessor(Component[StartDataCollection]):
+class HumidityProcessor(Module[StartDataCollection]):
     """Processes humidity data from the same stream"""
 
     def __init__(self, application):
@@ -163,7 +163,7 @@ class HumidityProcessor(Component[StartDataCollection]):
         print(f" Humidity Processor: Stopped. Processed {self.processed_count} readings")
 
 
-class DataAggregator(Component[StartDataCollection]):
+class DataAggregator(Module[StartDataCollection]):
     """Aggregates statistics from the stream"""
 
     def __init__(self, application):
@@ -206,7 +206,7 @@ class DataAggregator(Component[StartDataCollection]):
             print(f"   Average humidity: {avg_humidity:.1f}%")
 
 
-class ProgressReporter(Component[DataProcessed]):
+class ProgressReporter(Module[DataProcessed]):
     """Reports processing progress from different processors"""
 
     def __init__(self, application):

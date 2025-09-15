@@ -5,7 +5,7 @@ from collections.abc import Awaitable, Callable
 from typing import Any
 
 from nether.mediator import Mediator, Context
-from nether.component import Component
+from nether.modules import Module
 from nether.message import Message, Command, Query, Event
 
 
@@ -31,7 +31,7 @@ class UnhandledMessage(Command):
 
 
 # Test Components
-class TestCommandHandler(Component[TestCommand]):
+class TestCommandHandler(Module[TestCommand]):
     def __init__(self, application=None):
         super().__init__(application)
         self.handled_messages = []
@@ -46,7 +46,7 @@ class TestCommandHandler(Component[TestCommand]):
         self.handled_messages.append(message)
 
 
-class TestEventHandler(Component[TestEvent]):
+class TestEventHandler(Module[TestEvent]):
     def __init__(self, application=None):
         super().__init__(application)
         self.handled_messages = []
@@ -61,7 +61,7 @@ class TestEventHandler(Component[TestEvent]):
         self.handled_messages.append(message)
 
 
-class TestMultiMessageHandler(Component[tuple[TestCommand, TestEvent]]):
+class TestMultiMessageHandler(Module[tuple[TestCommand, TestEvent]]):
     def __init__(self, application=None):
         super().__init__(application)
         self.handled_messages = []
@@ -76,7 +76,7 @@ class TestMultiMessageHandler(Component[tuple[TestCommand, TestEvent]]):
         self.handled_messages.append(message)
 
 
-class EventProducingHandler(Component[TestCommand]):
+class EventProducingHandler(Module[TestCommand]):
     def __init__(self, application=None):
         super().__init__(application)
         self.handled_messages = []
@@ -130,13 +130,13 @@ class TestMediatorBasics:
     def test_attach_component(self, mediator, command_handler):
         """Test attaching a component to mediator"""
         mediator.attach(command_handler)
-        assert command_handler in mediator.components
+        assert command_handler in mediator.modules
 
     def test_detach_component(self, mediator, command_handler):
         """Test detaching a component from mediator"""
         mediator.attach(command_handler)
         mediator.detach(command_handler)
-        assert command_handler not in mediator.components
+        assert command_handler not in mediator.modules
 
 
 class TestMessageHandling:
@@ -283,7 +283,7 @@ class TestErrorHandling:
         """Test that handler exceptions are caught and logged"""
         import logging
 
-        class FailingHandler(Component[TestCommand]):
+        class FailingHandler(Module[TestCommand]):
             def __init__(self, application=None):
                 super().__init__(application)
 
@@ -314,7 +314,7 @@ class TestMediatorShutdown:
         # After stop, components should be cleared
         # Note: This might reset the singleton, so create a new one
         new_mediator = Mediator()
-        assert len(new_mediator.components) == 0
+        assert len(new_mediator.modules) == 0
 
 
 # Cleanup fixture to reset mediator singleton between tests

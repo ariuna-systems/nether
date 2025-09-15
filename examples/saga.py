@@ -19,7 +19,7 @@ from typing import Any
 
 from nether import Application, execute
 from nether.protocol import Command, Event, Message
-from nether.component import Component
+from nether.modules import Module
 
 # =============================================================================
 # BUSINESS DOMAIN MODELS
@@ -157,7 +157,7 @@ class SystemHealthCheck(Event):
 # ============================================================================= #
 
 
-class OrderProcessingSaga(Component[ProcessOrder | InventoryValidated | PaymentProcessed | PaymentFailed]):
+class OrderProcessingSaga(Module[ProcessOrder | InventoryValidated | PaymentProcessed | PaymentFailed]):
     """
     Orchestrates the order processing workflow with compensation patterns
     """
@@ -303,7 +303,7 @@ class OrderProcessingSaga(Component[ProcessOrder | InventoryValidated | PaymentP
 # ============================================================================= #
 
 
-class InventoryService(Component[ValidateInventory]):
+class InventoryService(Module[ValidateInventory]):
     """Handles inventory validation with simulated failures"""
 
     def __init__(self, application: Application):
@@ -337,7 +337,7 @@ class InventoryService(Component[ValidateInventory]):
         )
 
 
-class PaymentService(Component[ProcessPayment]):
+class PaymentService(Module[ProcessPayment]):
     """Handles payment processing with circuit breaker pattern."""
 
     def __init__(self, application: Application):
@@ -422,7 +422,7 @@ class PaymentService(Component[ProcessPayment]):
             await handler(PaymentFailed(order_id=message.order_id, reason=str(e), amount=message.amount))
 
 
-class ShippingService(Component[ShipOrder]):
+class ShippingService(Module[ShipOrder]):
     """Handles order shipping"""
 
     async def handle(
@@ -447,7 +447,7 @@ class ShippingService(Component[ShipOrder]):
 # ============================================================================= #
 
 
-class CompensationHandler(Component[CompensationRequired]):
+class CompensationHandler(Module[CompensationRequired]):
     """Handles compensation/rollback actions"""
 
     async def handle(
@@ -488,7 +488,7 @@ class CompensationHandler(Component[CompensationRequired]):
 # ============================================================================= #
 
 
-class SystemMonitor(Component[OrderStatusChanged | PaymentFailed | OrderShipped]):
+class SystemMonitor(Module[OrderStatusChanged | PaymentFailed | OrderShipped]):
     """Monitors system health and performance"""
 
     def __init__(self, application: Application):
@@ -540,7 +540,7 @@ class SystemMonitor(Component[OrderStatusChanged | PaymentFailed | OrderShipped]
             )
 
 
-class EventLogger(Component[OrderStatusChanged | OrderShipped | OrderCancelled | SystemHealthCheck]):
+class EventLogger(Module[OrderStatusChanged | OrderShipped | OrderCancelled | SystemHealthCheck]):
     """Logs all important events for audit trail"""
 
     async def handle(

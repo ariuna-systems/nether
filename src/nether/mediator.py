@@ -11,7 +11,7 @@ from collections.abc import Awaitable, Callable, Coroutine
 from contextlib import asynccontextmanager
 from typing import Any, Self
 
-from .component import Component
+from .modules import Module
 from .message import Command, Event, Message, Query
 
 __all__ = [
@@ -107,7 +107,7 @@ class Mediator:
         if not self._initialized:
             self._contexts: dict[uuid.UUID, Context] = {}
             self._context_locks: dict[uuid.UUID, asyncio.Lock] = {}
-            self._components: set[Component[Any]] = set()
+            self._modules: set[Module[Any]] = set()
             self._initialized = True
 
     @asynccontextmanager
@@ -125,18 +125,18 @@ class Mediator:
             await self.detach_context(context)
 
     @property
-    def components(self) -> set[Component[Any]]:
+    def modules(self) -> set[Module[Any]]:
         """Get the set of registered components."""
-        return self._components
+        return self._modules
 
     async def stop(self) -> None:
         """Stop all registered services and reset singleton state."""
         logger.info(f"{self.__class__.__name__} stopping")
-        for component in self.components:
+        for component in self.modules:
             await component.on_stop()
 
         # Reset singleton state for clean restart
-        self._components.clear()
+        self._modules.clear()
         self._contexts.clear()
         self._context_locks.clear()
         self.__class__._initialized = False
@@ -147,22 +147,22 @@ class Mediator:
             self._context_locks[context_id] = asyncio.Lock()
         return self._context_locks[context_id]
 
-    def attach(self, component: Component[Any]) -> None:
+    def attach(self, component: Module[Any]) -> None:
         """Attach and register a component.
         :param component: The component to add to registered components.
         """
         component_name = type(component).__name__
-        self._components.add(component)
-        logger.info(f"Component {component_name} attached (supports: {component.supports})")
+        self._modules.add(component)
+        logger.info(f"Module {component_name} attached (supports: {component.supports})")
 
-    def detach(self, component: Component[Any]) -> None:
+    def detach(self, component: Module[Any]) -> None:
         """Detach and unregister a component.
         :param component: The component to remove from registered components.
         """
         component_name = type(component).__name__
-        if component in self._components:
-            self._components.remove(component)
-            logger.info(f"Component {component_name} detached")
+        if component in self._modules:
+            self._modules.remove(component)
+            logger.info(f"Module {component_name} detached")
         else:
             logger.warning(f"Attempted to detach non-registered component {component_name}")
 
@@ -187,7 +187,7 @@ class Mediator:
 
         async def _handle(
             *,
-            module: Component[Any],
+            module: Module[Any],
             message: Message,
             handler: Callable[[Message], Awaitable[None]],
             channel: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
@@ -208,7 +208,7 @@ class Mediator:
             handled = False
             matching_components = []
 
-            for module in self.components:
+            for module in self.modules:
                 supports = module.supports
                 if isinstance(supports, tuple):
                     match_type = any(isinstance(message, t) for t in supports)

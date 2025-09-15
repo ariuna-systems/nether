@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from nether import Application, execute
-from nether.component import Component
+from nether.modules import Module
 from nether.message import Command, Event, Message
 
 # 1. WORKFLOW COMMANDS AND EVENTS
@@ -199,7 +199,7 @@ class CycleDetector:
 # 4. WORKFLOW ORCHESTRATOR MODULE
 
 
-class WorkflowOrchestrator(Component[StartWorkflow | WorkflowStep]):
+class WorkflowOrchestrator(Module[StartWorkflow | WorkflowStep]):
     """Orchestrates workflow execution and step coordination"""
 
     def __init__(self, application: Application):
@@ -348,7 +348,7 @@ class WorkflowOrchestrator(Component[StartWorkflow | WorkflowStep]):
 # 5. STEP PROCESSORS
 
 
-class OrderValidationProcessor(Component[WorkflowStep]):
+class OrderValidationProcessor(Module[WorkflowStep]):
     """Processes order validation steps"""
 
     async def handle(
@@ -365,7 +365,7 @@ class OrderValidationProcessor(Component[WorkflowStep]):
             # The WorkflowOrchestrator will handle step completion
 
 
-class InventoryProcessor(Component[WorkflowStep]):
+class InventoryProcessor(Module[WorkflowStep]):
     """Processes inventory-related steps"""
 
     async def handle(
@@ -380,7 +380,7 @@ class InventoryProcessor(Component[WorkflowStep]):
             await asyncio.sleep(0.3)
 
 
-class PaymentProcessor(Component[WorkflowStep]):
+class PaymentProcessor(Module[WorkflowStep]):
     """Processes payment-related steps"""
 
     async def handle(
@@ -398,7 +398,7 @@ class PaymentProcessor(Component[WorkflowStep]):
 # 6. EVENT LISTENERS
 
 
-class WorkflowEventListener(Component[WorkflowCompleted | WorkflowFailed | StepCompleted]):
+class WorkflowEventListener(Module[WorkflowCompleted | WorkflowFailed | StepCompleted]):
     """Listens to workflow events for monitoring and logging"""
 
     async def handle(
