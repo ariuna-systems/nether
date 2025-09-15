@@ -1,0 +1,476 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Actor Model in Nether Framework &mdash; Nether 0.20.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=b52c616d"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Nether
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="architecture-review.html">Nether Framework Architecture Review</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">Package API Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Nether</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Actor Model in Nether Framework</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/actor-model-analysis.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="actor-model-in-nether-framework">
+<h1>Actor Model in Nether Framework<a class="headerlink" href="#actor-model-in-nether-framework" title="Link to this heading"></a></h1>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h2>
+<p>The <strong>nether framework</strong> implements a sophisticated Actor Model pattern through its <code class="docutils literal notranslate"><span class="pre">Module</span></code> class, enhanced with modern async capabilities and innovative streaming features. While the framework uses “Module” terminology, the underlying architecture follows classic Actor Model principles with significant enhancements.</p>
+</section>
+<section id="actor-model-fundamentals">
+<h2>Actor Model Fundamentals<a class="headerlink" href="#actor-model-fundamentals" title="Link to this heading"></a></h2>
+<p>The Actor Model is a concurrent computation model where:</p>
+<ul class="simple">
+<li><p><strong>Actors</strong> are fundamental units of computation</p></li>
+<li><p><strong>Message Passing</strong> is the only form of communication</p></li>
+<li><p><strong>Encapsulation</strong> ensures no shared mutable state</p></li>
+<li><p><strong>Asynchronous Processing</strong> handles messages independently</p></li>
+<li><p><strong>Supervision</strong> manages actor lifecycle and failures</p></li>
+</ul>
+</section>
+<section id="module-as-actor-implementation">
+<h2>Module as Actor Implementation<a class="headerlink" href="#module-as-actor-implementation" title="Link to this heading"></a></h2>
+<section id="core-actor-properties">
+<h3>Core Actor Properties<a class="headerlink" href="#core-actor-properties" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p><strong>Actor Model Concept</strong></p></th>
+<th class="head"><p><strong>Module Implementation</strong></p></th>
+<th class="head"><p><strong>Code Evidence</strong></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Encapsulated State</strong></p></td>
+<td><p>Private instance variables</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">self._is_running</span></code>, <code class="docutils literal notranslate"><span class="pre">self._logger</span></code>, <code class="docutils literal notranslate"><span class="pre">self.processed_count</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Message Passing</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">handle(message,</span> <span class="pre">*,</span> <span class="pre">handler,</span> <span class="pre">...)</span></code></p></td>
+<td><p>Only communicates via messages</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>No Shared Memory</strong></p></td>
+<td><p>Isolated component instances</p></td>
+<td><p>Each component manages own state</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Asynchronous Processing</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">async</span> <span class="pre">def</span> <span class="pre">handle(...)</span></code></p></td>
+<td><p>Built on asyncio</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Actor Address/Reference</strong></p></td>
+<td><p>Message type subscription <code class="docutils literal notranslate"><span class="pre">Module[T]</span></code></p></td>
+<td><p>Mediator routes by message type</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Supervisor Hierarchy</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Application</span></code> manages components</p></td>
+<td><p>Lifecycle management</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Message Queues</strong></p></td>
+<td><p>Mediator queuing system</p></td>
+<td><p>Messages routed through mediator</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="actor-definition-pattern">
+<h3>Actor Definition Pattern<a class="headerlink" href="#actor-definition-pattern" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">TemperatureProcessor</span><span class="p">(</span><span class="n">Module</span><span class="p">[</span><span class="n">StartDataCollection</span><span class="p">]):</span>  <span class="c1"># 🎭 Actor</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">application</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">application</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">processed_count</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># 🔒 Private state</span>
+        
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">handler</span><span class="p">,</span> <span class="n">channel</span><span class="p">):</span>  <span class="c1"># 📨 Message handler</span>
+        <span class="c1"># Process the message</span>
+        <span class="n">temp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_analyze_temperature</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+        
+        <span class="c1"># Send messages to other actors (no direct calls)</span>
+        <span class="k">if</span> <span class="n">temp</span> <span class="o">&gt;</span> <span class="mf">25.0</span><span class="p">:</span>
+            <span class="k">await</span> <span class="n">handler</span><span class="p">(</span><span class="n">TemperatureAlert</span><span class="p">(</span><span class="n">temp</span><span class="o">=</span><span class="n">temp</span><span class="p">))</span>  <span class="c1"># 📤 Message passing</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="enhanced-actor-model-features">
+<h2>Enhanced Actor Model Features<a class="headerlink" href="#enhanced-actor-model-features" title="Link to this heading"></a></h2>
+<section id="type-safe-message-subscription">
+<h3>1. <strong>Type-Safe Message Subscription</strong><a class="headerlink" href="#type-safe-message-subscription" title="Link to this heading"></a></h3>
+<p>Traditional actor systems use string-based addressing. Nether uses Python’s type system:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Traditional Actor: actor.send(&quot;temperature_processor&quot;, message)</span>
+<span class="c1"># Nether Actor: Automatic routing by message type</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">TemperatureProcessor</span><span class="p">(</span><span class="n">Module</span><span class="p">[</span><span class="n">TemperatureReading</span><span class="p">]):</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="n">TemperatureReading</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">handler</span><span class="p">,</span> <span class="n">channel</span><span class="p">):</span>
+        <span class="c1"># Only receives TemperatureReading messages</span>
+</pre></div>
+</div>
+</section>
+<section id="shared-streaming-within-context">
+<h3>2. <strong>Shared Streaming within Context</strong><a class="headerlink" href="#shared-streaming-within-context" title="Link to this heading"></a></h3>
+<p><strong>Innovation</strong>: The <code class="docutils literal notranslate"><span class="pre">channel</span></code> parameter adds shared data streaming capabilities while maintaining Actor isolation:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">handler</span><span class="p">,</span> <span class="n">channel</span><span class="p">):</span>
+    <span class="c1"># Classic Actor: Isolated message passing</span>
+    <span class="k">await</span> <span class="n">handler</span><span class="p">(</span><span class="n">SomeMessage</span><span class="p">())</span>
+    
+    <span class="c1"># Enhanced Actor: Shared data streams within context</span>
+    <span class="n">stream_queue</span><span class="p">,</span> <span class="n">stop_event</span> <span class="o">=</span> <span class="n">channel</span><span class="p">()</span>  <span class="c1"># 🌊 Shared stream access</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="k">await</span> <span class="n">stream_queue</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>This allows multiple actors to process the same continuous data stream within a single context (unit of work).</p>
+</section>
+<section id="context-isolated-actor-groups">
+<h3>3. <strong>Context-Isolated Actor Groups</strong><a class="headerlink" href="#context-isolated-actor-groups" title="Link to this heading"></a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">Context</span></code> class provides unit-of-work isolation:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">async</span> <span class="k">with</span> <span class="n">mediator</span><span class="o">.</span><span class="n">context</span><span class="p">()</span> <span class="k">as</span> <span class="n">ctx</span><span class="p">:</span>
+    <span class="c1"># All actors within this context share streams</span>
+    <span class="c1"># but are isolated from other contexts</span>
+    <span class="k">await</span> <span class="n">ctx</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="n">StartDataCollection</span><span class="p">())</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="practical-actor-examples">
+<h2>Practical Actor Examples<a class="headerlink" href="#practical-actor-examples" title="Link to this heading"></a></h2>
+<section id="simple-command-actor">
+<h3>Simple Command Actor<a class="headerlink" href="#simple-command-actor" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">kw_only</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ProcessOrder</span><span class="p">(</span><span class="n">Command</span><span class="p">):</span>
+    <span class="n">order_id</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">amount</span><span class="p">:</span> <span class="nb">float</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">OrderProcessor</span><span class="p">(</span><span class="n">Module</span><span class="p">[</span><span class="n">ProcessOrder</span><span class="p">]):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">application</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">application</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">orders_processed</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># Actor state</span>
+        
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="n">ProcessOrder</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">handler</span><span class="p">,</span> <span class="n">channel</span><span class="p">):</span>
+        <span class="c1"># Process order logic</span>
+        <span class="n">success</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_order</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">amount</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">orders_processed</span> <span class="o">+=</span> <span class="mi">1</span>
+        
+        <span class="c1"># Send result to other actors</span>
+        <span class="k">if</span> <span class="n">success</span><span class="p">:</span>
+            <span class="k">await</span> <span class="n">handler</span><span class="p">(</span><span class="n">OrderCompleted</span><span class="p">(</span><span class="n">order_id</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">order_id</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">await</span> <span class="n">handler</span><span class="p">(</span><span class="n">OrderFailed</span><span class="p">(</span><span class="n">order_id</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">order_id</span><span class="p">))</span>
+</pre></div>
+</div>
+</section>
+<section id="streaming-data-actor">
+<h3>Streaming Data Actor<a class="headerlink" href="#streaming-data-actor" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">SensorDataProcessor</span><span class="p">(</span><span class="n">Module</span><span class="p">[</span><span class="n">StartMonitoring</span><span class="p">]):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">application</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">application</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">readings_count</span> <span class="o">=</span> <span class="mi">0</span>
+        
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">handler</span><span class="p">,</span> <span class="n">channel</span><span class="p">):</span>
+        <span class="n">stream_queue</span><span class="p">,</span> <span class="n">stop_event</span> <span class="o">=</span> <span class="n">channel</span><span class="p">()</span>
+        
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;📡 Sensor Actor: Started monitoring&quot;</span><span class="p">)</span>
+        
+        <span class="k">while</span> <span class="ow">not</span> <span class="n">stop_event</span><span class="o">.</span><span class="n">is_set</span><span class="p">():</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># Receive from shared stream</span>
+                <span class="n">sensor_data</span> <span class="o">=</span> <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">wait_for</span><span class="p">(</span><span class="n">stream_queue</span><span class="o">.</span><span class="n">get</span><span class="p">(),</span> <span class="n">timeout</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+                
+                <span class="c1"># Process data</span>
+                <span class="k">if</span> <span class="n">sensor_data</span><span class="p">[</span><span class="s1">&#39;temperature&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">30</span><span class="p">:</span>
+                    <span class="k">await</span> <span class="n">handler</span><span class="p">(</span><span class="n">HighTemperatureAlert</span><span class="p">(</span>
+                        <span class="n">temp</span><span class="o">=</span><span class="n">sensor_data</span><span class="p">[</span><span class="s1">&#39;temperature&#39;</span><span class="p">]</span>
+                    <span class="p">))</span>
+                
+                <span class="bp">self</span><span class="o">.</span><span class="n">readings_count</span> <span class="o">+=</span> <span class="mi">1</span>
+                
+            <span class="k">except</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">TimeoutError</span><span class="p">:</span>
+                <span class="k">continue</span>
+</pre></div>
+</div>
+</section>
+<section id="multi-message-type-actor">
+<h3>Multi-Message Type Actor<a class="headerlink" href="#multi-message-type-actor" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">SystemMonitor</span><span class="p">(</span><span class="n">Module</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">SystemStart</span><span class="p">,</span> <span class="n">SystemStop</span><span class="p">,</span> <span class="n">HealthCheck</span><span class="p">]]):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">application</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">application</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s2">&quot;stopped&quot;</span>
+        
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">handler</span><span class="p">,</span> <span class="n">channel</span><span class="p">):</span>
+        <span class="k">match</span> <span class="n">message</span><span class="p">:</span>
+            <span class="k">case</span> <span class="n">SystemStart</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s2">&quot;running&quot;</span>
+                <span class="k">await</span> <span class="n">handler</span><span class="p">(</span><span class="n">SystemStatusChanged</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="s2">&quot;running&quot;</span><span class="p">))</span>
+                
+            <span class="k">case</span> <span class="n">SystemStop</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s2">&quot;stopped&quot;</span> 
+                <span class="k">await</span> <span class="n">handler</span><span class="p">(</span><span class="n">SystemStatusChanged</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="s2">&quot;stopped&quot;</span><span class="p">))</span>
+                
+            <span class="k">case</span> <span class="n">HealthCheck</span><span class="p">():</span>
+                <span class="k">await</span> <span class="n">handler</span><span class="p">(</span><span class="n">HealthReport</span><span class="p">(</span>
+                    <span class="n">status</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="p">,</span>
+                    <span class="n">uptime</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_uptime</span><span class="p">()</span>
+                <span class="p">))</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="actor-lifecycle-management">
+<h2>Actor Lifecycle Management<a class="headerlink" href="#actor-lifecycle-management" title="Link to this heading"></a></h2>
+<section id="application-as-actor-supervisor">
+<h3>Application as Actor Supervisor<a class="headerlink" href="#application-as-actor-supervisor" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">MyApplication</span><span class="p">(</span><span class="n">Nether</span><span class="p">):</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Register actors (components) with supervisor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">register_component</span><span class="p">(</span><span class="n">OrderProcessor</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">register_component</span><span class="p">(</span><span class="n">PaymentProcessor</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">register_component</span><span class="p">(</span><span class="n">NotificationSender</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+        
+        <span class="c1"># Start processing</span>
+        <span class="k">async</span> <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">mediator</span><span class="o">.</span><span class="n">context</span><span class="p">()</span> <span class="k">as</span> <span class="n">ctx</span><span class="p">:</span>
+            <span class="k">await</span> <span class="n">ctx</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="n">ProcessOrder</span><span class="p">(</span><span class="n">order_id</span><span class="o">=</span><span class="s2">&quot;123&quot;</span><span class="p">,</span> <span class="n">amount</span><span class="o">=</span><span class="mf">99.99</span><span class="p">))</span>
+</pre></div>
+</div>
+</section>
+<section id="actor-states">
+<h3>Actor States<a class="headerlink" href="#actor-states" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">ComponentState</span><span class="p">(</span><span class="n">StrEnum</span><span class="p">):</span>
+    <span class="n">STARTED</span> <span class="o">=</span> <span class="s2">&quot;started&quot;</span>
+    <span class="n">PENDING</span> <span class="o">=</span> <span class="s2">&quot;pending&quot;</span> 
+    <span class="n">RUNNING</span> <span class="o">=</span> <span class="s2">&quot;running&quot;</span>
+    <span class="n">STOPPED</span> <span class="o">=</span> <span class="s2">&quot;stopped&quot;</span>
+</pre></div>
+</div>
+<p>Actors have lifecycle hooks:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">async</span> <span class="pre">def</span> <span class="pre">on_start(self)</span></code> - Actor initialization</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">async</span> <span class="pre">def</span> <span class="pre">on_stop(self)</span></code> - Actor cleanup</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">async</span> <span class="pre">def</span> <span class="pre">on_error(self)</span></code> - Error handling</p></li>
+</ul>
+</section>
+</section>
+<section id="comparison-with-traditional-actor-systems">
+<h2>Comparison with Traditional Actor Systems<a class="headerlink" href="#comparison-with-traditional-actor-systems" title="Link to this heading"></a></h2>
+<section id="advantages-of-nether-s-actor-implementation">
+<h3>Advantages of Nether’s Actor Implementation<a class="headerlink" href="#advantages-of-nether-s-actor-implementation" title="Link to this heading"></a></h3>
+<ol class="arabic simple">
+<li><p><strong>Type Safety</strong>: Compile-time message type checking via generics</p></li>
+<li><p><strong>Async Native</strong>: Built on asyncio, not threads or processes</p></li>
+<li><p><strong>Shared Streaming</strong>: Innovative addition for real-time data processing</p></li>
+<li><p><strong>Python Idiomatic</strong>: Uses dataclasses, type hints, async/await</p></li>
+<li><p><strong>Minimal Dependencies</strong>: Lightweight compared to full actor frameworks</p></li>
+</ol>
+</section>
+<section id="traditional-actor-systems-vs-nether">
+<h3>Traditional Actor Systems vs Nether<a class="headerlink" href="#traditional-actor-systems-vs-nether" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p><strong>Feature</strong></p></th>
+<th class="head"><p><strong>Traditional (e.g., Akka)</strong></p></th>
+<th class="head"><p><strong>Nether Components</strong></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Message Addressing</strong></p></td>
+<td><p>String-based actor paths</p></td>
+<td><p>Type-based routing</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Concurrency</strong></p></td>
+<td><p>Thread/process-based</p></td>
+<td><p>asyncio-based</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Message Definition</strong></p></td>
+<td><p>Classes/case classes</p></td>
+<td><p>Python dataclasses</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Shared State</strong></p></td>
+<td><p>Not allowed</p></td>
+<td><p>Controlled via streams</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Error Handling</strong></p></td>
+<td><p>Supervisor strategies</p></td>
+<td><p>Module lifecycle hooks</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Performance</strong></p></td>
+<td><p>High for CPU-bound</p></td>
+<td><p>Optimized for I/O-bound</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="actor-communication-patterns">
+<h2>Actor Communication Patterns<a class="headerlink" href="#actor-communication-patterns" title="Link to this heading"></a></h2>
+<section id="fire-and-forget">
+<h3>1. <strong>Fire-and-Forget</strong><a class="headerlink" href="#fire-and-forget" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">await</span> <span class="n">handler</span><span class="p">(</span><span class="n">LogEvent</span><span class="p">(</span><span class="n">message</span><span class="o">=</span><span class="s2">&quot;Order processed&quot;</span><span class="p">))</span>
+</pre></div>
+</div>
+</section>
+<section id="request-response-via-events">
+<h3>2. <strong>Request-Response</strong> (via Events)<a class="headerlink" href="#request-response-via-events" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Send command</span>
+<span class="k">await</span> <span class="n">handler</span><span class="p">(</span><span class="n">ProcessPayment</span><span class="p">(</span><span class="n">amount</span><span class="o">=</span><span class="mi">100</span><span class="p">))</span>
+
+<span class="c1"># Handle response in another actor</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PaymentResultHandler</span><span class="p">(</span><span class="n">Module</span><span class="p">[</span><span class="n">PaymentCompleted</span><span class="p">]):</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">handler</span><span class="p">,</span> <span class="n">channel</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Payment completed: </span><span class="si">{</span><span class="n">message</span><span class="o">.</span><span class="n">transaction_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="fan-out-processing">
+<h3>3. <strong>Fan-out Processing</strong><a class="headerlink" href="#fan-out-processing" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Multiple actors process the same stream</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">handler</span><span class="p">,</span> <span class="n">channel</span><span class="p">):</span>
+    <span class="n">stream_queue</span><span class="p">,</span> <span class="n">stop_event</span> <span class="o">=</span> <span class="n">channel</span><span class="p">()</span>
+    <span class="c1"># TemperatureProcessor, HumidityProcessor, DataAggregator</span>
+    <span class="c1"># all process the same sensor data stream</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="best-practices">
+<h2>Best Practices<a class="headerlink" href="#best-practices" title="Link to this heading"></a></h2>
+<section id="actor-design-guidelines">
+<h3>Actor Design Guidelines<a class="headerlink" href="#actor-design-guidelines" title="Link to this heading"></a></h3>
+<ol class="arabic simple">
+<li><p><strong>Single Responsibility</strong>: Each actor handles one specific concern</p></li>
+<li><p><strong>Stateful but Isolated</strong>: Maintain internal state, never share it</p></li>
+<li><p><strong>Message-Only Communication</strong>: No direct method calls between actors</p></li>
+<li><p><strong>Error Isolation</strong>: Actor failures don’t crash other actors</p></li>
+<li><p><strong>Lifecycle Awareness</strong>: Implement proper start/stop procedures</p></li>
+</ol>
+</section>
+<section id="message-design">
+<h3>Message Design<a class="headerlink" href="#message-design" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Good: Immutable messages with clear intent</span>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">kw_only</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ProcessOrder</span><span class="p">(</span><span class="n">Command</span><span class="p">):</span>
+    <span class="n">order_id</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">customer_id</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">items</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span>
+    
+<span class="c1"># Good: Events for notifications</span>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">kw_only</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">OrderCompleted</span><span class="p">(</span><span class="n">Event</span><span class="p">):</span>
+    <span class="n">order_id</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">total_amount</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">timestamp</span><span class="p">:</span> <span class="n">datetime</span>
+</pre></div>
+</div>
+</section>
+<section id="context-usage">
+<h3>Context Usage<a class="headerlink" href="#context-usage" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Context provides unit-of-work isolation</span>
+<span class="k">async</span> <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">mediator</span><span class="o">.</span><span class="n">context</span><span class="p">()</span> <span class="k">as</span> <span class="n">ctx</span><span class="p">:</span>
+    <span class="c1"># All actors in this context share streams</span>
+    <span class="c1"># but are isolated from other contexts</span>
+    <span class="k">await</span> <span class="n">ctx</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="n">StartWorkflow</span><span class="p">())</span>
+    
+    <span class="c1"># Wait for completion</span>
+    <span class="k">async</span> <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">ctx</span><span class="o">.</span><span class="n">results</span><span class="p">():</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">WorkflowCompleted</span><span class="p">):</span>
+            <span class="k">break</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="conclusion">
+<h2>Conclusion<a class="headerlink" href="#conclusion" title="Link to this heading"></a></h2>
+<p>The nether framework successfully implements a modern, async-first Actor Model through its Module architecture. Key innovations include:</p>
+<ul class="simple">
+<li><p><strong>Type-safe message routing</strong> via generic type parameters</p></li>
+<li><p><strong>Shared streaming capabilities</strong> within isolated contexts</p></li>
+<li><p><strong>Python-idiomatic design</strong> using dataclasses and async/await</p></li>
+<li><p><strong>Lightweight implementation</strong> focusing on I/O-bound workloads</p></li>
+</ul>
+<p>While maintaining core Actor principles of encapsulation, message passing, and isolation, nether enhances the pattern with practical features for modern web service development.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">channel</span></code> parameter represents a novel extension to the Actor Model, enabling shared data processing while preserving actor isolation—making it ideal for real-time data processing scenarios.</p>
+<p>This design makes nether both a <strong>pure Actor framework</strong> and a <strong>practical web service foundation</strong>, bridging the gap between academic actor models and real-world application needs.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Arjuna Systems.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

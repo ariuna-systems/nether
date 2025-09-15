@@ -152,7 +152,7 @@
 <h3><strong>The Problem: Mixing Framework Modules with Business Logic</strong><a class="headerlink" href="#the-problem-mixing-framework-modules-with-business-logic" title="Link to this heading"></a></h3>
 <p>❌ <strong>COMMON MISTAKE</strong>: Putting business workflows and domain logic directly in framework modules</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># ❌ WRONG - Business logic in framework component</span>
-<span class="k">class</span><span class="w"> </span><span class="nc">OrderProcessingSaga</span><span class="p">(</span><span class="n">Component</span><span class="p">[</span><span class="n">ProcessOrder</span><span class="p">]):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">OrderProcessingSaga</span><span class="p">(</span><span class="n">Module</span><span class="p">[</span><span class="n">ProcessOrder</span><span class="p">]):</span>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="n">ProcessOrder</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">dispatch</span><span class="p">,</span> <span class="n">join_stream</span><span class="p">):</span>
         <span class="c1"># ❌ Business rules and workflows directly in framework component</span>
         <span class="k">if</span> <span class="n">message</span><span class="o">.</span><span class="n">total_amount</span> <span class="o">&gt;</span> <span class="mi">1000</span><span class="p">:</span>
@@ -172,7 +172,7 @@
 <h3><strong>The Solution: Proper DDD Layering</strong><a class="headerlink" href="#the-solution-proper-ddd-layering" title="Link to this heading"></a></h3>
 <p>✅ <strong>CORRECT</strong>: Framework components delegate to application services</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># ✅ RIGHT - Framework component is thin, delegates to application service</span>
-<span class="k">class</span><span class="w"> </span><span class="nc">OrderCommandHandler</span><span class="p">(</span><span class="n">Component</span><span class="p">[</span><span class="n">ProcessOrder</span><span class="p">]):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">OrderCommandHandler</span><span class="p">(</span><span class="n">Module</span><span class="p">[</span><span class="n">ProcessOrder</span><span class="p">]):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">Application</span><span class="p">,</span> <span class="n">order_service</span><span class="p">:</span> <span class="n">OrderProcessingService</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_order_service</span> <span class="o">=</span> <span class="n">order_service</span>  <span class="c1"># Application layer</span>
@@ -297,7 +297,7 @@ Modules (Message Handlers)
 <section id="components-component-py">
 <h3>3. <strong>Components</strong> (<code class="docutils literal notranslate"><span class="pre">component.py</span></code>)<a class="headerlink" href="#components-component-py" title="Link to this heading"></a></h3>
 <p>Self-contained units that handle specific message types.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Component</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="n">Message</span><span class="p">](</span><span class="n">ComponentProtocol</span><span class="p">[</span><span class="n">T</span><span class="p">]):</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Module</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="n">Message</span><span class="p">](</span><span class="n">ComponentProtocol</span><span class="p">[</span><span class="n">T</span><span class="p">]):</span>
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">supports</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">[</span><span class="n">T</span><span class="p">]:</span>
         <span class="c1"># Automatically determined from generic type parameter</span>

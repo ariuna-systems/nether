@@ -1,0 +1,275 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Enhanced HTTP Server Debugging &mdash; Nether 0.20.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=b52c616d"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Nether
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="architecture-review.html">Nether Framework Architecture Review</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">Package API Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Nether</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Enhanced HTTP Server Debugging</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/debugging-guide.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="enhanced-http-server-debugging">
+<h1>Enhanced HTTP Server Debugging<a class="headerlink" href="#enhanced-http-server-debugging" title="Link to this heading"></a></h1>
+<p>The nether HTTP server now includes comprehensive debugging capabilities to help you troubleshoot 404 errors and routing issues.</p>
+<section id="features">
+<h2>Features<a class="headerlink" href="#features" title="Link to this heading"></a></h2>
+<p>When running with <code class="docutils literal notranslate"><span class="pre">--log-level</span> <span class="pre">DEBUG</span></code>, the server will provide detailed logging for:</p>
+<section id="request-tracking">
+<h3>1. Request Tracking<a class="headerlink" href="#request-tracking" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>All incoming requests with method, path, and query parameters</p></li>
+<li><p>Request headers</p></li>
+<li><p>Response status codes</p></li>
+<li><p>Request processing flow</p></li>
+</ul>
+</section>
+<section id="route-resolution">
+<h3>2. Route Resolution<a class="headerlink" href="#route-resolution" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Detailed route matching attempts</p></li>
+<li><p>Available route prefixes</p></li>
+<li><p>Dynamic vs static route handling</p></li>
+<li><p>Method availability checks</p></li>
+</ul>
+</section>
+<section id="error-debugging">
+<h3>3. 404 Error Debugging<a class="headerlink" href="#error-debugging" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Detailed 404 error information including:</p>
+<ul>
+<li><p>Requested path and query parameters</p></li>
+<li><p>Request headers</p></li>
+<li><p>All registered dynamic routes</p></li>
+<li><p>All registered static routes</p></li>
+<li><p>Suggested similar paths (if any)</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="method-not-allowed-405-debugging">
+<h3>4. Method Not Allowed (405) Debugging<a class="headerlink" href="#method-not-allowed-405-debugging" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Which methods are allowed for a given path</p></li>
+<li><p>Which methods are implemented by view classes</p></li>
+</ul>
+</section>
+<section id="route-registration-logging">
+<h3>5. Route Registration Logging<a class="headerlink" href="#route-registration-logging" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>When routes are added (both static and dynamic)</p></li>
+<li><p>Complete route dump at server startup</p></li>
+<li><p>Distinction between frozen app routes and regular routes</p></li>
+</ul>
+</section>
+</section>
+<section id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Link to this heading"></a></h2>
+<section id="basic-usage">
+<h3>Basic Usage<a class="headerlink" href="#basic-usage" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>your_app.py<span class="w"> </span>--log-level<span class="w"> </span>DEBUG
+</pre></div>
+</div>
+</section>
+<section id="using-the-debug-example">
+<h3>Using the Debug Example<a class="headerlink" href="#using-the-debug-example" title="Link to this heading"></a></h3>
+<p>A debug server example is provided to test the debugging capabilities:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>examples
+python<span class="w"> </span>debug_server.py<span class="w"> </span>--log-level<span class="w"> </span>DEBUG
+</pre></div>
+</div>
+<p>This will start a server with some example routes and static files. Try accessing these URLs to see the debug output:</p>
+<p><strong>Valid routes:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">http://localhost:8080/hello</span></code> - Simple hello world</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">http://localhost:8080/api</span></code> - JSON API (GET/POST)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">http://localhost:8080/static/test.txt</span></code> - Static file</p></li>
+</ul>
+<p><strong>Invalid routes (to see 404 debugging):</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">http://localhost:8080/nonexistent</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">http://localhost:8080/api/v1/users</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">http://localhost:8080/hello/world</span></code></p></li>
+</ul>
+<p><strong>Method not allowed (to see 405 debugging):</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">http://localhost:8080/hello</span></code> (only GET is supported)</p></li>
+</ul>
+</section>
+</section>
+<section id="debug-output-examples">
+<h2>Debug Output Examples<a class="headerlink" href="#debug-output-examples" title="Link to this heading"></a></h2>
+<section id="server-startup-debug-level">
+<h3>Server Startup (DEBUG level)<a class="headerlink" href="#server-startup-debug-level" title="Link to this heading"></a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">2025</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">03</span> <span class="mi">10</span><span class="p">:</span><span class="mi">30</span><span class="p">:</span><span class="mf">00.123</span> <span class="o">+</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span> <span class="o">-</span> <span class="n">nether</span><span class="o">.</span><span class="n">server</span> <span class="o">-</span> <span class="n">INFO</span> <span class="o">-</span> <span class="n">Server</span> <span class="n">started</span> <span class="n">on</span> <span class="n">localhost</span><span class="p">:</span><span class="mf">8080.</span>
+<span class="mi">2025</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">03</span> <span class="mi">10</span><span class="p">:</span><span class="mi">30</span><span class="p">:</span><span class="mf">00.124</span> <span class="o">+</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span> <span class="o">-</span> <span class="n">nether</span><span class="o">.</span><span class="n">server</span> <span class="o">-</span> <span class="n">DEBUG</span> <span class="o">-</span> <span class="o">===</span> <span class="n">Registered</span> <span class="n">Routes</span> <span class="o">===</span>
+<span class="mi">2025</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">03</span> <span class="mi">10</span><span class="p">:</span><span class="mi">30</span><span class="p">:</span><span class="mf">00.124</span> <span class="o">+</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span> <span class="o">-</span> <span class="n">nether</span><span class="o">.</span><span class="n">server</span> <span class="o">-</span> <span class="n">DEBUG</span> <span class="o">-</span> <span class="n">Main</span> <span class="n">router</span> <span class="n">routes</span><span class="p">:</span>
+<span class="mi">2025</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">03</span> <span class="mi">10</span><span class="p">:</span><span class="mi">30</span><span class="p">:</span><span class="mf">00.124</span> <span class="o">+</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span> <span class="o">-</span> <span class="n">nether</span><span class="o">.</span><span class="n">server</span> <span class="o">-</span> <span class="n">DEBUG</span> <span class="o">-</span>   <span class="o">/</span><span class="n">hello</span>
+<span class="mi">2025</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">03</span> <span class="mi">10</span><span class="p">:</span><span class="mi">30</span><span class="p">:</span><span class="mf">00.124</span> <span class="o">+</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span> <span class="o">-</span> <span class="n">nether</span><span class="o">.</span><span class="n">server</span> <span class="o">-</span> <span class="n">DEBUG</span> <span class="o">-</span>   <span class="o">/</span><span class="n">api</span>
+<span class="mi">2025</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">03</span> <span class="mi">10</span><span class="p">:</span><span class="mi">30</span><span class="p">:</span><span class="mf">00.124</span> <span class="o">+</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span> <span class="o">-</span> <span class="n">nether</span><span class="o">.</span><span class="n">server</span> <span class="o">-</span> <span class="n">DEBUG</span> <span class="o">-</span> <span class="n">Static</span> <span class="n">routes</span><span class="p">:</span>
+<span class="mi">2025</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">03</span> <span class="mi">10</span><span class="p">:</span><span class="mi">30</span><span class="p">:</span><span class="mf">00.124</span> <span class="o">+</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span> <span class="o">-</span> <span class="n">nether</span><span class="o">.</span><span class="n">server</span> <span class="o">-</span> <span class="n">DEBUG</span> <span class="o">-</span>   <span class="o">/</span><span class="n">static</span> <span class="o">-&gt;</span> <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">static</span>
+<span class="mi">2025</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">03</span> <span class="mi">10</span><span class="p">:</span><span class="mi">30</span><span class="p">:</span><span class="mf">00.124</span> <span class="o">+</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span> <span class="o">-</span> <span class="n">nether</span><span class="o">.</span><span class="n">server</span> <span class="o">-</span> <span class="n">DEBUG</span> <span class="o">-</span> <span class="o">===</span> <span class="n">End</span> <span class="n">Routes</span> <span class="o">===</span>
+</pre></div>
+</div>
+</section>
+<section id="successful-request-debug-level">
+<h3>Successful Request (DEBUG level)<a class="headerlink" href="#successful-request-debug-level" title="Link to this heading"></a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>2025-09-03 10:30:15.456 +00:00 - nether.server - DEBUG - Incoming request: GET /hello
+2025-09-03 10:30:15.456 +00:00 - nether.server - DEBUG - Processing request: GET /hello from 127.0.0.1
+2025-09-03 10:30:15.456 +00:00 - nether.server - DEBUG - Route matched: /hello -&gt; &lt;class &#39;HelloView&#39;&gt;
+2025-09-03 10:30:15.457 +00:00 - nether.server - DEBUG - View HelloView served: /hello -&gt; 200
+2025-09-03 10:30:15.457 +00:00 - nether.server - DEBUG - Response: 200 for GET /hello
+</pre></div>
+</div>
+</section>
+<section id="error-debug-level">
+<h3>404 Error (DEBUG level)<a class="headerlink" href="#error-debug-level" title="Link to this heading"></a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">2025</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">03</span> <span class="mi">10</span><span class="p">:</span><span class="mi">30</span><span class="p">:</span><span class="mf">30.789</span> <span class="o">+</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span> <span class="o">-</span> <span class="n">nether</span><span class="o">.</span><span class="n">server</span> <span class="o">-</span> <span class="n">DEBUG</span> <span class="o">-</span> <span class="n">Incoming</span> <span class="n">request</span><span class="p">:</span> <span class="n">GET</span> <span class="o">/</span><span class="n">nonexistent</span>
+<span class="mi">2025</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">03</span> <span class="mi">10</span><span class="p">:</span><span class="mi">30</span><span class="p">:</span><span class="mf">30.789</span> <span class="o">+</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span> <span class="o">-</span> <span class="n">nether</span><span class="o">.</span><span class="n">server</span> <span class="o">-</span> <span class="n">DEBUG</span> <span class="o">-</span> <span class="n">Processing</span> <span class="n">request</span><span class="p">:</span> <span class="n">GET</span> <span class="o">/</span><span class="n">nonexistent</span> <span class="kn">from</span><span class="w"> </span><span class="mf">127.0.0.1</span>
+<span class="mi">2025</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">03</span> <span class="mi">10</span><span class="p">:</span><span class="mi">30</span><span class="p">:</span><span class="mf">30.789</span> <span class="o">+</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span> <span class="o">-</span> <span class="n">nether</span><span class="o">.</span><span class="n">server</span> <span class="o">-</span> <span class="n">DEBUG</span> <span class="o">-</span> <span class="n">Available</span> <span class="n">route</span> <span class="n">prefixes</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="s1">&#39;/hello&#39;</span><span class="p">,</span> <span class="s1">&#39;/api&#39;</span><span class="p">]</span>
+<span class="mi">2025</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">03</span> <span class="mi">10</span><span class="p">:</span><span class="mi">30</span><span class="p">:</span><span class="mf">30.790</span> <span class="o">+</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span> <span class="o">-</span> <span class="n">nether</span><span class="o">.</span><span class="n">server</span> <span class="o">-</span> <span class="n">DEBUG</span> <span class="o">-</span> <span class="mi">404</span> <span class="n">NOT</span> <span class="n">FOUND</span><span class="p">:</span> <span class="n">GET</span> <span class="o">/</span><span class="n">nonexistent</span>
+<span class="mi">2025</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">03</span> <span class="mi">10</span><span class="p">:</span><span class="mi">30</span><span class="p">:</span><span class="mf">30.790</span> <span class="o">+</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span> <span class="o">-</span> <span class="n">nether</span><span class="o">.</span><span class="n">server</span> <span class="o">-</span> <span class="n">DEBUG</span> <span class="o">-</span> <span class="n">Query</span> <span class="n">string</span><span class="p">:</span> 
+<span class="mi">2025</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">03</span> <span class="mi">10</span><span class="p">:</span><span class="mi">30</span><span class="p">:</span><span class="mf">30.790</span> <span class="o">+</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span> <span class="o">-</span> <span class="n">nether</span><span class="o">.</span><span class="n">server</span> <span class="o">-</span> <span class="n">DEBUG</span> <span class="o">-</span> <span class="n">Headers</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;Host&#39;</span><span class="p">:</span> <span class="s1">&#39;localhost:8080&#39;</span><span class="p">,</span> <span class="s1">&#39;User-Agent&#39;</span><span class="p">:</span> <span class="s1">&#39;curl/7.68.0&#39;</span><span class="p">,</span> <span class="s1">&#39;Accept&#39;</span><span class="p">:</span> <span class="s1">&#39;*/*&#39;</span><span class="p">}</span>
+<span class="mi">2025</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">03</span> <span class="mi">10</span><span class="p">:</span><span class="mi">30</span><span class="p">:</span><span class="mf">30.790</span> <span class="o">+</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span> <span class="o">-</span> <span class="n">nether</span><span class="o">.</span><span class="n">server</span> <span class="o">-</span> <span class="n">DEBUG</span> <span class="o">-</span> <span class="n">Registered</span> <span class="n">dynamic</span> <span class="n">routes</span><span class="p">:</span>
+<span class="mi">2025</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">03</span> <span class="mi">10</span><span class="p">:</span><span class="mi">30</span><span class="p">:</span><span class="mf">30.790</span> <span class="o">+</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span> <span class="o">-</span> <span class="n">nether</span><span class="o">.</span><span class="n">server</span> <span class="o">-</span> <span class="n">DEBUG</span> <span class="o">-</span>   <span class="o">/</span> <span class="o">-&gt;</span> <span class="o">/</span><span class="n">hello</span>
+<span class="mi">2025</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">03</span> <span class="mi">10</span><span class="p">:</span><span class="mi">30</span><span class="p">:</span><span class="mf">30.790</span> <span class="o">+</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span> <span class="o">-</span> <span class="n">nether</span><span class="o">.</span><span class="n">server</span> <span class="o">-</span> <span class="n">DEBUG</span> <span class="o">-</span>   <span class="o">/</span> <span class="o">-&gt;</span> <span class="o">/</span><span class="n">api</span>
+<span class="mi">2025</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">03</span> <span class="mi">10</span><span class="p">:</span><span class="mi">30</span><span class="p">:</span><span class="mf">30.790</span> <span class="o">+</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span> <span class="o">-</span> <span class="n">nether</span><span class="o">.</span><span class="n">server</span> <span class="o">-</span> <span class="n">DEBUG</span> <span class="o">-</span> <span class="n">Registered</span> <span class="n">static</span> <span class="n">routes</span><span class="p">:</span>
+<span class="mi">2025</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">03</span> <span class="mi">10</span><span class="p">:</span><span class="mi">30</span><span class="p">:</span><span class="mf">30.790</span> <span class="o">+</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span> <span class="o">-</span> <span class="n">nether</span><span class="o">.</span><span class="n">server</span> <span class="o">-</span> <span class="n">DEBUG</span> <span class="o">-</span>   <span class="o">/</span><span class="n">static</span> <span class="o">-&gt;</span> <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">static</span>
+</pre></div>
+</div>
+</section>
+<section id="method-not-allowed-debug-level">
+<h3>Method Not Allowed (DEBUG level)<a class="headerlink" href="#method-not-allowed-debug-level" title="Link to this heading"></a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>2025-09-03 10:30:45.123 +00:00 - nether.server - DEBUG - Incoming request: POST /hello
+2025-09-03 10:30:45.123 +00:00 - nether.server - DEBUG - Processing request: POST /hello from 127.0.0.1
+2025-09-03 10:30:45.123 +00:00 - nether.server - DEBUG - Route matched: /hello -&gt; &lt;class &#39;HelloView&#39;&gt;
+2025-09-03 10:30:45.123 +00:00 - nether.server - DEBUG - Method POST not implemented by HelloView. Available methods: [&#39;get&#39;]
+</pre></div>
+</div>
+</section>
+</section>
+<section id="integration-with-existing-applications">
+<h2>Integration with Existing Applications<a class="headerlink" href="#integration-with-existing-applications" title="Link to this heading"></a></h2>
+<p>The enhanced debugging is automatically enabled when you:</p>
+<ol class="arabic simple">
+<li><p>Set the log level to DEBUG (<code class="docutils literal notranslate"><span class="pre">--log-level</span> <span class="pre">DEBUG</span></code>)</p></li>
+<li><p>Use the nether Server class</p></li>
+<li><p>Have proper logging configuration</p></li>
+</ol>
+<p>No code changes are required in your existing applications. Just run with DEBUG logging to get comprehensive debugging information.</p>
+</section>
+<section id="tips-for-debugging-404-errors">
+<h2>Tips for Debugging 404 Errors<a class="headerlink" href="#tips-for-debugging-404-errors" title="Link to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p><strong>Check route registration</strong>: Look for “View assigned to route” messages at startup</p></li>
+<li><p><strong>Verify route patterns</strong>: Dynamic routes use <code class="docutils literal notranslate"><span class="pre">{param}</span></code> syntax</p></li>
+<li><p><strong>Check static file paths</strong>: Ensure static directories exist and are readable</p></li>
+<li><p><strong>Compare similar paths</strong>: The debug output suggests similar registered paths</p></li>
+<li><p><strong>Verify middleware order</strong>: Middlewares are processed in order, which can affect routing</p></li>
+</ol>
+</section>
+<section id="configuration">
+<h2>Configuration<a class="headerlink" href="#configuration" title="Link to this heading"></a></h2>
+<p>The debug logging respects the standard Python logging configuration. You can also configure it programmatically:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">nether.logging</span><span class="w"> </span><span class="kn">import</span> <span class="n">configure_global_logging</span>
+
+<span class="c1"># Configure with DEBUG level</span>
+<span class="n">configure_global_logging</span><span class="p">(</span><span class="n">log_level</span><span class="o">=</span><span class="s2">&quot;DEBUG&quot;</span><span class="p">)</span>
+
+<span class="c1"># Or configure to a file</span>
+<span class="n">configure_global_logging</span><span class="p">(</span><span class="n">log_level</span><span class="o">=</span><span class="s2">&quot;DEBUG&quot;</span><span class="p">,</span> <span class="n">log_file</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;server.log&quot;</span><span class="p">))</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Arjuna Systems.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,282 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nether Framework Logging &mdash; Nether 0.20.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=b52c616d"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Nether
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="architecture-review.html">Nether Framework Architecture Review</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">Package API Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Nether</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Nether Framework Logging</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/logging.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="nether-framework-logging">
+<h1>Nether Framework Logging<a class="headerlink" href="#nether-framework-logging" title="Link to this heading"></a></h1>
+<p>The Nether framework now includes comprehensive logging capabilities that allow you to track every message going through the mediator. This logging system supports both stdout and file logging with configurable log levels and verbosity.</p>
+<section id="features">
+<h2>Features<a class="headerlink" href="#features" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Comprehensive Message Logging</strong>: Every message processed by the mediator is logged with detailed information</p></li>
+<li><p><strong>Dual Output</strong>: Log to both stdout and file simultaneously</p></li>
+<li><p><strong>Configurable Log Levels</strong>: Support for DEBUG, INFO, WARNING, ERROR, and CRITICAL levels</p></li>
+<li><p><strong>Command Line Configuration</strong>: Easy setup via CLI arguments</p></li>
+<li><p><strong>Structured Logging</strong>: Consistent timestamp format with timezone information</p></li>
+<li><p><strong>Module Tracking</strong>: Logs component attachment/detachment and message routing</p></li>
+<li><p><strong>Context Management</strong>: Tracks message processing contexts and their lifecycle</p></li>
+</ul>
+</section>
+<section id="cli-arguments">
+<h2>CLI Arguments<a class="headerlink" href="#cli-arguments" title="Link to this heading"></a></h2>
+<p>When creating a Nether application, you can configure logging using these command-line arguments:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">--log-level</span> <span class="pre">{DEBUG,INFO,WARNING,ERROR,CRITICAL}</span></code>: Set the logging level (default: INFO)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--log-file</span> <span class="pre">LOG_FILE</span></code>: Path to the log file for file logging (optional)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--verbose</span></code>, <code class="docutils literal notranslate"><span class="pre">-v</span></code>: Increase verbosity level (can be used multiple times)</p></li>
+</ul>
+</section>
+<section id="usage-examples">
+<h2>Usage Examples<a class="headerlink" href="#usage-examples" title="Link to this heading"></a></h2>
+<section id="basic-usage-stdout-only">
+<h3>Basic Usage (stdout only)<a class="headerlink" href="#basic-usage-stdout-only" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>your_app.py<span class="w"> </span>--log-level<span class="w"> </span>INFO
+</pre></div>
+</div>
+</section>
+<section id="enable-debug-logging">
+<h3>Enable DEBUG logging<a class="headerlink" href="#enable-debug-logging" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>your_app.py<span class="w"> </span>--log-level<span class="w"> </span>DEBUG
+</pre></div>
+</div>
+</section>
+<section id="log-to-file-and-stdout">
+<h3>Log to file and stdout<a class="headerlink" href="#log-to-file-and-stdout" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>your_app.py<span class="w"> </span>--log-level<span class="w"> </span>INFO<span class="w"> </span>--log-file<span class="w"> </span>logs/app.log
+</pre></div>
+</div>
+</section>
+<section id="maximum-verbosity-with-file-logging">
+<h3>Maximum verbosity with file logging<a class="headerlink" href="#maximum-verbosity-with-file-logging" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>your_app.py<span class="w"> </span>--log-level<span class="w"> </span>DEBUG<span class="w"> </span>--log-file<span class="w"> </span>logs/debug.log<span class="w"> </span>-v<span class="w"> </span>-v
+</pre></div>
+</div>
+</section>
+</section>
+<section id="what-gets-logged">
+<h2>What Gets Logged<a class="headerlink" href="#what-gets-logged" title="Link to this heading"></a></h2>
+<section id="message-processing">
+<h3>Message Processing<a class="headerlink" href="#message-processing" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Message Reception</strong>: When a message enters the mediator</p></li>
+<li><p><strong>Message Type</strong>: Command, Query, or Event classification</p></li>
+<li><p><strong>Module Matching</strong>: Which components can handle the message</p></li>
+<li><p><strong>Message Dispatch</strong>: Routing information to handlers</p></li>
+<li><p><strong>Processing Results</strong>: Success or failure of message handling</p></li>
+</ul>
+</section>
+<section id="module-lifecycle">
+<h3>Module Lifecycle<a class="headerlink" href="#module-lifecycle" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Module Attachment</strong>: When components are registered</p></li>
+<li><p><strong>Module Detachment</strong>: When components are unregistered</p></li>
+<li><p><strong>Supported Message Types</strong>: What messages each component handles</p></li>
+</ul>
+</section>
+<section id="context-management">
+<h3>Context Management<a class="headerlink" href="#context-management" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Context Creation</strong>: New processing contexts (units of work)</p></li>
+<li><p><strong>Context Lifecycle</strong>: Context attachment, processing, and cleanup</p></li>
+<li><p><strong>Error Handling</strong>: Exceptions and error conditions</p></li>
+</ul>
+</section>
+</section>
+<section id="log-format">
+<h2>Log Format<a class="headerlink" href="#log-format" title="Link to this heading"></a></h2>
+<p>Each log entry includes:</p>
+<ul class="simple">
+<li><p><strong>Timestamp</strong>: ISO format with timezone (e.g., <code class="docutils literal notranslate"><span class="pre">2025-09-02</span> <span class="pre">17:29:08.283</span> <span class="pre">+02:00</span></code>)</p></li>
+<li><p><strong>Logger Name</strong>: Module or component name (e.g., <code class="docutils literal notranslate"><span class="pre">nether.mediator</span></code>)</p></li>
+<li><p><strong>Log Level</strong>: DEBUG, INFO, WARNING, ERROR, or CRITICAL</p></li>
+<li><p><strong>Message</strong>: Detailed information about the event</p></li>
+</ul>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">2025</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">02</span> <span class="mi">17</span><span class="p">:</span><span class="mi">29</span><span class="p">:</span><span class="mf">08.284</span> <span class="o">+</span><span class="mi">02</span><span class="p">:</span><span class="mi">00</span> <span class="o">-</span> <span class="n">nether</span><span class="o">.</span><span class="n">mediator</span> <span class="o">-</span> <span class="n">INFO</span> <span class="o">-</span> <span class="n">Module</span> <span class="n">LoggingDemoComponent</span> <span class="n">attached</span> <span class="p">(</span><span class="n">supports</span><span class="p">:</span> <span class="n">LogTestCommand</span> <span class="o">|</span> <span class="n">LogTestQuery</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="implementation-in-your-application">
+<h2>Implementation in Your Application<a class="headerlink" href="#implementation-in-your-application" title="Link to this heading"></a></h2>
+<p>To use the new logging system in your Nether application:</p>
+<ol class="arabic">
+<li><p><strong>Import the Nether system</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">nether</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Create a configuration with logging arguments</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
+
+<span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--log-level&quot;</span><span class="p">,</span> <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;DEBUG&quot;</span><span class="p">,</span> <span class="s2">&quot;INFO&quot;</span><span class="p">,</span> <span class="s2">&quot;WARNING&quot;</span><span class="p">,</span> <span class="s2">&quot;ERROR&quot;</span><span class="p">,</span> <span class="s2">&quot;CRITICAL&quot;</span><span class="p">],</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;INFO&quot;</span><span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--log-file&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Path to log file&quot;</span><span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--verbose&quot;</span><span class="p">,</span> <span class="s2">&quot;-v&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;count&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+<span class="n">config</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">Namespace</span><span class="p">(</span>
+    <span class="n">log_level</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">log_level</span><span class="p">,</span>
+    <span class="n">log_file</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">log_file</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">verbose</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Create your Nether application</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">MyApp</span><span class="p">(</span><span class="n">nether</span><span class="o">.</span><span class="n">Nether</span><span class="p">):</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Your application logic here</span>
+        <span class="k">pass</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="n">MyApp</span><span class="p">(</span><span class="n">configuration</span><span class="o">=</span><span class="n">config</span><span class="p">)</span>
+<span class="n">nether</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">start</span><span class="p">())</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="demo-application">
+<h2>Demo Application<a class="headerlink" href="#demo-application" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">examples/logging_demo.py</span></code> file provides a complete demonstration of the logging capabilities. Run it with different options to see the logging in action:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Basic demo</span>
+python<span class="w"> </span>examples/logging_demo.py
+
+<span class="c1"># Debug level with file logging</span>
+python<span class="w"> </span>examples/logging_demo.py<span class="w"> </span>--log-level<span class="w"> </span>DEBUG<span class="w"> </span>--log-file<span class="w"> </span>logs/demo.log
+
+<span class="c1"># Maximum verbosity</span>
+python<span class="w"> </span>examples/logging_demo.py<span class="w"> </span>--log-level<span class="w"> </span>DEBUG<span class="w"> </span>--log-file<span class="w"> </span>logs/verbose.log<span class="w"> </span>-v<span class="w"> </span>-v
+</pre></div>
+</div>
+</section>
+<section id="benefits">
+<h2>Benefits<a class="headerlink" href="#benefits" title="Link to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p><strong>Debugging</strong>: Easily trace message flow through your application</p></li>
+<li><p><strong>Monitoring</strong>: Track application behavior in production</p></li>
+<li><p><strong>Audit Trail</strong>: Complete record of all message processing</p></li>
+<li><p><strong>Performance Analysis</strong>: Identify bottlenecks and processing patterns</p></li>
+<li><p><strong>Error Diagnosis</strong>: Detailed context for troubleshooting issues</p></li>
+</ol>
+</section>
+<section id="file-logging">
+<h2>File Logging<a class="headerlink" href="#file-logging" title="Link to this heading"></a></h2>
+<p>When using file logging:</p>
+<ul class="simple">
+<li><p>Log files are created with UTF-8 encoding</p></li>
+<li><p>Parent directories are created automatically if they don’t exist</p></li>
+<li><p>Logs are appended to existing files</p></li>
+<li><p>Both stdout and file receive the same log entries</p></li>
+<li><p>File logging errors are reported but don’t stop the application</p></li>
+</ul>
+</section>
+<section id="performance">
+<h2>Performance<a class="headerlink" href="#performance" title="Link to this heading"></a></h2>
+<p>The logging system is designed to be efficient:</p>
+<ul class="simple">
+<li><p>Uses structured logging with lazy evaluation</p></li>
+<li><p>Configurable log levels to control output volume</p></li>
+<li><p>Minimal performance impact on message processing</p></li>
+<li><p>File I/O is handled asynchronously where possible</p></li>
+</ul>
+<p>This logging system provides complete visibility into your Nether application’s message processing, making debugging, monitoring, and maintenance much easier.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Arjuna Systems.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

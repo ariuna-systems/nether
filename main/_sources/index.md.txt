@@ -33,7 +33,7 @@ At the same time, components are designed to be extensible. This means they can 
 
 By following this approach, the framework supports both a robust core and flexible expansion, making it easy to adapt to new requirements or integrate third-party features.
 
-Nether framework is build in a modular fashion. It is based on components. Component can be registere on application and can expose a views to the user. Each view has a route through which it can be accessed.
+Nether framework is build in a modular fashion. It is based on components. Module can be registere on application and can expose a views to the user. Each view has a route through which it can be accessed.
 
 Example: Account component expose REST API on  `/api/account/` and UI on `/account/` route.
 

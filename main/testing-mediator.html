@@ -1,0 +1,266 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Testing the Nether Mediator &mdash; Nether 0.20.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=b52c616d"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Nether
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="architecture-review.html">Nether Framework Architecture Review</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">Package API Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Nether</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Testing the Nether Mediator</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/testing-mediator.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="testing-the-nether-mediator">
+<h1>Testing the Nether Mediator<a class="headerlink" href="#testing-the-nether-mediator" title="Link to this heading"></a></h1>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h2>
+<p>The Mediator is the core component of the Nether framework that routes messages between components asynchronously. Here’s how to test it comprehensively:</p>
+</section>
+<section id="test-categories">
+<h2>Test Categories<a class="headerlink" href="#test-categories" title="Link to this heading"></a></h2>
+<section id="basic-mediator-functionality">
+<h3>1. Basic Mediator Functionality<a class="headerlink" href="#basic-mediator-functionality" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Singleton Pattern</strong>: Verify mediator returns same instance</p></li>
+<li><p><strong>Module Management</strong>: Test attach/detach of components</p></li>
+<li><p><strong>Module Discovery</strong>: Verify components are found in mediator.modules</p></li>
+</ul>
+</section>
+<section id="message-routing">
+<h3>2. Message Routing<a class="headerlink" href="#message-routing" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Single Handler</strong>: Test message routed to correct handler</p></li>
+<li><p><strong>Multiple Handlers</strong>: Test same message type handled by multiple components</p></li>
+<li><p><strong>Multi-Message Handlers</strong>: Test components that handle multiple message types</p></li>
+<li><p><strong>Unhandled Messages</strong>: Test error logging for messages with no handlers</p></li>
+</ul>
+</section>
+<section id="context-management">
+<h3>3. Context Management<a class="headerlink" href="#context-management" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Context Creation</strong>: Test context manager functionality</p></li>
+<li><p><strong>Message Processing</strong>: Test ctx.process() routes messages correctly</p></li>
+<li><p><strong>Event Results</strong>: Test events are queued in context results</p></li>
+<li><p><strong>Task Management</strong>: Test active tasks are tracked and cleaned up</p></li>
+</ul>
+</section>
+<section id="asynchronous-behavior">
+<h3>4. Asynchronous Behavior<a class="headerlink" href="#asynchronous-behavior" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Concurrent Handling</strong>: Test multiple messages processed concurrently</p></li>
+<li><p><strong>Event Production</strong>: Test handlers that produce events for other handlers</p></li>
+<li><p><strong>Task Isolation</strong>: Test each context has isolated task management</p></li>
+</ul>
+</section>
+<section id="error-handling">
+<h3>5. Error Handling<a class="headerlink" href="#error-handling" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Handler Exceptions</strong>: Test exceptions in handlers are caught and logged</p></li>
+<li><p><strong>Invalid Messages</strong>: Test non-Message objects are rejected</p></li>
+<li><p><strong>Context Cleanup</strong>: Test contexts clean up even with errors</p></li>
+</ul>
+</section>
+<section id="lifecycle-management">
+<h3>6. Lifecycle Management<a class="headerlink" href="#lifecycle-management" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Module Lifecycle</strong>: Test on_start/on_stop called correctly</p></li>
+<li><p><strong>Mediator Shutdown</strong>: Test mediator.stop() cleans up properly</p></li>
+<li><p><strong>Singleton Reset</strong>: Test singleton can be reset for testing</p></li>
+</ul>
+</section>
+</section>
+<section id="running-tests">
+<h2>Running Tests<a class="headerlink" href="#running-tests" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run all mediator tests</span>
+pytest<span class="w"> </span>tests/mediator_test.py<span class="w"> </span>-v
+
+<span class="c1"># Run specific test class</span>
+pytest<span class="w"> </span>tests/mediator_test.py::TestMessageHandling<span class="w"> </span>-v
+
+<span class="c1"># Run with async support and output</span>
+pytest<span class="w"> </span>tests/mediator_test.py<span class="w"> </span>-v<span class="w"> </span>-s<span class="w"> </span>--asyncio-mode<span class="o">=</span>auto
+</pre></div>
+</div>
+</section>
+<section id="test-patterns">
+<h2>Test Patterns<a class="headerlink" href="#test-patterns" title="Link to this heading"></a></h2>
+<section id="creating-test-components">
+<h3>Creating Test Components<a class="headerlink" href="#creating-test-components" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">TestHandler</span><span class="p">(</span><span class="n">Module</span><span class="p">[</span><span class="n">YourMessageType</span><span class="p">]):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">application</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">application</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">handled_messages</span> <span class="o">=</span> <span class="p">[]</span>
+        
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">dispatch</span><span class="p">,</span> <span class="n">join_stream</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">handled_messages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+        <span class="c1"># Optionally dispatch new messages</span>
+        <span class="k">await</span> <span class="n">dispatch</span><span class="p">(</span><span class="n">AnotherMessage</span><span class="p">())</span>
+</pre></div>
+</div>
+</section>
+<section id="testing-message-flow">
+<h3>Testing Message Flow<a class="headerlink" href="#testing-message-flow" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">asyncio</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">test_message_routing</span><span class="p">():</span>
+    <span class="n">mediator</span> <span class="o">=</span> <span class="n">Mediator</span><span class="p">()</span>
+    <span class="n">handler</span> <span class="o">=</span> <span class="n">TestHandler</span><span class="p">()</span>
+    <span class="n">mediator</span><span class="o">.</span><span class="n">attach</span><span class="p">(</span><span class="n">handler</span><span class="p">)</span>
+    
+    <span class="n">message</span> <span class="o">=</span> <span class="n">TestMessage</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+    <span class="k">await</span> <span class="n">mediator</span><span class="o">.</span><span class="n">handle</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+    
+    <span class="c1"># Allow async processing to complete</span>
+    <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.01</span><span class="p">)</span>
+    
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">handler</span><span class="o">.</span><span class="n">handled_messages</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+    <span class="k">assert</span> <span class="n">handler</span><span class="o">.</span><span class="n">handled_messages</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">message</span>
+</pre></div>
+</div>
+</section>
+<section id="testing-context-usage">
+<h3>Testing Context Usage<a class="headerlink" href="#testing-context-usage" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">asyncio</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">test_context_processing</span><span class="p">():</span>
+    <span class="n">mediator</span> <span class="o">=</span> <span class="n">Mediator</span><span class="p">()</span>
+    <span class="n">handler</span> <span class="o">=</span> <span class="n">TestHandler</span><span class="p">()</span>
+    <span class="n">mediator</span><span class="o">.</span><span class="n">attach</span><span class="p">(</span><span class="n">handler</span><span class="p">)</span>
+    
+    <span class="k">async</span> <span class="k">with</span> <span class="n">mediator</span><span class="o">.</span><span class="n">context</span><span class="p">()</span> <span class="k">as</span> <span class="n">ctx</span><span class="p">:</span>
+        <span class="k">await</span> <span class="n">ctx</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="n">TestMessage</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="mi">123</span><span class="p">))</span>
+        
+        <span class="c1"># For events, can retrieve from results</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">Event</span><span class="p">):</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">ctx</span><span class="o">.</span><span class="n">receive_result</span><span class="p">()</span>
+            <span class="k">assert</span> <span class="n">result</span> <span class="o">==</span> <span class="n">message</span>
+</pre></div>
+</div>
+</section>
+<section id="testing-event-production">
+<h3>Testing Event Production<a class="headerlink" href="#testing-event-production" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">EventProducer</span><span class="p">(</span><span class="n">Module</span><span class="p">[</span><span class="n">Command</span><span class="p">]):</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">dispatch</span><span class="p">,</span> <span class="n">join_stream</span><span class="p">):</span>
+        <span class="c1"># Process command and produce event</span>
+        <span class="k">await</span> <span class="n">dispatch</span><span class="p">(</span><span class="n">ResultEvent</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">value</span> <span class="o">*</span> <span class="mi">2</span><span class="p">))</span>
+
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">asyncio</span>        
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">test_event_cascading</span><span class="p">():</span>
+    <span class="n">mediator</span> <span class="o">=</span> <span class="n">Mediator</span><span class="p">()</span>
+    <span class="n">producer</span> <span class="o">=</span> <span class="n">EventProducer</span><span class="p">()</span>
+    <span class="n">consumer</span> <span class="o">=</span> <span class="n">EventConsumer</span><span class="p">()</span>
+    
+    <span class="n">mediator</span><span class="o">.</span><span class="n">attach</span><span class="p">(</span><span class="n">producer</span><span class="p">)</span>
+    <span class="n">mediator</span><span class="o">.</span><span class="n">attach</span><span class="p">(</span><span class="n">consumer</span><span class="p">)</span>
+    
+    <span class="k">await</span> <span class="n">mediator</span><span class="o">.</span><span class="n">handle</span><span class="p">(</span><span class="n">TestCommand</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="mi">10</span><span class="p">))</span>
+    <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.01</span><span class="p">)</span>
+    
+    <span class="c1"># Check both command processed and event produced</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">consumer</span><span class="o">.</span><span class="n">handled_events</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+    <span class="k">assert</span> <span class="n">consumer</span><span class="o">.</span><span class="n">handled_events</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="mi">20</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="key-testing-considerations">
+<h2>Key Testing Considerations<a class="headerlink" href="#key-testing-considerations" title="Link to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p><strong>Async Delays</strong>: Always add small delays (<code class="docutils literal notranslate"><span class="pre">await</span> <span class="pre">asyncio.sleep(0.01)</span></code>) after mediator.handle() to allow async processing to complete</p></li>
+<li><p><strong>Singleton Reset</strong>: Reset the mediator singleton between tests to avoid test interference</p></li>
+<li><p><strong>Error Logging</strong>: Use <code class="docutils literal notranslate"><span class="pre">caplog</span></code> fixture to test error logging behavior</p></li>
+<li><p><strong>Module Types</strong>: Test components with different message type specifications (single type, tuple of types)</p></li>
+<li><p><strong>Context Isolation</strong>: Verify each context maintains its own task queue and results</p></li>
+<li><p><strong>Memory Leaks</strong>: Ensure tasks are properly cleaned up and don’t accumulate</p></li>
+</ol>
+<p>The comprehensive test suite covers all these aspects and provides a solid foundation for testing mediator functionality.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Arjuna Systems.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

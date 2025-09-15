@@ -12,7 +12,7 @@ The Nether framework is a sophisticated event-driven architecture built around t
 
 ```python
 # ❌ WRONG - Business logic in framework component
-class OrderProcessingSaga(Component[ProcessOrder]):
+class OrderProcessingSaga(Module[ProcessOrder]):
     async def handle(self, message: ProcessOrder, *, dispatch, join_stream):
         # ❌ Business rules and workflows directly in framework component
         if message.total_amount > 1000:
@@ -33,7 +33,7 @@ class OrderProcessingSaga(Component[ProcessOrder]):
 
 ```python
 # ✅ RIGHT - Framework component is thin, delegates to application service
-class OrderCommandHandler(Component[ProcessOrder]):
+class OrderCommandHandler(Module[ProcessOrder]):
     def __init__(self, app: Application, order_service: OrderProcessingService):
         super().__init__(app)
         self._order_service = order_service  # Application layer
@@ -157,7 +157,7 @@ Modules (Message Handlers)
 Self-contained units that handle specific message types.
 
 ```python
-class Component[T: Message](ComponentProtocol[T]):
+class Module[T: Message](ComponentProtocol[T]):
     @property
     def supports(self) -> type[T]:
         # Automatically determined from generic type parameter
