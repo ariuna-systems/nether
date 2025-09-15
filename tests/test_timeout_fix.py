@@ -44,29 +44,29 @@ async def test_agent_timeout():
                     end_time = time.time()
                     duration = end_time - start_time
 
-                    print(f"\n✅ SUCCESS! Response received in {duration:.2f} seconds")
+                    print(f"\n SUCCESS! Response received in {duration:.2f} seconds")
                     print(f"Response length: {len(result.get('response', ''))} characters")
 
                     # Check if it's a fallback response
                     response_text = result.get("response", "")
                     if "Ollama not available" in response_text or "fallback response" in response_text:
-                        print("\n❌ Still getting fallback response!")
+                        print("\n Still getting fallback response!")
                         print(f"Response: {response_text[:200]}...")
                     else:
-                        print("\n✅ Real AI response received!")
+                        print("\n Real AI response received!")
                         print(f"First 300 characters: {response_text[:300]}...")
                 else:
-                    print(f"❌ HTTP Error: {response.status}")
+                    print(f" HTTP Error: {response.status}")
                     print(await response.text())
 
     except asyncio.TimeoutError:
         end_time = time.time()
         duration = end_time - start_time
-        print(f"\n❌ TIMEOUT after {duration:.2f} seconds")
+        print(f"\n TIMEOUT after {duration:.2f} seconds")
     except Exception as e:
         end_time = time.time()
         duration = end_time - start_time
-        print(f"\n❌ ERROR after {duration:.2f} seconds: {e}")
+        print(f"\n ERROR after {duration:.2f} seconds: {e}")
 
 
 if __name__ == "__main__":

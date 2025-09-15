@@ -187,7 +187,7 @@ class OrderProcessingSaga(Module[ProcessOrder | InventoryValidated | PaymentProc
         self, command: ProcessOrder, handler: Callable[[Message], Awaitable[None]]
     ) -> None:
         """Initialize order processing"""
-        self._logger.info(f"🛒 Starting order processing for {command.order_id}")
+        self._logger.info(f" Starting order processing for {command.order_id}")
 
         # Initialize order state
         self.order_states[command.order_id] = {
@@ -219,7 +219,7 @@ class OrderProcessingSaga(Module[ProcessOrder | InventoryValidated | PaymentProc
             return
 
         if event.valid:
-            self._logger.info(f"✅ Inventory validated for order {order_id}")
+            self._logger.info(f" Inventory validated for order {order_id}")
             order_state["completed_steps"].add("inventory_validated")
             order_state["compensation_stack"].append("release_inventory")
 
@@ -239,7 +239,7 @@ class OrderProcessingSaga(Module[ProcessOrder | InventoryValidated | PaymentProc
                 )
             )
         else:
-            self._logger.warning(f"❌ Inventory validation failed for order {order_id}")
+            self._logger.warning(f" Inventory validation failed for order {order_id}")
             await handler(
                 CompensationRequired(order_id=order_id, failed_step="inventory_validation", compensation_actions=[])
             )
@@ -254,7 +254,7 @@ class OrderProcessingSaga(Module[ProcessOrder | InventoryValidated | PaymentProc
         if not order_state:
             return
 
-        self._logger.info(f"💳 Payment processed for order {order_id}: {event.payment_id}")
+        self._logger.info(f" Payment processed for order {order_id}: {event.payment_id}")
         order_state["completed_steps"].add("payment_processed")
         order_state["compensation_stack"].append(f"refund_payment:{event.payment_id}")
         order_state["payment_id"] = event.payment_id
@@ -288,7 +288,7 @@ class OrderProcessingSaga(Module[ProcessOrder | InventoryValidated | PaymentProc
         if not order_state:
             return
 
-        self._logger.error(f"💳❌ Payment failed for order {order_id}: {event.reason}")
+        self._logger.error(f" Payment failed for order {order_id}: {event.reason}")
 
         # Trigger compensation for all completed steps
         await handler(
@@ -317,7 +317,7 @@ class InventoryService(Module[ValidateInventory]):
         handler: Callable[[Message], Awaitable[None]],
         channel: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
     ) -> None:
-        self._logger.info(f"📦 Validating inventory for order {message.order_id}")
+        self._logger.info(f" Validating inventory for order {message.order_id}")
 
         # Simulate processing time
         await asyncio.sleep(0.3)
@@ -357,7 +357,7 @@ class PaymentService(Module[ProcessPayment]):
         if time.time() - self.last_failure_time > self.recovery_time:
             self.circuit_open = False
             self.failure_count = 0
-            self._logger.info("🔄 Circuit breaker reset - allowing requests")
+            self._logger.info(" Circuit breaker reset - allowing requests")
             return True
 
         return False
@@ -366,7 +366,7 @@ class PaymentService(Module[ProcessPayment]):
         """Record successful operation"""
         self.failure_count = 0
         if self.circuit_open:
-            self._logger.info("✅ Circuit breaker closed - service recovered")
+            self._logger.info(" Circuit breaker closed - service recovered")
             self.circuit_open = False
 
     def _record_failure(self):
@@ -376,7 +376,7 @@ class PaymentService(Module[ProcessPayment]):
 
         if self.failure_count >= self.failure_threshold:
             self.circuit_open = True
-            self._logger.warning("⚠️ Circuit breaker opened - service degraded")
+            self._logger.warning("️ Circuit breaker opened - service degraded")
 
     async def handle(
         self,
@@ -386,11 +386,11 @@ class PaymentService(Module[ProcessPayment]):
         channel: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
     ) -> None:
         if not self._should_allow_request():
-            self._logger.warning("🚫 Payment request rejected - circuit breaker open")
+            self._logger.warning(" Payment request rejected - circuit breaker open")
             await handler(PaymentFailed(order_id=message.order_id, reason="service_unavailable", amount=message.amount))
             return
 
-        self._logger.info(f"💳 Processing payment for order {message.order_id}: ${message.amount}")
+        self._logger.info(f" Processing payment for order {message.order_id}: ${message.amount}")
 
         try:
             # Simulate payment processing
@@ -417,7 +417,7 @@ class PaymentService(Module[ProcessPayment]):
 
         except Exception as e:
             self._record_failure()
-            self._logger.error(f"💳❌ Payment failed for order {message.order_id}: {str(e)}")
+            self._logger.error(f" Payment failed for order {message.order_id}: {str(e)}")
 
             await handler(PaymentFailed(order_id=message.order_id, reason=str(e), amount=message.amount))
 
@@ -432,7 +432,7 @@ class ShippingService(Module[ShipOrder]):
         handler: Callable[[Message], Awaitable[None]],
         channel: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
     ) -> None:
-        self._logger.info(f"📮 Shipping order {message.order_id}")
+        self._logger.info(f" Shipping order {message.order_id}")
 
         # Simulate shipping process
         await asyncio.sleep(0.4)
@@ -457,7 +457,7 @@ class CompensationHandler(Module[CompensationRequired]):
         handler: Callable[[Message], Awaitable[None]],
         channel: Callable[[], tuple[asyncio.Queue[Any], asyncio.Event]],
     ) -> None:
-        self._logger.warning(f"⚠️ Compensation required for order {message.order_id}")
+        self._logger.warning(f"️ Compensation required for order {message.order_id}")
         self._logger.info(f"Failed step: {message.failed_step}")
 
         # Execute compensation actions in reverse order (LIFO)
@@ -471,18 +471,18 @@ class CompensationHandler(Module[CompensationRequired]):
         self, action: str, order_id: str, handler: Callable[[Message], Awaitable[None]]
     ) -> None:
         """Execute individual compensation action"""
-        self._logger.info(f"🔄 Executing compensation: {action}")
+        self._logger.info(f" Executing compensation: {action}")
 
         if action == "release_inventory":
             # Simulate releasing reserved inventory
             await asyncio.sleep(0.1)
-            self._logger.info(f"📦🔄 Released inventory for order {order_id}")
+            self._logger.info(f" Released inventory for order {order_id}")
 
         elif action.startswith("refund_payment:"):
             payment_id = action.split(":")[1]
             # Simulate payment refund
             await asyncio.sleep(0.2)
-            self._logger.info(f"💳🔄 Refunded payment {payment_id} for order {order_id}")
+            self._logger.info(f" Refunded payment {payment_id} for order {order_id}")
 
 
 # ============================================================================= #
@@ -536,7 +536,7 @@ class SystemMonitor(Module[OrderStatusChanged | PaymentFailed | OrderShipped]):
             )
 
             self._logger.info(
-                f"📊 System Metrics: Success Rate: {success_rate:.2%}, Payment Failure Rate: {payment_failure_rate:.2%}"
+                f" System Metrics: Success Rate: {success_rate:.2%}, Payment Failure Rate: {payment_failure_rate:.2%}"
             )
 
 
@@ -552,16 +552,16 @@ class EventLogger(Module[OrderStatusChanged | OrderShipped | OrderCancelled | Sy
     ) -> None:
         match message:
             case OrderStatusChanged():
-                self._logger.info(f"📋 Order {message.order_id}: {message.old_status} → {message.new_status}")
+                self._logger.info(f" Order {message.order_id}: {message.old_status} → {message.new_status}")
 
             case OrderShipped():
-                self._logger.info(f"📦✅ Order {message.order_id} shipped with tracking: {message.tracking_number}")
+                self._logger.info(f" Order {message.order_id} shipped with tracking: {message.tracking_number}")
 
             case OrderCancelled():
-                self._logger.warning(f"❌ Order {message.order_id} cancelled: {message.reason}")
+                self._logger.warning(f" Order {message.order_id} cancelled: {message.reason}")
 
             case SystemHealthCheck():
-                status_emoji = "✅" if message.status == "healthy" else "⚠️"
+                status_emoji = "" if message.status == "healthy" else "️"
                 self._logger.info(
                     f"{status_emoji} System Health: {message.service_name} - "
                     f"Status: {message.status}, Error Rate: {message.error_rate:.2%}"
@@ -573,7 +573,7 @@ class EventLogger(Module[OrderStatusChanged | OrderShipped | OrderCancelled | Sy
 
 class ECommerceApplication(Application):
     async def main(self) -> None:
-        self.logger.info("🛍️ Starting E-Commerce Order Processing Demo")
+        self.logger.info("️ Starting E-Commerce Order Processing Demo")
 
         # Process multiple orders to demonstrate different scenarios
         orders = [
@@ -619,7 +619,7 @@ class ECommerceApplication(Application):
             self.logger.info("⏳ Waiting for order processing to complete...")
             await asyncio.sleep(8)
 
-            self.logger.info("✅ Demo completed!")
+            self.logger.info(" Demo completed!")
 
 
 async def main():

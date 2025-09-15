@@ -48,9 +48,15 @@ class SecureComponentRegistry:
         if result.valid:
             self.registered_components[manifest.id] = manifest
             await self._save_component_manifest(manifest)
+<<<<<<< HEAD:src/nether/component/registry.py
+            print(f" Component {manifest.id} registered successfully")
+        else:
+            print(f" Component {manifest.id} failed validation:")
+=======
             print(f"✅ Module {manifest.id} registered successfully")
         else:
             print(f"❌ Module {manifest.id} failed validation:")
+>>>>>>> main:src/nether/modules/registry.py
             for error in result.errors:
                 print(f"   - {error}")
 
@@ -74,7 +80,11 @@ class SecureComponentRegistry:
             if manifest_file.exists():
                 manifest_file.unlink()
 
+<<<<<<< HEAD:src/nether/component/registry.py
+            print(f" Component {component_id} unregistered")
+=======
             print(f"✅ Module {component_id} unregistered")
+>>>>>>> main:src/nether/modules/registry.py
             return True
 
         return False
@@ -117,10 +127,10 @@ class SecureComponentRegistry:
 
                 manifest = ComponentManifest(**manifest_data)
                 self.registered_components[manifest.id] = manifest
-                print(f"📦 Loaded component {manifest.id} from disk")
+                print(f" Loaded component {manifest.id} from disk")
 
             except Exception as e:
-                print(f"❌ Failed to load component from {manifest_file}: {e}")
+                print(f" Failed to load component from {manifest_file}: {e}")
 
 
 class ComponentRegistryView(web.View):

@@ -640,9 +640,9 @@ class ViewRegistrationHandler(Module[ViewRegistered | RegisterViewFailure]):
         """Handle view registration success/failure events."""
         match message:
             case ViewRegistered():
-                print("✓ View successfully registered")
+                print(" View successfully registered")
             case RegisterViewFailure():
-                print(f"✗ View registration failed: {message.error}")
+                print(f" View registration failed: {message.error}")
 
 
 class AgentResponseHandler(Module[AgentResponse | AgentError]):

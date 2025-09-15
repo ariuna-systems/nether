@@ -49,14 +49,14 @@ class SensorDataProducer(Module[StartDataCollection | StopDataCollection]):
                 # Signal all consumers to stop
                 stream_queue, stop_event = join_stream()
                 stop_event.set()
-                print("🛑 Producer: Stopping data collection")
+                print(" Producer: Stopping data collection")
 
     async def _start_producing(self, command, dispatch, join_stream):
         """Produce sensor data to the shared stream"""
         stream_queue, stop_event = join_stream()
         self._producing = True
 
-        print(f"🔄 Producer: Starting data collection for {command.duration_seconds} seconds")
+        print(f" Producer: Starting data collection for {command.duration_seconds} seconds")
 
         start_time = time.time()
         data_count = 0
@@ -75,7 +75,7 @@ class SensorDataProducer(Module[StartDataCollection | StopDataCollection]):
             await stream_queue.put(sensor_data)
             data_count += 1
 
-            print(f"📊 Producer: Generated data #{data_count} - Temp: {sensor_data['temperature']}°C")
+            print(f" Producer: Generated data #{data_count} - Temp: {sensor_data['temperature']}°C")
 
             # Check if duration exceeded
             if time.time() - start_time >= command.duration_seconds:
@@ -96,7 +96,7 @@ class TemperatureProcessor(Module[StartDataCollection]):
         """Start consuming temperature data from the stream"""
         stream_queue, stop_event = join_stream()
 
-        print("🌡️  Temperature Processor: Started monitoring")
+        print("️  Temperature Processor: Started monitoring")
 
         while not stop_event.is_set():
             try:
@@ -106,9 +106,9 @@ class TemperatureProcessor(Module[StartDataCollection]):
                 # Process temperature-specific logic
                 temp = data.get("temperature", 0)
                 if temp > 25.0:
-                    print(f"🔥 Temperature Alert: {temp}°C is high! (Data #{data['data_id']})")
+                    print(f" Temperature Alert: {temp}°C is high! (Data #{data['data_id']})")
                 elif temp < 22.0:
-                    print(f"🧊 Temperature Alert: {temp}°C is low! (Data #{data['data_id']})")
+                    print(f" Temperature Alert: {temp}°C is low! (Data #{data['data_id']})")
 
                 self.processed_count += 1
 
@@ -121,7 +121,7 @@ class TemperatureProcessor(Module[StartDataCollection]):
             except asyncio.TimeoutError:
                 continue  # Keep waiting for data
 
-        print(f"🌡️  Temperature Processor: Stopped. Processed {self.processed_count} readings")
+        print(f"️  Temperature Processor: Stopped. Processed {self.processed_count} readings")
 
 
 class HumidityProcessor(Module[StartDataCollection]):
@@ -135,7 +135,7 @@ class HumidityProcessor(Module[StartDataCollection]):
         """Start consuming humidity data from the stream"""
         stream_queue, stop_event = join_stream()
 
-        print("💧 Humidity Processor: Started monitoring")
+        print(" Humidity Processor: Started monitoring")
 
         while not stop_event.is_set():
             try:
@@ -145,9 +145,9 @@ class HumidityProcessor(Module[StartDataCollection]):
                 # Process humidity-specific logic
                 humidity = data.get("humidity", 0)
                 if humidity > 70.0:
-                    print(f"💦 Humidity Alert: {humidity}% is very humid! (Data #{data['data_id']})")
+                    print(f" Humidity Alert: {humidity}% is very humid! (Data #{data['data_id']})")
                 elif humidity < 50.0:
-                    print(f"🏜️  Humidity Alert: {humidity}% is dry! (Data #{data['data_id']})")
+                    print(f"️  Humidity Alert: {humidity}% is dry! (Data #{data['data_id']})")
 
                 self.processed_count += 1
 
@@ -160,7 +160,7 @@ class HumidityProcessor(Module[StartDataCollection]):
             except asyncio.TimeoutError:
                 continue
 
-        print(f"💧 Humidity Processor: Stopped. Processed {self.processed_count} readings")
+        print(f" Humidity Processor: Stopped. Processed {self.processed_count} readings")
 
 
 class DataAggregator(Module[StartDataCollection]):
@@ -174,7 +174,7 @@ class DataAggregator(Module[StartDataCollection]):
         """Collect all data for statistical analysis"""
         stream_queue, stop_event = join_stream()
 
-        print("📈 Data Aggregator: Started collecting statistics")
+        print(" Data Aggregator: Started collecting statistics")
 
         while not stop_event.is_set():
             try:
@@ -186,7 +186,7 @@ class DataAggregator(Module[StartDataCollection]):
                     avg_temp = sum(r["temperature"] for r in self.readings) / len(self.readings)
                     avg_humidity = sum(r["humidity"] for r in self.readings) / len(self.readings)
                     print(
-                        f"📊 Stats: {len(self.readings)} readings - Avg Temp: {avg_temp:.1f}°C, Avg Humidity: {avg_humidity:.1f}%"
+                        f" Stats: {len(self.readings)} readings - Avg Temp: {avg_temp:.1f}°C, Avg Humidity: {avg_humidity:.1f}%"
                     )
 
             except asyncio.TimeoutError:
@@ -199,7 +199,7 @@ class DataAggregator(Module[StartDataCollection]):
             max_temp = max(r["temperature"] for r in self.readings)
             min_temp = min(r["temperature"] for r in self.readings)
 
-            print(f"📈 Final Statistics:")
+            print(f" Final Statistics:")
             print(f"   Total readings: {len(self.readings)}")
             print(f"   Average temperature: {avg_temp:.1f}°C")
             print(f"   Temperature range: {min_temp:.1f}°C - {max_temp:.1f}°C")
@@ -213,12 +213,12 @@ class ProgressReporter(Module[DataProcessed]):
         super().__init__(application)
 
     async def handle(self, message, *, dispatch, join_stream):
-        print(f"📋 Progress: {message.processor_name} has processed {message.processed_count} items")
+        print(f" Progress: {message.processor_name} has processed {message.processed_count} items")
 
 
 class SensorApp(Nether):
     async def main(self):
-        print("🚀 Sensor Data Processing System Started")
+        print(" Sensor Data Processing System Started")
         print("This demonstrates join_stream for coordinating multiple processors on shared data")
 
         # Start data collection for 8 seconds
