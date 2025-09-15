@@ -18,7 +18,7 @@ The Actor Model is built on five fundamental principles:
 
 ## AI Agents as Actors: Implementation Analysis
 
-### 1. Isolated State ✅
+### 1. Isolated State 
 
 **Implementation in Nether Framework:**
 
@@ -36,12 +36,12 @@ class BaseAgent(Module[AgentQuery]):
 
 **Actor Principle Adherence:**
 
-- ✅ Each agent maintains completely isolated state
-- ✅ No shared mutable data between agents
-- ✅ Private conversation memory per agent
-- ✅ Independent AI model configurations
+-  Each agent maintains completely isolated state
+-  No shared mutable data between agents
+-  Private conversation memory per agent
+-  Independent AI model configurations
 
-### 2. Message-Driven Communication ✅
+### 2. Message-Driven Communication 
 
 **Message Types:**
 
@@ -75,12 +75,12 @@ class AgentError(Event):
 
 **Actor Principle Adherence:**
 
-- ✅ All communication through immutable messages
-- ✅ No direct method calls between agents
-- ✅ Structured message types for different interactions
-- ✅ Asynchronous message processing
+-  All communication through immutable messages
+-  No direct method calls between agents
+-  Structured message types for different interactions
+-  Asynchronous message processing
 
-### 3. Concurrent Processing ✅
+### 3. Concurrent Processing 
 
 **Implementation:**
 
@@ -102,12 +102,12 @@ async def handle(self, message: AgentQuery, *, handler, channel) -> None:
 
 **Actor Principle Adherence:**
 
-- ✅ Asynchronous message processing
-- ✅ Non-blocking operations
-- ✅ Independent processing per agent
-- ✅ No shared execution context
+-  Asynchronous message processing
+-  Non-blocking operations
+-  Independent processing per agent
+-  No shared execution context
 
-### 4. Fault Tolerance ✅
+### 4. Fault Tolerance 
 
 **Error Handling Strategy:**
 
@@ -131,12 +131,12 @@ except Exception as error:
 
 **Actor Principle Adherence:**
 
-- ✅ Failures contained within individual agents
-- ✅ Errors communicated via messages, not exceptions
-- ✅ System continues operating despite individual agent failures
-- ✅ Graceful degradation with fallback responses
+-  Failures contained within individual agents
+-  Errors communicated via messages, not exceptions
+-  System continues operating despite individual agent failures
+-  Graceful degradation with fallback responses
 
-### 5. Location Transparency ✅
+### 5. Location Transparency 
 
 **Framework Design:**
 
@@ -156,10 +156,10 @@ distributed_agent = DistributedChatAgent(cluster=["node1", "node2", "node3"])
 
 **Actor Principle Adherence:**
 
-- ✅ Message-based communication enables distribution
-- ✅ Agent behavior independent of location
-- ✅ Framework ready for distributed deployment
-- ✅ Network transparency through mediator pattern
+-  Message-based communication enables distribution
+-  Agent behavior independent of location
+-  Framework ready for distributed deployment
+-  Network transparency through mediator pattern
 
 ## Specialized AI Agent Types
 
@@ -414,14 +414,14 @@ The Actor Model provides an exceptional architectural foundation for AI agent sy
 
 ### **Key Advantages:**
 
-1. **🔄 Resilience**: Individual agent failures don't compromise system availability
-2. **📈 Scalability**: Easy horizontal scaling through agent multiplication
-3. **🎯 Specialization**: Each agent focuses on specific AI capabilities
-4. **🌐 Distribution**: Natural support for distributed AI workloads
-5. **🔧 Maintainability**: Clean separation of concerns and responsibilities
-6. **⚡ Performance**: Concurrent processing of multiple AI queries
-7. **🧠 Memory Management**: Isolated conversation contexts per agent
-8. **🛡️ Fault Tolerance**: Graceful degradation and error recovery
+1. ** Resilience**: Individual agent failures don't compromise system availability
+2. ** Scalability**: Easy horizontal scaling through agent multiplication
+3. ** Specialization**: Each agent focuses on specific AI capabilities
+4. ** Distribution**: Natural support for distributed AI workloads
+5. ** Maintainability**: Clean separation of concerns and responsibilities
+6. ** Performance**: Concurrent processing of multiple AI queries
+7. ** Memory Management**: Isolated conversation contexts per agent
+8. **️ Fault Tolerance**: Graceful degradation and error recovery
 
 ### **Real-World Impact:**
 

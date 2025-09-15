@@ -18,9 +18,7 @@
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Package API Documentation" href="api.html" />
-    <link rel="prev" title="Nether" href="index.html" /> 
+    <link rel="search" title="Search" href="search.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -43,76 +41,7 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
-<ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Nether Framework Architecture Review</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#framework-overview">Framework Overview</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#critical-architectural-guidance-ddd-and-separation-of-concerns">⚠️ Critical Architectural Guidance: DDD and Separation of Concerns</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#the-problem-mixing-framework-modules-with-business-logic"><strong>The Problem: Mixing Framework Modules with Business Logic</strong></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#the-solution-proper-ddd-layering"><strong>The Solution: Proper DDD Layering</strong></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#architecture-layers"><strong>Architecture Layers</strong></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#what-framework-modules-should-do"><strong>What Framework Modules Should Do</strong></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#what-framework-modules-should-not-do"><strong>What Framework Modules Should NOT Do</strong></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#example-proper-separation"><strong>Example: Proper Separation</strong></a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#core-components">Core Components</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#message-types-common-py">1. <strong>Message Types</strong> (<code class="docutils literal notranslate"><span class="pre">common.py</span></code>)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#mediator-mediator-py">2. <strong>Mediator</strong> (<code class="docutils literal notranslate"><span class="pre">mediator.py</span></code>)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#components-component-py">3. <strong>Components</strong> (<code class="docutils literal notranslate"><span class="pre">component.py</span></code>)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#application-application-py">4. <strong>Application</strong> (<code class="docutils literal notranslate"><span class="pre">application.py</span></code>)</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#what-you-can-do-with-event-dispatching-and-commands">What You Can Do with Event Dispatching and Commands</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#simple-command-event-flow">1. <strong>Simple Command-Event Flow</strong></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#chain-of-events-event-sourcing-pattern">2. <strong>Chain of Events (Event Sourcing Pattern)</strong></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#saga-pattern-for-distributed-transactions">3. <strong>Saga Pattern for Distributed Transactions</strong></a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#creating-workflows-and-pipelines">Creating Workflows and Pipelines</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#sequential-workflows">1. <strong>Sequential Workflows</strong></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#parallel-processing-pipelines">2. <strong>Parallel Processing Pipelines</strong></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#conditional-workflows">3. <strong>Conditional Workflows</strong></a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#cycle-detection-in-workflows">Cycle Detection in Workflows</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#why-cycle-detection-matters">Why Cycle Detection Matters</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#implementation-approaches">Implementation Approaches</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#depth-first-search-dfs-cycle-detection">1. <strong>Depth-First Search (DFS) Cycle Detection</strong></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#topological-sort-for-execution-order">2. <strong>Topological Sort for Execution Order</strong></a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="#runtime-cycle-prevention">3. <strong>Runtime Cycle Prevention</strong></a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#advanced-patterns">Advanced Patterns</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#event-streaming-with-join-streams">1. <strong>Event Streaming with Join Streams</strong></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#message-aggregation">2. <strong>Message Aggregation</strong></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#circuit-breaker-pattern">3. <strong>Circuit Breaker Pattern</strong></a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#workflow-examples-and-use-cases">Workflow Examples and Use Cases</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#e-commerce-order-processing">1. <strong>E-commerce Order Processing</strong></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#data-processing-pipeline">2. <strong>Data Processing Pipeline</strong></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#content-publishing-workflow">3. <strong>Content Publishing Workflow</strong></a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#compensation-and-error-handling">Compensation and Error Handling</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#saga-pattern-with-compensation">1. <strong>Saga Pattern with Compensation</strong></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#circuit-breaker-for-external-services">2. <strong>Circuit Breaker for External Services</strong></a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#benefits-of-this-architecture">Benefits of This Architecture</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#best-practices">Best Practices</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#message-design">1. <strong>Message Design</strong></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#module-responsibility">2. <strong>Module Responsibility</strong></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#workflow-design">3. <strong>Workflow Design</strong></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#performance-considerations">4. <strong>Performance Considerations</strong></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#error-handling">5. <strong>Error Handling</strong></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#testing-strategies">6. <strong>Testing Strategies</strong></a></li>
-</ul>
-</li>
-</ul>
-</li>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="api.html">Package API Documentation</a></li>
 </ul>
 
@@ -132,7 +61,7 @@
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
       <li class="breadcrumb-item active">Nether Framework Architecture Review</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="_sources/architecture-review.md.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/architecture.md.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -147,43 +76,53 @@
 <p>The Nether framework is a sophisticated event-driven architecture built around the <strong>Mediator Pattern</strong> with support for asynchronous message processing, modular design, and workflow orchestration.</p>
 </section>
 <section id="critical-architectural-guidance-ddd-and-separation-of-concerns">
-<h2>⚠️ Critical Architectural Guidance: DDD and Separation of Concerns<a class="headerlink" href="#critical-architectural-guidance-ddd-and-separation-of-concerns" title="Link to this heading"></a></h2>
+<h2>️ Critical Architectural Guidance: DDD and Separation of Concerns<a class="headerlink" href="#critical-architectural-guidance-ddd-and-separation-of-concerns" title="Link to this heading"></a></h2>
 <section id="the-problem-mixing-framework-modules-with-business-logic">
 <h3><strong>The Problem: Mixing Framework Modules with Business Logic</strong><a class="headerlink" href="#the-problem-mixing-framework-modules-with-business-logic" title="Link to this heading"></a></h3>
-<p>❌ <strong>COMMON MISTAKE</strong>: Putting business workflows and domain logic directly in framework modules</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># ❌ WRONG - Business logic in framework component</span>
+<p><strong>COMMON MISTAKE</strong>: Putting business workflows and domain logic directly in framework modules</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;&lt;&lt;&lt;&lt;&lt;&lt;</span> <span class="n">HEAD</span>
+<span class="c1">#  WRONG - Business logic in framework component</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">OrderProcessingSaga</span><span class="p">(</span><span class="n">Component</span><span class="p">[</span><span class="n">ProcessOrder</span><span class="p">]):</span>
+<span class="o">=======</span>
+<span class="c1"># ❌ WRONG - Business logic in framework component</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">OrderProcessingSaga</span><span class="p">(</span><span class="n">Module</span><span class="p">[</span><span class="n">ProcessOrder</span><span class="p">]):</span>
+<span class="o">&gt;&gt;&gt;&gt;&gt;&gt;&gt;</span> <span class="n">main</span>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="n">ProcessOrder</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">dispatch</span><span class="p">,</span> <span class="n">join_stream</span><span class="p">):</span>
-        <span class="c1"># ❌ Business rules and workflows directly in framework component</span>
+        <span class="c1">#  Business rules and workflows directly in framework component</span>
         <span class="k">if</span> <span class="n">message</span><span class="o">.</span><span class="n">total_amount</span> <span class="o">&gt;</span> <span class="mi">1000</span><span class="p">:</span>
             <span class="c1"># Apply enterprise discount</span>
             <span class="n">discount</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">total_amount</span> <span class="o">*</span> <span class="mf">0.1</span>
         
-        <span class="c1"># ❌ Domain logic mixed with message handling</span>
+        <span class="c1">#  Domain logic mixed with message handling</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_inventory</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">items</span><span class="p">):</span>
             <span class="k">raise</span> <span class="n">InvalidInventoryError</span><span class="p">()</span>
         
-        <span class="c1"># ❌ Complex business workflow in infrastructure layer</span>
+        <span class="c1">#  Complex business workflow in infrastructure layer</span>
         <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_payment_with_retry_logic</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>
 <section id="the-solution-proper-ddd-layering">
 <h3><strong>The Solution: Proper DDD Layering</strong><a class="headerlink" href="#the-solution-proper-ddd-layering" title="Link to this heading"></a></h3>
-<p>✅ <strong>CORRECT</strong>: Framework components delegate to application services</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># ✅ RIGHT - Framework component is thin, delegates to application service</span>
+<p><strong>CORRECT</strong>: Framework components delegate to application services</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;&lt;&lt;&lt;&lt;&lt;&lt;</span> <span class="n">HEAD</span>
+<span class="c1">#  RIGHT - Framework component is thin, delegates to application service</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">OrderCommandHandler</span><span class="p">(</span><span class="n">Component</span><span class="p">[</span><span class="n">ProcessOrder</span><span class="p">]):</span>
+<span class="o">=======</span>
+<span class="c1"># ✅ RIGHT - Framework component is thin, delegates to application service</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">OrderCommandHandler</span><span class="p">(</span><span class="n">Module</span><span class="p">[</span><span class="n">ProcessOrder</span><span class="p">]):</span>
+<span class="o">&gt;&gt;&gt;&gt;&gt;&gt;&gt;</span> <span class="n">main</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">Application</span><span class="p">,</span> <span class="n">order_service</span><span class="p">:</span> <span class="n">OrderProcessingService</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_order_service</span> <span class="o">=</span> <span class="n">order_service</span>  <span class="c1"># Application layer</span>
     
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="n">ProcessOrder</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">dispatch</span><span class="p">,</span> <span class="n">join_stream</span><span class="p">):</span>
-        <span class="c1"># ✅ Delegate to application service</span>
+        <span class="c1">#  Delegate to application service</span>
         <span class="n">success</span><span class="p">,</span> <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_order_service</span><span class="o">.</span><span class="n">process_order</span><span class="p">(</span>
             <span class="n">message</span><span class="o">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">customer_id</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">items</span>
         <span class="p">)</span>
         
-        <span class="c1"># ✅ Framework only handles coordination and events</span>
+        <span class="c1">#  Framework only handles coordination and events</span>
         <span class="k">if</span> <span class="n">success</span><span class="p">:</span>
             <span class="k">await</span> <span class="n">dispatch</span><span class="p">(</span><span class="n">OrderCreated</span><span class="p">(</span><span class="n">order_id</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">order_id</span><span class="p">))</span>
         <span class="k">else</span><span class="p">:</span>
@@ -218,7 +157,7 @@
 </section>
 <section id="what-framework-modules-should-do">
 <h3><strong>What Framework Modules Should Do</strong><a class="headerlink" href="#what-framework-modules-should-do" title="Link to this heading"></a></h3>
-<p>✅ <strong>Framework modules should be THIN and only handle:</strong></p>
+<p><strong>Framework modules should be THIN and only handle:</strong></p>
 <ol class="arabic simple">
 <li><p><strong>Message Routing</strong>: Dispatch messages to appropriate application services</p></li>
 <li><p><strong>Event Emission</strong>: Convert service results into domain events</p></li>
@@ -228,7 +167,7 @@
 </section>
 <section id="what-framework-modules-should-not-do">
 <h3><strong>What Framework Modules Should NOT Do</strong><a class="headerlink" href="#what-framework-modules-should-not-do" title="Link to this heading"></a></h3>
-<p>❌ <strong>Framework modules should NEVER contain:</strong></p>
+<p><strong>Framework modules should NEVER contain:</strong></p>
 <ol class="arabic simple">
 <li><p><strong>Business Rules</strong>: Domain logic belongs in domain/application layers</p></li>
 <li><p><strong>Workflow Logic</strong>: Complex business processes belong in application services</p></li>
@@ -240,10 +179,10 @@
 <h3><strong>Example: Proper Separation</strong><a class="headerlink" href="#example-proper-separation" title="Link to this heading"></a></h3>
 <p>See <a class="reference internal" href="#../examples/proper_ddd_example.py"><span class="xref myst"><code class="docutils literal notranslate"><span class="pre">examples/proper_ddd_example.py</span></code></span></a> for a complete demonstration of:</p>
 <ul class="simple">
-<li><p>✅ Domain entities with business logic</p></li>
-<li><p>✅ Application services with use cases</p></li>
-<li><p>✅ Framework modules that only handle messages</p></li>
-<li><p>✅ Clear dependency flow: Infrastructure → Application → Domain</p></li>
+<li><p>Domain entities with business logic</p></li>
+<li><p>Application services with use cases</p></li>
+<li><p>Framework modules that only handle messages</p></li>
+<li><p>Clear dependency flow: Infrastructure → Application → Domain</p></li>
 </ul>
 </section>
 </section>
@@ -748,10 +687,7 @@ Modules (Message Handlers)
 
            </div>
           </div>
-          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="index.html" class="btn btn-neutral float-left" title="Nether" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="api.html" class="btn btn-neutral float-right" title="Package API Documentation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
-    </div>
+          <footer>
 
   <hr/>
 

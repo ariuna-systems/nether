@@ -31,18 +31,18 @@ The Actor Model is a concurrent computation model where:
 ### Actor Definition Pattern
 
 ```python
-class TemperatureProcessor(Module[StartDataCollection]):  # 🎭 Actor
+class TemperatureProcessor(Module[StartDataCollection]):  #  Actor
     def __init__(self, application):
         super().__init__(application)
-        self.processed_count = 0  # 🔒 Private state
+        self.processed_count = 0  #  Private state
         
-    async def handle(self, message, *, handler, channel):  # 📨 Message handler
+    async def handle(self, message, *, handler, channel):  #  Message handler
         # Process the message
         temp = self._analyze_temperature(message.data)
         
         # Send messages to other actors (no direct calls)
         if temp > 25.0:
-            await handler(TemperatureAlert(temp=temp))  # 📤 Message passing
+            await handler(TemperatureAlert(temp=temp))  #  Message passing
 ```
 
 ## Enhanced Actor Model Features
@@ -69,7 +69,7 @@ async def handle(self, message, *, handler, channel):
     await handler(SomeMessage())
     
     # Enhanced Actor: Shared data streams within context
-    stream_queue, stop_event = channel()  # 🌊 Shared stream access
+    stream_queue, stop_event = channel()  #  Shared stream access
     data = await stream_queue.get()
 ```
 
@@ -124,7 +124,7 @@ class SensorDataProcessor(Module[StartMonitoring]):
     async def handle(self, message, *, handler, channel):
         stream_queue, stop_event = channel()
         
-        print("📡 Sensor Actor: Started monitoring")
+        print(" Sensor Actor: Started monitoring")
         
         while not stop_event.is_set():
             try:

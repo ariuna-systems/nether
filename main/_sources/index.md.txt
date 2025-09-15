@@ -41,6 +41,5 @@ Example: Account component expose REST API on  `/api/account/` and UI on `/accou
 :maxdepth: 2
 :caption: Contents:
 
-architecture-review
 api
 ```
