@@ -4,24 +4,22 @@
 
 > Nether means beneath, below, or underneath — representing both our minimalistic goals and system-level thinking.
 
-## What is Nether?
-
-Nether is an **Actor Model Framework** for building **message-driven systems** in Python. Originally created to serve internal needs at Arjuna, it may or may not suit your use case — our goal is not to build a universal framework, but one that works best for us.
+Nether is a framework for building **message-driven systems** in Python. 
+Originally created to serve internal needs at Arjuna, it may or may not suit your use case — our goal is not to build a universal framework, but one that works best for us.
 
 > **Note**: Nether is actively under development but is already being used in production environments. While the core architecture is stable, APIs may evolve as we continue to refine the framework based on real-world usage.
 
 Use Nether to build:
 
-- **CRUD applications** with clean separation between business logic and data access
-- **Streaming services** for real-time data processing and event handling  
 - **Reactive systems** that respond to events and scale with demand
+- **Streaming services** for real-time data processing and event handling  
 
 Nether's Actor Model and message-driven design make it particularly well-suited for:
 
-- **Event Sourcing** - Natural event handling and state reconstruction
+- **Event Sourcing (ES)** - Natural event handling and state reconstruction
 - **Domain-Driven Design (DDD)** - Clear bounded contexts and domain isolation
-- **Clean Architecture** - Dependency inversion through message passing
-- **CQRS** - Separate command and query handling with type safety
+- **Clean Architecture (CA)** - Dependency inversion through message passing
+- **Command and Query Segregation (CQRS)** - Separate command and query handling with type safety
 
 ## Philosophy
 
@@ -44,10 +42,10 @@ Nether's Actor Model and message-driven design make it particularly well-suited 
 
 Nether implements the **Actor Model** where:
 
-- **Actors** (Components) handle specific message types
-- **Messages** are the only form of communication between actors
-- **Mediator** routes messages to appropriate actors
-- **Contexts** provide isolated environments for message processing
+- **Actor** handles specific message types.
+- **Message** passing is the only form of communication between actors.
+- **Mediator** routes messages to appropriate actors.
+- **Context** provide isolated environments for message processing.
 
 ## Quick Example
 
