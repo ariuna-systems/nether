@@ -39,7 +39,10 @@ from nether.server import RegisterView, Server, ViewRegistered
 
 from .module.analytics import AnalyticsModule
 from .module.dashboard import DashboardModule
+from .module.process import ProcessModule
 from .module.settings import SettingsModule
+
+# COMPONENTS #
 
 
 class ComponentRegistry:
@@ -106,6 +109,229 @@ class ComponentRegistry:
 
     def get_components(self) -> dict:
         return self.components.copy()
+
+
+class ComponentManifestView(web.View):
+    """API endpoint that returns all component manifests."""
+
+    async def get(self) -> web.Response:
+        """Return all component manifests as JSON."""
+        try:
+            app: System = self.request.app["nether_app"]
+            manifests = app.component_registry.get_manifests()
+            return web.json_response(manifests)
+        except KeyError:
+            return web.json_response(
+                {"error": "Application not properly initialized"}, status=500
+            )
+        except Exception as e:
+            return web.json_response(
+                {"error": f"Failed to retrieve manifests: {e!s}"}, status=500
+            )
+
+
+class APIDiscoveryView(web.View):
+    """API endpoint that returns all discovered HTTP endpoints and routes."""
+
+    async def get(self) -> web.Response:
+        """Return all registered API endpoints and routes."""
+        try:
+            app: System = self.request.app["nether_app"]
+
+            # Get all registered routes from the HTTP server
+            registered_routes = []
+
+            # Find the server component to access HTTP routes
+            server_component = None
+            for component in app.mediator.modules:
+                if hasattr(component, "_http_server"):
+                    server_component = component
+                    break
+
+            if server_component and hasattr(server_component, "_http_server"):
+                # Extract routes from aiohttp router
+                for resource in server_component._http_server.router.resources():
+                    route_info = {
+                        "path": getattr(resource, "_path", str(resource)),
+                        "name": getattr(resource, "_name", None),
+                        "methods": [],
+                    }
+
+                    # Get HTTP methods for this route
+                    for route in resource:
+                        if hasattr(route, "method"):
+                            route_info["methods"].append(route.method)
+
+                    registered_routes.append(route_info)
+
+            # Get component-specific API endpoints
+            component_endpoints = []
+            for (
+                component_id,
+                manifest,
+            ) in app.component_registry.get_manifests().items():
+                if "api_endpoints" in manifest:
+                    for endpoint in manifest["api_endpoints"]:
+                        component_endpoints.append(
+                            {
+                                "component": component_id,
+                                "endpoint": endpoint,
+                                "component_name": manifest.get("name", component_id),
+                                "description": manifest.get("description", ""),
+                                "permissions": manifest.get("permissions", []),
+                            }
+                        )
+
+            # System information
+            host = getattr(app.configuration, "host", "localhost")
+            port = getattr(app.configuration, "port", 8080)
+            base_url = f"http://{host}:{port}"
+
+            discovery_info = {
+                "service_info": {
+                    "name": "Module-based SPA System",
+                    "version": "1.0.0",
+                    "base_url": base_url,
+                    "timestamp": app.start_time,
+                },
+                "system_routes": [
+                    {
+                        "path": "/",
+                        "method": "GET",
+                        "description": "Main SPA application",
+                        "type": "ui",
+                    },
+                    {
+                        "path": "/api/discovery",
+                        "method": "GET",
+                        "description": "API endpoint discovery",
+                        "type": "api",
+                    },
+                    {
+                        "path": "/api/components/manifests",
+                        "method": "GET",
+                        "description": "Module manifests",
+                        "type": "api",
+                    },
+                    {
+                        "path": "/api/components",
+                        "method": "GET",
+                        "description": "Secure component registry",
+                        "type": "api",
+                    },
+                    {
+                        "path": "/api/components/validate",
+                        "method": "GET",
+                        "description": "Module validation",
+                        "type": "api",
+                    },
+                ],
+                "registered_routes": registered_routes,
+                "component_endpoints": component_endpoints,
+                "components": list(app.component_registry.get_manifests().keys()),
+            }
+
+            return web.json_response(discovery_info)
+
+        except Exception as e:
+            return web.json_response(
+                {"error": f"Failed to discover endpoints: {e!s}"}, status=500
+            )
+
+
+class ComponentSSEView(web.View):
+    """Server-Sent Events endpoint for real-time component updates."""
+
+    async def get(self) -> web.StreamResponse:
+        """Handle SSE connection for component updates."""
+        response = web.StreamResponse()
+        response.headers["Content-Type"] = "text/event-stream"
+        response.headers["Cache-Control"] = "no-cache"
+        response.headers["Connection"] = "keep-alive"
+        response.headers["Access-Control-Allow-Origin"] = "*"
+
+        await response.prepare(self.request)
+
+        # Get the app instance from request
+        app = self.request.app.get("nether_app")
+        if app and hasattr(app, "component_registry"):
+            # Add this SSE client to the registry
+            app.component_registry.add_sse_client(response)
+
+            # Send initial connection message
+            initial_message = f"data: {json.dumps({'type': 'connected', 'message': 'SSE connection established'})}\n\n"
+            await response.write(initial_message.encode())
+
+            try:
+                # Keep connection alive until client disconnects
+                while True:
+                    await asyncio.sleep(30)  # Send heartbeat every 30 seconds
+                    heartbeat = f"data: {json.dumps({'type': 'heartbeat', 'timestamp': time.time()})}\n\n"
+                    await response.write(heartbeat.encode())
+            except Exception:
+                # Client disconnected or other error
+                pass
+            finally:
+                # Remove client from registry when disconnected
+                if app and hasattr(app, "component_registry"):
+                    app.component_registry.remove_sse_client(response)
+
+        return response
+
+
+class ComponentManager(Module[RegisterView | ViewRegistered]):
+    """Module to register SPA views and routes."""
+
+    def __init__(self, application):
+        super().__init__(application)
+        self.registered = False
+
+    async def on_start(self) -> None:
+        await super().on_start()
+        if not self.registered:
+            # Get server component to access the HTTP app
+            server = None
+            for component in self.application.mediator.modules:
+                if hasattr(component, "_http_server"):
+                    server = component
+                    break
+
+            if server:
+                # Store system reference in the HTTP app for views
+                server._http_server["nether_app"] = (
+                    self.application
+                )  # Store the actual System instance
+
+            # Register main SPA view
+            async with self.application.mediator.context() as ctx:
+                await ctx.process(RegisterView(route="/", view=SystemView))
+                await ctx.process(
+                    RegisterView(
+                        route="/api/components/manifests", view=ComponentManifestView
+                    )
+                )
+                await ctx.process(
+                    RegisterView(route="/api/discovery", view=APIDiscoveryView)
+                )
+                await ctx.process(
+                    RegisterView(route="/api/components/events", view=ComponentSSEView)
+                )
+
+            self.registered = True
+            print("SPA routes registered")
+
+    async def handle(
+        self, message: RegisterView | ViewRegistered, *, handler, **_
+    ) -> None:
+        if isinstance(message, ViewRegistered):
+            # Handle successful view registration confirmation
+            pass
+        elif isinstance(message, RegisterView):
+            # Handle view registration requests (if needed)
+            pass
+
+
+# SYSTEM #
 
 
 class SystemView(web.View):
@@ -968,226 +1194,6 @@ ${JSON.stringify(data, null, 2)}
         return web.Response(text=html_content, content_type="text/html")
 
 
-class ComponentManifestView(web.View):
-    """API endpoint that returns all component manifests."""
-
-    async def get(self) -> web.Response:
-        """Return all component manifests as JSON."""
-        try:
-            app: System = self.request.app["nether_app"]
-            manifests = app.component_registry.get_manifests()
-            return web.json_response(manifests)
-        except KeyError:
-            return web.json_response(
-                {"error": "Application not properly initialized"}, status=500
-            )
-        except Exception as e:
-            return web.json_response(
-                {"error": f"Failed to retrieve manifests: {e!s}"}, status=500
-            )
-
-
-class APIDiscoveryView(web.View):
-    """API endpoint that returns all discovered HTTP endpoints and routes."""
-
-    async def get(self) -> web.Response:
-        """Return all registered API endpoints and routes."""
-        try:
-            app: System = self.request.app["nether_app"]
-
-            # Get all registered routes from the HTTP server
-            registered_routes = []
-
-            # Find the server component to access HTTP routes
-            server_component = None
-            for component in app.mediator.modules:
-                if hasattr(component, "_http_server"):
-                    server_component = component
-                    break
-
-            if server_component and hasattr(server_component, "_http_server"):
-                # Extract routes from aiohttp router
-                for resource in server_component._http_server.router.resources():
-                    route_info = {
-                        "path": getattr(resource, "_path", str(resource)),
-                        "name": getattr(resource, "_name", None),
-                        "methods": [],
-                    }
-
-                    # Get HTTP methods for this route
-                    for route in resource:
-                        if hasattr(route, "method"):
-                            route_info["methods"].append(route.method)
-
-                    registered_routes.append(route_info)
-
-            # Get component-specific API endpoints
-            component_endpoints = []
-            for (
-                component_id,
-                manifest,
-            ) in app.component_registry.get_manifests().items():
-                if "api_endpoints" in manifest:
-                    for endpoint in manifest["api_endpoints"]:
-                        component_endpoints.append(
-                            {
-                                "component": component_id,
-                                "endpoint": endpoint,
-                                "component_name": manifest.get("name", component_id),
-                                "description": manifest.get("description", ""),
-                                "permissions": manifest.get("permissions", []),
-                            }
-                        )
-
-            # System information
-            host = getattr(app.configuration, "host", "localhost")
-            port = getattr(app.configuration, "port", 8080)
-            base_url = f"http://{host}:{port}"
-
-            discovery_info = {
-                "service_info": {
-                    "name": "Module-based SPA System",
-                    "version": "1.0.0",
-                    "base_url": base_url,
-                    "timestamp": app.start_time,
-                },
-                "system_routes": [
-                    {
-                        "path": "/",
-                        "method": "GET",
-                        "description": "Main SPA application",
-                        "type": "ui",
-                    },
-                    {
-                        "path": "/api/discovery",
-                        "method": "GET",
-                        "description": "API endpoint discovery",
-                        "type": "api",
-                    },
-                    {
-                        "path": "/api/components/manifests",
-                        "method": "GET",
-                        "description": "Module manifests",
-                        "type": "api",
-                    },
-                    {
-                        "path": "/api/components",
-                        "method": "GET",
-                        "description": "Secure component registry",
-                        "type": "api",
-                    },
-                    {
-                        "path": "/api/components/validate",
-                        "method": "GET",
-                        "description": "Module validation",
-                        "type": "api",
-                    },
-                ],
-                "registered_routes": registered_routes,
-                "component_endpoints": component_endpoints,
-                "components": list(app.component_registry.get_manifests().keys()),
-            }
-
-            return web.json_response(discovery_info)
-
-        except Exception as e:
-            return web.json_response(
-                {"error": f"Failed to discover endpoints: {e!s}"}, status=500
-            )
-
-
-class ComponentSSEView(web.View):
-    """Server-Sent Events endpoint for real-time component updates."""
-
-    async def get(self) -> web.StreamResponse:
-        """Handle SSE connection for component updates."""
-        response = web.StreamResponse()
-        response.headers["Content-Type"] = "text/event-stream"
-        response.headers["Cache-Control"] = "no-cache"
-        response.headers["Connection"] = "keep-alive"
-        response.headers["Access-Control-Allow-Origin"] = "*"
-
-        await response.prepare(self.request)
-
-        # Get the app instance from request
-        app = self.request.app.get("nether_app")
-        if app and hasattr(app, "component_registry"):
-            # Add this SSE client to the registry
-            app.component_registry.add_sse_client(response)
-
-            # Send initial connection message
-            initial_message = f"data: {json.dumps({'type': 'connected', 'message': 'SSE connection established'})}\n\n"
-            await response.write(initial_message.encode())
-
-            try:
-                # Keep connection alive until client disconnects
-                while True:
-                    await asyncio.sleep(30)  # Send heartbeat every 30 seconds
-                    heartbeat = f"data: {json.dumps({'type': 'heartbeat', 'timestamp': time.time()})}\n\n"
-                    await response.write(heartbeat.encode())
-            except Exception:
-                # Client disconnected or other error
-                pass
-            finally:
-                # Remove client from registry when disconnected
-                if app and hasattr(app, "component_registry"):
-                    app.component_registry.remove_sse_client(response)
-
-        return response
-
-
-class ComponentManager(Module[RegisterView | ViewRegistered]):
-    """Module to register SPA views and routes."""
-
-    def __init__(self, application):
-        super().__init__(application)
-        self.registered = False
-
-    async def on_start(self) -> None:
-        await super().on_start()
-        if not self.registered:
-            # Get server component to access the HTTP app
-            server = None
-            for component in self.application.mediator.modules:
-                if hasattr(component, "_http_server"):
-                    server = component
-                    break
-
-            if server:
-                # Store system reference in the HTTP app for views
-                server._http_server["nether_app"] = (
-                    self.application
-                )  # Store the actual System instance
-
-            # Register main SPA view
-            async with self.application.mediator.context() as ctx:
-                await ctx.process(RegisterView(route="/", view=SystemView))
-                await ctx.process(
-                    RegisterView(
-                        route="/api/components/manifests", view=ComponentManifestView
-                    )
-                )
-                await ctx.process(
-                    RegisterView(route="/api/discovery", view=APIDiscoveryView)
-                )
-                await ctx.process(
-                    RegisterView(route="/api/components/events", view=ComponentSSEView)
-                )
-
-            self.registered = True
-            print("SPA routes registered")
-
-    async def handle(
-        self, message: RegisterView | ViewRegistered, *, handler, **_
-    ) -> None:
-        if isinstance(message, ViewRegistered):
-            # Handle successful view registration confirmation
-            pass
-        elif isinstance(message, RegisterView):
-            # Handle view registration requests (if needed)
-            pass
-
-
 class System(nether.Nether):
     """Main SPA application that manages component discovery and registration."""
 
@@ -1285,6 +1291,35 @@ class System(nether.Nether):
             },
         )
 
+        process = ProcessModule(self)
+        self.attach(process)
+        self.component_registry.register_component(
+            "process",
+            process,
+            {
+                "id": "process",
+                "name": "Process Manager",
+                "description": "Background task processing with monitoring and control",
+                "version": "1.0.0",
+                "author": "system",
+                "tag_name": "process-component",
+                "class_name": "ProcessWebComponent",
+                "routes": {
+                    "api_base": "/api/process",
+                    "web_component": "/components/process",
+                    "module": "/modules/process.js",
+                },
+                "menu": {
+                    "title": "Processes",
+                    "icon": "process",
+                    "order": 5,
+                    "route": "/process",
+                },
+                "permissions": ["read:process", "write:process"],
+                "api_endpoints": ["/api/process"],
+            },
+        )
+
     async def sync_components_to_secure_registry(self) -> None:
         """Simplified - no secure registry sync needed."""
         print("Skipping secure registry sync (simplified mode)")
@@ -1307,6 +1342,9 @@ class System(nether.Nether):
         print(f"Dashboard: http://{host}:{port}/")
         print(f"API Discovery: http://{host}:{port}/api/discovery")
         print("Note: Secure component loader disabled for simplicity")
+
+
+# EXECUTE #
 
 
 async def run():

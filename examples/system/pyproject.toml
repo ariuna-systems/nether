@@ -3,17 +3,17 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "nether-system-example"
+name = "nether-system"
 version = "0.1.0"
-description = "Module system example using Nether framework"
+description = "Module system using Nether framework"
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
-    "aiohttp>=3.8.0",
-    "nether @ git+https://github.com/arjuna-systems/nether.git",
+    "psutil", "schedule", # process module
+    "nether @ git+https://github.com/ariuna-systems/nether.git",
 ]
 [project.scripts]
-nether-system-example = "nether_system_example.__init__:main"
+nether-system = "nether_system.__init__:main"
 
 [project.optional-dependencies]
 dev = [
@@ -24,11 +24,11 @@ dev = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["nether_system_example*"]
+include = ["nether_system*"]
 
 [tool.ruff]
-line-length = 88
-target-version = "py38"
+line-length = 120
+target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]

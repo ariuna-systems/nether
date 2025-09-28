@@ -9,8 +9,8 @@ from dataclasses import dataclass
 from typing import Any
 
 from aiohttp import web
-from nether.modules import Module
 from nether.message import Event, Message, Query
+from nether.modules import Module
 from nether.server import RegisterView
 
 

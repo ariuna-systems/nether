@@ -7,13 +7,12 @@ name = "nether-module-settings"
 version = "1.0.0"
 description = "Independent settings module for Nether applications with modern frontend"
 authors = [
-    {name = "Nether Team", email = "team@nether.dev"}
+    {name = "David Landa", email = "david.landa@proton.me"}
 ]
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "aiohttp>=3.8.0",
-    "nether-framework>=1.0.0",
+    "nether @ git+https://github.com/ariuna-systems/nether.git",
 ]
 classifiers = [
     "Development Status :: 4 - Beta",

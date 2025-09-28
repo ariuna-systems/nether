@@ -1,6 +1,6 @@
 # Secure Module-based SPA with Nether Framework
 
-A production-ready Single Page Application demonstrating secure dynamic component discovery and registration using the Nether framework.
+A Single Page Application demonstrating dynamic module discovery and registration using the Nether framework.
 
 ## Features
 
@@ -31,7 +31,7 @@ cd examples\system
 ```
 
 ```powershell
-python -m nether-system-example
+python -m nether-system
 ```
 
 ## API Endpoints
@@ -48,7 +48,7 @@ python -m nether-system-example
 
 ### Module Structure
 
-Each component is self-contained providing:
+Each module is self-contained providing:
 
 - **REST API**: Data operations (`/api/{component}/data`)
 - **Web Interface**: Frontend widget with secure loading

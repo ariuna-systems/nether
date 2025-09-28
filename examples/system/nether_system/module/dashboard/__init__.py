@@ -3,17 +3,19 @@ Dashboard Module - Complete system overview and metrics
 Includes: API endpoints, Nether component, and secure ES6 module serving
 """
 
+import logging
 import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, override
 
 from aiohttp import web
-from nether.modules import Module
 from nether.message import Event, Message, Query
+from nether.modules import Module
 from nether.server import RegisterView
 
 __all__ = ["DashboardModule"]
+__version__ = "1.0.0"
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -619,13 +621,13 @@ class DashboardModule(Module[GetDashboardData]):
     def __init__(self, application):
         super().__init__(application)
         self.registered = False
-
+        self.logger = logging.getLogger(str(type(self)))
         self.views = {}
 
+    @override
     async def on_start(self) -> None:
         await super().on_start()
         if not self.registered:
-            # Register both API and module routes
             async with self.application.mediator.context() as ctx:
                 await ctx.process(
                     RegisterView(route="/api/dashboard/data", view=DashboardAPIView)
@@ -635,15 +637,15 @@ class DashboardModule(Module[GetDashboardData]):
                         route="/modules/dashboard.js", view=DashboardModuleView
                     )
                 )
-                # Provide an HTML endpoint similar to other components so the SPA can fetch /components/dashboard
                 await ctx.process(
                     RegisterView(
                         route="/components/dashboard", view=DashboardComponentView
                     )
                 )
-
             self.registered = True
-            print("Dashboard component routes registered (API + secure ES6 module)")
+            self.logger.debug(
+                "Dashboard component routes registered (API + secure ES6 module)"
+            )
 
     async def handle(
         self,
