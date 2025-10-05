@@ -2,19 +2,19 @@
 
 [![Sphinx Docs](https://github.com/arjuna-systems/nether/actions/workflows/docs.yml/badge.svg)](https://github.com/arjuna-systems/nether/actions/workflows/docs.yml)
 
-> Nether means beneath, below, or underneath — representing both our minimalistic goals and system-level thinking.
+> Nether means beneath, below, or underneath
 
 Nether is a framework for building **message-driven systems** in Python. 
-Originally created to serve internal needs at Arjuna, it may or may not suit your use case — our goal is not to build a universal framework, but one that works best for us.
+Originally created to serve internal needs, it may or may not suit your use case&mdash;our goal is not to build a universal framework, but one that works best for us.
 
-> **Note**: Nether is actively under development but is already being used in production environments. While the core architecture is stable, APIs may evolve as we continue to refine the framework based on real-world usage.
+**Disclaimer**: Nether is actively under development. While the core architecture is stable, APIs may evolve as we continue to refine the framework based on real-world usage.
 
 Use Nether to build:
 
 - **Reactive systems** that respond to events and scale with demand
-- **Streaming services** for real-time data processing and event handling  
+- **Streaming systems** for real-time data processing and event handling  
 
-Nether's Actor Model and message-driven design make it particularly well-suited for:
+Nether's message-driven design make it particularly well-suited for:
 
 - **Event Sourcing (ES)** - Natural event handling and state reconstruction
 - **Domain-Driven Design (DDD)** - Clear bounded contexts and domain isolation
@@ -53,7 +53,7 @@ Nether implements the **Actor Model** where:
 from dataclasses import dataclass
 from nether import Nether
 from nether.message import Command, Event
-from nether.component import Module
+from nether.modules import Module
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ProcessOrder(Command):
