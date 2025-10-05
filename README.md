@@ -42,9 +42,9 @@ Nether's message-driven design make it particularly well-suited for:
 
 Nether implements the **Actor Model** where:
 
-- **Actor** handles specific message types.
-- **Message** passing is the only form of communication between actors.
-- **Mediator** routes messages to appropriate actors.
+- **Module** handles specific message types.
+- **Message** passing is the only form of communication between modules.
+- **Mediator** routes messages to appropriate modules.
 - **Context** provide isolated environments for message processing.
 
 ## Quick Example
