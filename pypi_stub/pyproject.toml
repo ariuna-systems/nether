@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nether"
+version = "0.0.1"
+description = "A Python framework for building concurrent and distributed applications"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.14"
+authors = [
+    { name = "David Landa", email = "david.landa@proton.me" }
+]
+maintainers = [
+    { name = "David Landa", email = "david.landa@proton.me" }
+]
+keywords = [
+    "actors",
+    "agents",
+    "concurrent",
+    "distributed",
+    "framework",
+    "messaging",
+    "services",
+]
+classifiers = [
+    "Development Status :: 1 - Planning",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Topic :: System :: Distributed Computing",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence"
+]
+
+[project.urls]
+Homepage = "https://github.com/ariuna-systems/nether"
+Documentation = "https://github.com/ariuna-systems/nether/docs"
+Repository = "https://github.com/ariuna-systems/nether"
+"Bug Tracker" = "https://github.com/ariuna-systems/nether/issues"
+
+[tool.setuptools]
+py-modules = ["nether"]

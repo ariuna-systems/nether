@@ -9,11 +9,10 @@ dynamic = ["readme", "version"]
 requires-python = ">=3.12"
 license = { text = "MIT" }
 authors = [
-    { name = "David Landa", email = "david.landa@proton.me" },
-    { name = "Daniel Randsdrof", email = "daniel.randsdrof@proton.me" },
+    { name = "Ariuna Systems", email = "info@ariuna.dev" },
 ]
 maintainers = [
-    { name = "David Landa", email = "david.landa@proton.me" },
+    { name = "Ariuna Systems", email = "info@ariuna.dev" },
 ]
 keywords = ["actor-model", "async", "messaging", "framework", "event-driven"]
 classifiers = [
@@ -50,6 +49,7 @@ version = { attr = "nether.__version__" }
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["nether*"]
+exclude = ["tests*"]
 
 [tool.setuptools.package-data]
 "nether" = ["py.typed"]

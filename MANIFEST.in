@@ -1,0 +1,37 @@
+# Include essential project files
+include README.md
+include LICENSE
+include pyproject.toml
+
+# Include documentation
+recursive-include docs *
+
+# Include examples
+recursive-include examples *
+
+# Include scripts
+recursive-include scripts *
+
+# Include modules
+recursive-include modules *
+
+# Include source code (though setuptools should handle this)
+recursive-include src *
+
+# Exclude development and build files
+exclude .gitignore
+exclude uv.lock
+global-exclude *.pyc
+global-exclude __pycache__
+global-exclude .pytest_cache
+global-exclude .mypy_cache
+global-exclude .ruff_cache
+global-exclude .DS_Store
+global-exclude Thumbs.db
+prune .git
+prune .github
+prune pypi_stub
+prune build
+prune dist
+prune *.egg-info
+prune tests
